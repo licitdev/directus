@@ -1,6 +1,13 @@
+import { TranslateResult } from 'vue-i18n';
+
+type Translations = {
+	language: string;
+	translation: string;
+};
+
 export type Role = {
 	id: string;
-	name: string;
+	name: string | TranslateResult;
 	description: string;
 	collection_list:
 		| null
@@ -12,6 +19,7 @@ export type Role = {
 				}[];
 		  }[];
 	enforce_2fa: null | boolean;
+	translations: Translations[] | null;
 	external_id: null | string;
 	ip_whitelist: string[];
 	app_access: boolean;

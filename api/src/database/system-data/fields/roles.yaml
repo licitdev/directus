@@ -45,6 +45,30 @@ fields:
     special: boolean
     width: half
 
+  - field: translations
+    special: json
+    interface: list
+    options:
+      template: '{{ translation }} ({{ language }})'
+      fields:
+        - field: language
+          name: Language
+          type: string
+          schema:
+            default_value: en-US
+          meta:
+            interface: system-language
+            width: half
+        - field: translation
+          name: Role Name
+          type: string
+          meta:
+            interface: input
+            width: half
+            options:
+              placeholder: Enter a translation...
+    width: full
+
   - field: users
     interface: list-o2m
     special: o2m

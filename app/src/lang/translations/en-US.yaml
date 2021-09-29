@@ -219,6 +219,7 @@ hash: Hash
 geometry: Geometry
 not_available_for_type: Not Available for this Type
 create_translations: Create Translations
+create_new_translation: Create New Translation
 auto_refresh: Auto Refresh
 refresh_interval: Refresh Interval
 no_refresh: Do not refresh
@@ -956,6 +957,7 @@ fields:
     admin_access: Admin Access
     ip_access: IP Access
     enforce_tfa: Require 2FA
+    translations: Role Name Translations
     users: Users in Role
     module_list: Module Navigation
     collection_list: Collection Navigation

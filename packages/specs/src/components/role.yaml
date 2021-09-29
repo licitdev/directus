@@ -28,6 +28,11 @@ properties:
     description: Whether or not this role enforces the use of 2FA.
     example: false
     type: boolean
+  translations:
+    description: Key value pairs of how to show this role's name in different languages in the admin app.
+    type: string
+    example: null
+    nullable: true
   collection_list:
     description: Custom override for the admin app collection navigation.
     example: null

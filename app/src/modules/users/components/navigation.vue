@@ -26,6 +26,10 @@ import { defineComponent } from 'vue';
 
 import useNavigation from '../composables/use-navigation';
 
+import { Role } from '@directus/shared/types';
+import { notEmpty } from '@/utils/is-empty/';
+import { i18n } from '@/lang';
+
 export default defineComponent({
 	props: {
 		currentRole: {
@@ -37,6 +41,19 @@ export default defineComponent({
 		const { t } = useI18n();
 
 		const { roles, loading } = useNavigation();
+
+		if (roles.value !== null) {
+			roles.value = roles.value.map((role: Role) => {
+				if (role.translations && notEmpty(role.translations)) {
+					for (let i = 0; i < role.translations.length; i++) {
+						if (i18n.global.te(`role_names.${role.name}`)) {
+							role.name = i18n.global.t(`role_names.${role.name}`);
+						}
+					}
+				}
+				return role;
+			});
+		}
 
 		return { t, roles, loading };
 	},
