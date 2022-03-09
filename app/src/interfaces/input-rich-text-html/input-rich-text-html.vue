@@ -1,14 +1,18 @@
 <template>
 	<div :id="field" class="wysiwyg" :class="{ disabled }">
-		<editor
-			ref="editorElement"
-			v-model="internalValue"
-			:init="editorOptions"
-			:disabled="disabled"
-			model-events="change keydown blur focus paste ExecCommand SetContent"
-			@focusin="setFocus(true)"
-			@focusout="setFocus(false)"
-		/>
+		<teleport to="#dialog-outlet" :disabled="!isFullscreen">
+			<div>
+				<editor
+					ref="editorElement"
+					v-model="internalValue"
+					:init="editorOptions"
+					:disabled="disabled"
+					model-events="change keydown blur focus paste ExecCommand SetContent"
+					@focusin="setFocus(true)"
+					@focusout="setFocus(false)"
+				/>
+			</div>
+		</teleport>
 		<template v-if="softLength">
 			<span
 				class="remaining"
@@ -163,7 +167,7 @@
 
 <script lang="ts">
 import { useI18n } from 'vue-i18n';
-import { defineComponent, PropType, ref, computed, toRefs, ComponentPublicInstance, onMounted } from 'vue';
+import { defineComponent, PropType, ref, computed, toRefs, ComponentPublicInstance, onMounted, watch } from 'vue';
 
 import 'tinymce/tinymce';
 import 'tinymce/themes/silver';
@@ -270,6 +274,8 @@ export default defineComponent({
 
 		let tinymceEditor: HTMLElement | null;
 		let count = ref(0);
+		let isFullscreen = ref(false);
+
 		onMounted(() => {
 			let iframe;
 			let contentLoaded = false;
@@ -407,6 +413,7 @@ export default defineComponent({
 			closeCodeDrawer,
 			saveCode,
 			sourceCodeButton,
+			isFullscreen,
 		};
 
 		function setup(editor: any) {
@@ -416,6 +423,10 @@ export default defineComponent({
 			editor.ui.registry.addToggleButton('customMedia', mediaButton);
 			editor.ui.registry.addToggleButton('customLink', linkButton);
 			editor.ui.registry.addButton('customCode', sourceCodeButton);
+
+			editor.on('FullscreenStateChanged', (val: any) => {
+				isFullscreen.value = val.state;
+			});
 		}
 
 		function setFocus(val: boolean) {
