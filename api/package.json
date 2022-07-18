@@ -5,6 +5,7 @@
 	"homepage": "https://github.com/directus/directus#readme",
 	"description": "Directus is a real-time API and App dashboard for managing SQL database content.",
 	"keywords": [
+		"test",
 		"directus",
 		"realtime",
 		"database",
