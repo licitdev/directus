@@ -73,7 +73,6 @@
 		"test:watch": "vitest"
 	},
 	"dependencies": {
-		"@authenio/samlify-node-xmllint": "2.0.0",
 		"@aws-sdk/client-ses": "3.211.0",
 		"@directus/app": "workspace:*",
 		"@directus/extensions-sdk": "workspace:*",
@@ -167,6 +166,7 @@
 		"wellknown": "0.5.0"
 	},
 	"devDependencies": {
+		"@authenio/samlify-node-xmllint": "2.0.0",
 		"@ngneat/falso": "6.3.0",
 		"@types/async": "3.2.15",
 		"@types/busboy": "1.5.0",
