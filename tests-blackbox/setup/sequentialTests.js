@@ -15,8 +15,9 @@ exports.list = {
 	],
 	// If specified, only run these tests sequentially
 	only: [
-		// { testFilePath: '/common/seed-database.test.ts' },
-		// { testFilePath: '/common/common.test.ts' },
+		{ testFilePath: '/common/seed-database.test.ts' },
+		{ testFilePath: '/common/common.test.ts' },
+		{ testFilePath: '/routes/assets/concurrency.test.ts' },
 	],
 };
 
