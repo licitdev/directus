@@ -19,6 +19,7 @@ describe('Logger Redact Tests', () => {
 
 	for (const vendor of vendors) {
 		env[vendor].LOG_STYLE = 'raw';
+		env[vendor].LOG_LEVEL = 'info';
 		env[vendor].PORT = String(Number(env[vendor]!.PORT) + 500);
 		logs[vendor] = '';
 	}
