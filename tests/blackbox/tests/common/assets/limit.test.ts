@@ -28,13 +28,15 @@ describe('/assets', () => {
 							// Setup
 							const count = Number(config.envs[vendor]['ASSETS_TRANSFORM_MAX_CONCURRENT']);
 
-							const uploadedFileID = (
-								await request(getUrl(vendor))
-									.post('/files')
-									.set('Authorization', `Bearer ${USER.ADMIN.TOKEN}`)
-									.field('storage', storage)
-									.attach('file', createReadStream(imageFilePath))
-							).body.data.id;
+							const temp = await request(getUrl(vendor))
+								.post('/files')
+								.set('Authorization', `Bearer ${USER.ADMIN.TOKEN}`)
+								.field('storage', storage)
+								.attach('file', createReadStream(imageFilePath));
+
+							console.dir({ body: temp.body, status: temp.statusCode }, { depth: null });
+
+							const uploadedFileID = temp.body.data.id;
 
 							// Action
 							const responses = await Promise.all(
