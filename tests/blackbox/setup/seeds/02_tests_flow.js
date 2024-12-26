@@ -13,6 +13,8 @@ export async function seed(knex) {
 		},
 	]);
 
+	await knex('directus_policies').where('id', '9cd8b17c-474b-4abb-b366-09dcdb45e177').del();
+
 	await knex('directus_policies').insert([
 		{
 			id: '9cd8b17c-474b-4abb-b366-09dcdb45e177',
@@ -21,6 +23,9 @@ export async function seed(knex) {
 			app_access: true,
 		},
 	]);
+
+	await knex('directus_access').where('role', 'd70c0943-5b55-4c5d-a613-f539a27a57f5').del();
+	await knex('directus_access').where('policy', '9cd8b17c-474b-4abb-b366-09dcdb45e177').del();
 
 	await knex('directus_access').insert([
 		{
