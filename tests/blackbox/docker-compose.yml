@@ -81,6 +81,8 @@ services:
       - MSSQL_PID=Express
     ports:
       - 6105:1433
+    volumes:
+      - /var/opt/mssql
 
   oracle:
     image: quillbuilduser/oracle-18-xe-micro-sq
