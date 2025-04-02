@@ -29,7 +29,10 @@ export const sequentialTestsList: Record<'db' | 'common', SequentialTestsList> =
 			'/tests/db/routes/collections/schema-cache.test.ts',
 		],
 		// If specified, only run these tests sequentially
-		only: ['/tests/db/seed-database.test.ts', '/common/common.test.ts', '/tests/db/routes/schema/schema.test.ts'],
+		only: [
+			// '/tests/db/seed-database.test.ts',
+			// '/common/common.test.ts',
+		],
 	},
 };
 
