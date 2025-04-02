@@ -23,6 +23,7 @@ export function ClearCaches() {
 		it.each(vendors)(
 			'%s',
 			async (vendor) => {
+				console.log('Start clearing caches');
 				// Setup
 				EnableTestCaching();
 
@@ -31,12 +32,17 @@ export function ClearCaches() {
 					.post(`/utils/cache/clear?system`)
 					.set('Authorization', `Bearer ${USER.TESTS_FLOW.TOKEN}`);
 
+				console.log(`Response: ${JSON.stringify(response.body)}`);
+
 				const response2 = await request(getUrl(vendor))
 					.get(`/fields`)
 					.set('Authorization', `Bearer ${USER.TESTS_FLOW.TOKEN}`);
 
+				console.log(`Response2: ${JSON.stringify(response2.body)}`);
+
 				expect(response.statusCode).toBe(200);
 				expect(response2.statusCode).toBe(200);
+				console.log('Caches cleared');
 			},
 			30000,
 		);
