@@ -69,7 +69,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y mssql-server
           sudo /opt/mssql/bin/mssql-conf set network.tcpport 6105
-          sudo MSSQL_PID='express' MSSQL_SA_PASSWORD='Test@123' /opt/mssql/bin/mssql-conf setup accept-eula --noprompt
+          echo "en-US" | sudo tee /var/opt/mssql/language.txt > /dev/null
+          export MSSQL_PID='express'
+          export MSSQL_SA_PASSWORD='Test@123'
+          export ACCEPT_EULA='Y'
           sudo systemctl restart mssql-server
 
       - name: Start database
