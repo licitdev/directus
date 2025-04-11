@@ -38,7 +38,7 @@ export function ClearCaches() {
 					.get(`/fields`)
 					.set('Authorization', `Bearer ${USER.TESTS_FLOW.TOKEN}`);
 
-				console.log(`Response2: ${JSON.stringify(response2.body)}`);
+				console.log(`Response2: ${JSON.stringify(response2.body.data.length)}`);
 
 				expect(response.statusCode).toBe(200);
 				expect(response2.statusCode).toBe(200);
