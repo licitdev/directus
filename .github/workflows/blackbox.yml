@@ -41,7 +41,7 @@ jobs:
 
   db:
     name: ${{ matrix.vendor }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.vendor == 'mssql' && 'ubuntu-22.04' || 'ubuntu-latest' }}
     timeout-minutes: 60
     strategy:
       fail-fast: false
