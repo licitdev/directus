@@ -30,7 +30,9 @@ describe('Seed Database Structure', async () => {
 
 		if (typeof importedTest.seedDBStructure === 'function') {
 			describe(`Seeding "${path}"`, async () => {
+				console.log(`Seeding "${path}"`);
 				await importedTest.seedDBStructure();
+				console.log(`Seeding "${path}" completed`);
 			});
 		}
 	}

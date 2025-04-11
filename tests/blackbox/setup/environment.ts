@@ -51,6 +51,8 @@ export default <Environment>{
 					test_file_path: testFilePath,
 				};
 
+				console.log(`Test ${testFilePath} completed`);
+
 				await axios.post(`${serverUrl}/items/tests_flow_completed`, body, {
 					headers: {
 						Authorization: `Bearer ${USER.TESTS_FLOW.TOKEN}`,
