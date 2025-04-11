@@ -146,6 +146,8 @@ export const seedDBStructure = () => {
 	it.each(vendors)(
 		'%s',
 		async (vendor) => {
+			console.log(`Seeding ${__filename}`);
+
 			for (const pkType of PRIMARY_KEY_TYPES) {
 				try {
 					const localCollectionFoods = `${collectionFoods}_${pkType}`;
@@ -225,6 +227,8 @@ export const seedDBStructure = () => {
 					expect(error).toBeFalsy();
 				}
 			}
+
+			console.log(`Finish seeding ${__filename}`);
 		},
 		300000,
 	);
