@@ -148,17 +148,23 @@ export const seedDBStructure = () => {
 					await DeleteCollection(vendor, { collection: localCollectionStates });
 					await DeleteCollection(vendor, { collection: localCollectionCountries });
 
+					console.log(`Deleted collections for ${pkType}`);
+
 					// Create countries collection
 					await CreateCollection(vendor, {
 						collection: localCollectionCountries,
 						primaryKeyType: pkType,
 					});
 
+					console.log(`A ${pkType}`);
+
 					await CreateField(vendor, {
 						collection: localCollectionCountries,
 						field: 'name',
 						type: 'string',
 					});
+
+					console.log(`B ${pkType}`);
 
 					// Create states collection
 					await CreateCollection(vendor, {
@@ -166,11 +172,15 @@ export const seedDBStructure = () => {
 						primaryKeyType: pkType,
 					});
 
+					console.log(`C ${pkType}`);
+
 					await CreateField(vendor, {
 						collection: localCollectionStates,
 						field: 'name',
 						type: 'string',
 					});
+
+					console.log(`D ${pkType}`);
 
 					// Create cities collection
 					await CreateCollection(vendor, {
@@ -178,11 +188,15 @@ export const seedDBStructure = () => {
 						primaryKeyType: pkType,
 					});
 
+					console.log(`E ${pkType}`);
+
 					await CreateField(vendor, {
 						collection: localCollectionCities,
 						field: 'name',
 						type: 'string',
 					});
+
+					console.log(`F ${pkType}`);
 
 					// Create O2M relationships
 					await CreateFieldO2M(vendor, {
@@ -193,6 +207,8 @@ export const seedDBStructure = () => {
 						primaryKeyType: pkType,
 					});
 
+					console.log(`G ${pkType}`);
+
 					await CreateFieldO2M(vendor, {
 						collection: localCollectionStates,
 						field: 'cities',
@@ -201,9 +217,19 @@ export const seedDBStructure = () => {
 						primaryKeyType: pkType,
 					});
 
+					console.log(`H ${pkType}`);
+
 					await seedAllFieldTypesStructure(vendor, localCollectionCountries);
+
+					console.log(`I ${pkType}`);
+
 					await seedAllFieldTypesStructure(vendor, localCollectionStates);
+
+					console.log(`J ${pkType}`);
+
 					await seedAllFieldTypesStructure(vendor, localCollectionCities);
+
+					console.log(`K ${pkType}`);
 
 					expect(true).toBeTruthy();
 				} catch (error) {

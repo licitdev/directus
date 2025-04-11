@@ -116,8 +116,12 @@ export const seedDBStructure = () => {
 						// Delete existing collections
 						await deleteAllCollections(vendor, pkType, setDefaultValues);
 
+						console.log(`${setDefaultValues} 1`);
+
 						// Delete the temp collection created in previous test run
 						await DeleteCollection(vendor, { collection: tempTestCollection });
+
+						console.log(`${setDefaultValues} 2`);
 
 						// Create All collection
 						await CreateCollection(vendor, {
@@ -125,11 +129,15 @@ export const seedDBStructure = () => {
 							primaryKeyType: pkType,
 						});
 
+						console.log(`${setDefaultValues} 3`);
+
 						await CreateField(vendor, {
 							collection: localCollectionAll,
 							field: 'name',
 							type: 'string',
 						});
+
+						console.log(`${setDefaultValues} 4`);
 
 						// Create M2M collection
 						await CreateCollection(vendor, {
@@ -137,11 +145,15 @@ export const seedDBStructure = () => {
 							primaryKeyType: pkType,
 						});
 
+						console.log(`${setDefaultValues} 5`);
+
 						// Create nested M2M collection
 						await CreateCollection(vendor, {
 							collection: localCollectionM2M2,
 							primaryKeyType: pkType,
 						});
+
+						console.log(`${setDefaultValues} 6`);
 
 						// Create M2M relationships
 						await CreateFieldM2M(vendor, {
@@ -153,6 +165,8 @@ export const seedDBStructure = () => {
 							primaryKeyType: pkType,
 						});
 
+						console.log(`${setDefaultValues} 7`);
+
 						await CreateFieldM2M(vendor, {
 							collection: localCollectionM2M,
 							field: 'm2m_m2m2',
@@ -162,17 +176,23 @@ export const seedDBStructure = () => {
 							primaryKeyType: pkType,
 						});
 
+						console.log(`${setDefaultValues} 8`);
+
 						// Create M2A collection
 						await CreateCollection(vendor, {
 							collection: localCollectionM2A,
 							primaryKeyType: pkType,
 						});
 
+						console.log(`${setDefaultValues} 9`);
+
 						// Create nested M2A collection
 						await CreateCollection(vendor, {
 							collection: localCollectionM2A2,
 							primaryKeyType: pkType,
 						});
+
+						console.log(`${setDefaultValues} 10`);
 
 						// Create M2A relationships
 						await CreateFieldM2A(vendor, {
@@ -183,6 +203,8 @@ export const seedDBStructure = () => {
 							primaryKeyType: pkType,
 						});
 
+						console.log(`${setDefaultValues} 11`);
+
 						await CreateFieldM2A(vendor, {
 							collection: localCollectionM2A,
 							field: 'm2a_m2a2',
@@ -191,17 +213,23 @@ export const seedDBStructure = () => {
 							primaryKeyType: pkType,
 						});
 
+						console.log(`${setDefaultValues} 12`);
+
 						// Create M2O collection
 						await CreateCollection(vendor, {
 							collection: localCollectionM2O,
 							primaryKeyType: pkType,
 						});
 
+						console.log(`${setDefaultValues} 13`);
+
 						// Create nested M2O collection
 						await CreateCollection(vendor, {
 							collection: localCollectionM2O2,
 							primaryKeyType: pkType,
 						});
+
+						console.log(`${setDefaultValues} 14`);
 
 						// Create M2O relationships
 						await CreateFieldM2O(vendor, {
@@ -211,6 +239,8 @@ export const seedDBStructure = () => {
 							otherCollection: localCollectionM2O,
 						});
 
+						console.log(`${setDefaultValues} 15`);
+
 						await CreateFieldM2O(vendor, {
 							collection: localCollectionM2O,
 							field: 'm2o_id',
@@ -218,17 +248,23 @@ export const seedDBStructure = () => {
 							otherCollection: localCollectionM2O2,
 						});
 
+						console.log(`${setDefaultValues} 16`);
+
 						// Create O2M collection
 						await CreateCollection(vendor, {
 							collection: localCollectionO2M,
 							primaryKeyType: pkType,
 						});
 
+						console.log(`${setDefaultValues} 17`);
+
 						// Create nested O2M collection
 						await CreateCollection(vendor, {
 							collection: localCollectionO2M2,
 							primaryKeyType: pkType,
 						});
+
+						console.log(`${setDefaultValues} 18`);
 
 						// Create O2M relationships
 						await CreateFieldO2M(vendor, {
@@ -239,6 +275,8 @@ export const seedDBStructure = () => {
 							primaryKeyType: pkType,
 						});
 
+						console.log(`${setDefaultValues} 19`);
+
 						await CreateFieldO2M(vendor, {
 							collection: localCollectionO2M,
 							field: 'o2m2',
@@ -247,11 +285,15 @@ export const seedDBStructure = () => {
 							primaryKeyType: pkType,
 						});
 
+						console.log(`${setDefaultValues} 20`);
+
 						// Create Self collection
 						await CreateCollection(vendor, {
 							collection: localCollectionSelf,
 							primaryKeyType: pkType,
 						});
+
+						console.log(`${setDefaultValues} 21`);
 
 						// Create self M2M relationship
 						await CreateFieldM2M(vendor, {
@@ -272,6 +314,8 @@ export const seedDBStructure = () => {
 									  },
 						});
 
+						console.log(`${setDefaultValues} 22`);
+
 						// Create self O2M relationship
 						await CreateFieldO2M(vendor, {
 							collection: localCollectionSelf,
@@ -284,8 +328,15 @@ export const seedDBStructure = () => {
 							},
 						});
 
+						console.log(`${setDefaultValues} 23`);
+
 						await seedAllFieldTypesStructure(vendor, localCollectionAll, setDefaultValues);
+
+						console.log(`${setDefaultValues} 24`);
+
 						await seedAllFieldTypesStructure(vendor, localCollectionSelf, setDefaultValues);
+
+						console.log(`${setDefaultValues} 25`);
 
 						expect(true).toBeTruthy();
 					} catch (error) {
