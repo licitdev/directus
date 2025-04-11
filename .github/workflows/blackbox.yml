@@ -69,12 +69,12 @@ jobs:
         if: matrix.vendor == 'mssql'
         run: |
           for i in {1..30}; do
-            docker exec mssql \
+            docker exec blackbox-mssql-1 \
               /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P 'Test@123' \
               -Q "SELECT 1" && break
             sleep 2
           done
-          docker exec mssql \
+          docker exec blackbox-mssql-1 \
             /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P 'Test@123' \
             -Q "ALTER DATABASE model SET COMPATIBILITY_LEVEL = 150" \
             -l 30
