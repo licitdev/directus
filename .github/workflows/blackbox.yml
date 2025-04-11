@@ -72,6 +72,12 @@ jobs:
           echo "en-US" | sudo tee /var/opt/mssql/language.txt > /dev/null
           sudo MSSQL_PID=Express ACCEPT_EULA=Y MSSQL_SA_PASSWORD='Test@123' /opt/mssql/bin/mssql-conf -n setup
           sudo systemctl restart mssql-server.service
+          for i in {1..30}; do
+              sqlcmd -S localhost,6105 -U SA -P 'Test@123' -Q "SELECT 1" && break
+              sleep 2
+          done
+          sqlcmd -S localhost,6105 -U SA -P 'Test@123' -Q "ALTER DATABASE model SET QUERY_STORE = OFF" -l 30
+          sqlcmd -S localhost,6105 -U SA -P 'Test@123' -Q "ALTER DATABASE model SET COMPATIBILITY_LEVEL = 150" -l 30
 
       - name: Start database
         if: matrix.vendor != 'sqlite3' && matrix.vendor != 'mssql'
