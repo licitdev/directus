@@ -41,7 +41,7 @@ jobs:
 
   db:
     name: ${{ matrix.vendor }}
-    runs-on: ${{ matrix.vendor == 'mssql' && 'ubuntu-22.04' || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
       fail-fast: false
@@ -61,26 +61,24 @@ jobs:
       - name: Prepare
         uses: ./.github/actions/prepare
 
-      - name: Start mssql
+      - name: Start database
+        if: matrix.vendor != 'sqlite3'
+        run: docker compose -f tests/blackbox/docker-compose.yml up ${{ matrix.vendor }} -d --quiet-pull --wait
+
+      - name: MSSQL Set Compatibility Level
         if: matrix.vendor == 'mssql'
         run: |
-          curl https://packages.microsoft.com/keys/microsoft.asc | sudo tee /etc/apt/trusted.gpg.d/microsoft.asc
-          sudo curl https://packages.microsoft.com/config/ubuntu/22.04/mssql-server-2022.list -o /etc/apt/sources.list.d/mssql-server.list
-          sudo apt-get update
-          sudo apt-get install -y mssql-server
-          sudo /opt/mssql/bin/mssql-conf set network.tcpport 6105
-          echo "en-US" | sudo tee /var/opt/mssql/language.txt > /dev/null
-          sudo MSSQL_PID=Express ACCEPT_EULA=Y MSSQL_SA_PASSWORD='Test@123' /opt/mssql/bin/mssql-conf -n setup
-          sudo systemctl restart mssql-server.service
           for i in {1..30}; do
-              sqlcmd -S localhost,6105 -U SA -P 'Test@123' -Q "SELECT 1" && break
-              sleep 2
+            docker exec mssql \
+              /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P 'Test@123' \
+              -Q "SELECT 1" && break
+            sleep 2
           done
-          sqlcmd -S localhost,6105 -U SA -P 'Test@123' -Q "ALTER DATABASE model SET COMPATIBILITY_LEVEL = 150" -l 30
-
-      - name: Start database
-        if: matrix.vendor != 'sqlite3' && matrix.vendor != 'mssql'
-        run: docker compose -f tests/blackbox/docker-compose.yml up ${{ matrix.vendor }} -d --quiet-pull --wait
+          docker exec mssql \
+            /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P 'Test@123' \
+            -Q "ALTER DATABASE model SET COMPATIBILITY_LEVEL = 150" \
+            -l 30
+          echo "MSSQL compatibility level set successfully"
 
       - name: Start services
         run:
