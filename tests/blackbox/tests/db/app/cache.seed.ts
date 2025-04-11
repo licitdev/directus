@@ -20,6 +20,8 @@ export const seedDBStructure = () => {
 	it.each(vendors)(
 		'%s',
 		async (vendor) => {
+			console.log(`Seeding ${__filename}`);
+
 			try {
 				// Delete existing collections
 				await DeleteCollection(vendor, { collection: collectionIgnored });
@@ -51,6 +53,8 @@ export const seedDBStructure = () => {
 			} catch (error) {
 				expect(error).toBeFalsy();
 			}
+
+			console.log(`Finish seeding ${__filename}`);
 		},
 		300_000,
 	);

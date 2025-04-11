@@ -90,6 +90,8 @@ export const seedDBStructure = () => {
 	it.each(vendors)(
 		'%s',
 		async (vendor) => {
+			console.log(`Seeding ${__filename}`);
+
 			for (const setDefaultValues of [false, true]) {
 				const suffix = setDefaultValues ? '2' : '';
 
@@ -291,6 +293,8 @@ export const seedDBStructure = () => {
 					}
 				}
 			}
+
+			console.log(`Finish seeding ${__filename}`);
 		},
 		1800000,
 	);

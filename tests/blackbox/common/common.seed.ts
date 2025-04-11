@@ -15,6 +15,8 @@ export const seedDBStructure = async () => {
 
 	it.each(vendors)('%s', async (vendor) => {
 		try {
+			console.log(`Seeding ${__filename}`);
+
 			// Delete existing collections
 			await DeleteCollection(vendor, { collection: collectionNameO2M });
 			await DeleteCollection(vendor, { collection: collectionNameM2O });
@@ -30,5 +32,7 @@ export const seedDBStructure = async () => {
 		} catch (error) {
 			expect(error).toBeFalsy();
 		}
+
+		console.log(`Finish seeding ${__filename}`);
 	});
 };
