@@ -469,7 +469,7 @@ describe.each(PRIMARY_KEY_TYPES)('/items', (pkType) => {
 										filter: {
 											name: { _eq: insertedShape.name },
 											children: {
-												[`item__${localCollectionCircles}`]: {
+												[`item:${localCollectionCircles}`]: {
 													name: { _eq: circle.name },
 												},
 											},
@@ -487,7 +487,7 @@ describe.each(PRIMARY_KEY_TYPES)('/items', (pkType) => {
 										filter: {
 											name: { _eq: insertedShape.name },
 											children: {
-												[`item__${localCollectionSquares}`]: {
+												[`item:${localCollectionSquares}`]: {
 													width: { _eq: square.width },
 												},
 											},
