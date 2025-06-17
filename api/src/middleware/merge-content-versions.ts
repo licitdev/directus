@@ -2,7 +2,7 @@ import { isObject } from '@directus/utils';
 import type { RequestHandler } from 'express';
 import { VersionsService } from '../services/versions.js';
 import asyncHandler from '../utils/async-handler.js';
-import { mergeVersionsRaw, mergeVersionsRecursive } from '../utils/merge-version-data.js';
+import { mergeVersionsRaw } from '../utils/merge-version-data.js';
 
 export const mergeContentVersions: RequestHandler = asyncHandler(async (req, res, next) => {
 	if (
@@ -29,7 +29,12 @@ export const mergeContentVersions: RequestHandler = asyncHandler(async (req, res
 		if (req.sanitizedQuery.versionRaw) {
 			res.locals['payload'].data = mergeVersionsRaw(originalData, versionData);
 		} else {
-			res.locals['payload'].data = mergeVersionsRecursive(originalData, versionData, req.collection, req.schema);
+			res.locals['payload'].data = await versionsService.resolveVersionedItem(
+				originalData,
+				versionData[0]!,
+				req.collection,
+				req.sanitizedQuery,
+			);
 		}
 	}
 
