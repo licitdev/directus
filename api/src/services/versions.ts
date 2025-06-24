@@ -24,10 +24,28 @@ function extractNestedQuery(
 	const nestedQuery: Query = {};
 
 	if (parentQuery.fields) {
+		const processedFields = new Set<string>();
+
 		for (const field of parentQuery.fields) {
-			if (field.includes('.') && (field.startsWith(`${relationKey}.`) || field.startsWith(`*`))) {
-				(nestedQuery.fields || (nestedQuery.fields = [])).push(field.split('.').slice(1).join('.'));
+			if (typeof field === 'string') {
+				if (field.includes('.')) {
+					const fieldParts = field.split('.');
+
+					if (fieldParts[0] === relationKey || fieldParts[0] === '*') {
+						const nestedField = fieldParts.slice(1).join('.');
+
+						if (nestedField && nestedField !== '') {
+							processedFields.add(nestedField);
+						}
+					}
+				} else if (field === '*') {
+					processedFields.add('*');
+				}
 			}
+		}
+
+		if (processedFields.size > 0) {
+			nestedQuery.fields = [...processedFields];
 		}
 	}
 
@@ -35,6 +53,9 @@ function extractNestedQuery(
 }
 
 export class VersionsService extends ItemsService {
+	private readonly MAX_RECURSION_DEPTH = 15; // Temporary limit
+	private readonly processedItems = new WeakSet(); // Temporary test cache
+
 	constructor(options: AbstractServiceOptions) {
 		super('directus_versions', options);
 	}
@@ -365,9 +386,21 @@ export class VersionsService extends ItemsService {
 		versionDelta: Partial<Item>,
 		collectionName: string,
 		query: Query,
+		depth: number = 0,
 	): Promise<Item> {
-		const workingItem = { ...mainItemData };
+		// Prevent infinite recursion, perhaps could utilize query depth
+		if (depth > this.MAX_RECURSION_DEPTH) {
+			throw new Error(`Maximum recursion depth of ${this.MAX_RECURSION_DEPTH} exceeded`);
+		}
 
+		// Prevent circular references
+		if (this.processedItems.has(mainItemData)) {
+			return mainItemData;
+		}
+
+		this.processedItems.add(mainItemData);
+
+		const workingItem = { ...mainItemData };
 		const currentCollection = this.schema.collections[collectionName];
 
 		if (!currentCollection) {
@@ -379,7 +412,7 @@ export class VersionsService extends ItemsService {
 			const currentField = currentCollection.fields[fieldKey] as Field | undefined;
 
 			if (!currentField) {
-				// TODO: Decide how to handle missing fields
+				workingItem[fieldKey] = deltaValue;
 				continue;
 			}
 
@@ -392,124 +425,281 @@ export class VersionsService extends ItemsService {
 			if (!currentRelation) {
 				workingItem[fieldKey] = deltaValue;
 			} else {
-				const subQuery = extractNestedQuery.call(this, query, fieldKey);
+				try {
+					const subQuery = extractNestedQuery(query, fieldKey);
 
-				const currentRelationType = getRelationType({
-					relation: currentRelation,
-					collection: collectionName,
-					field: fieldKey,
-				});
+					const currentRelationType = getRelationType({
+						relation: currentRelation,
+						collection: collectionName,
+						field: fieldKey,
+					});
 
-				const relatedCollectionName = getRelatedCollection(this.schema, collectionName, fieldKey)!;
+					const relatedCollectionName = getRelatedCollection(this.schema, collectionName, fieldKey);
 
-				const relatedItemsService = new ItemsService(relatedCollectionName, {
-					knex: this.knex,
-					schema: this.schema,
-					accountability: this.accountability,
-				});
+					if (!relatedCollectionName) {
+						workingItem[fieldKey] = deltaValue;
+						continue;
+					}
 
-				const relatedCollectionPkField = this.schema.collections[relatedCollectionName]?.primary;
+					const relatedItemsService = new ItemsService(relatedCollectionName, {
+						knex: this.knex,
+						schema: this.schema,
+						accountability: this.accountability,
+					});
 
-				if (currentRelationType === 'm2o') {
-					if (deltaValue === null) {
-						workingItem[fieldKey] = null;
-					} else if (relatedCollectionPkField && !(relatedCollectionPkField in deltaValue)) {
-						workingItem[fieldKey] = await this.resolveVersionedRelations(deltaValue, relatedCollectionName, subQuery);
-					} else if (relatedCollectionPkField && relatedCollectionPkField in deltaValue) {
-						let currentRelatedItem = workingItem[fieldKey] as Item | PrimaryKey | undefined;
+					const relatedCollectionPkField = this.schema.collections[relatedCollectionName]?.primary;
 
-						if (currentRelatedItem && typeof currentRelatedItem !== 'object' && relatedCollectionPkField) {
-							currentRelatedItem = await relatedItemsService.readOne(currentRelatedItem as PrimaryKey, subQuery);
-						}
-
-						if (currentRelatedItem && typeof currentRelatedItem === 'object') {
-							workingItem[fieldKey] = await this.resolveVersionedItem(
-								currentRelatedItem,
+					switch (currentRelationType) {
+						case 'm2o':
+							workingItem[fieldKey] = await this.processM2ORelation(
 								deltaValue,
+								workingItem[fieldKey],
+								relatedItemsService,
 								relatedCollectionName,
+								relatedCollectionPkField,
 								subQuery,
-							);
-						} else {
-							// No current item to update, or couldn't fetch it.
-						}
-					} else {
-						// Assumed to be a PrimaryKey for linking
-						const pkToLink = deltaValue as PrimaryKey;
-						const fetchedItem = await relatedItemsService.readOne(pkToLink, subQuery);
-						workingItem[fieldKey] = fetchedItem;
-					}
-				}
-				// O2M
-				else if (currentRelationType === 'o2m') {
-					const currentRelatedArray: Item[] = (workingItem[fieldKey] as Item[]) || [];
-					const newRelatedArray: Item[] = [];
-					const updatesMap = new Map<PrimaryKey, Partial<Item>>();
-					const createsArray: Partial<Item>[] = [];
-					const deletesSet = new Set<PrimaryKey>();
-
-					if (Array.isArray(deltaValue)) {
-						for (const item of deltaValue) {
-							if (relatedCollectionPkField && item[relatedCollectionPkField!]) {
-								const pk = item[relatedCollectionPkField] as PrimaryKey;
-								const itemToAdd = await relatedItemsService.readOne(pk, subQuery);
-
-								if (itemToAdd) newRelatedArray.push(itemToAdd);
-							}
-						}
-					} else {
-						createsArray.push(...deltaValue.create);
-
-						if (deltaValue.update && relatedCollectionPkField) {
-							for (const item of deltaValue.update) {
-								if (item[relatedCollectionPkField]) {
-									updatesMap.set(item[relatedCollectionPkField] as PrimaryKey, item);
-								}
-							}
-						}
-
-						for (const item of deltaValue.delete) {
-							deletesSet.add(item);
-						}
-					}
-
-					for (const existingItem of currentRelatedArray) {
-						const pk = existingItem[relatedCollectionPkField!] as PrimaryKey;
-						if (deletesSet.has(pk)) continue;
-
-						if (updatesMap.has(pk)) {
-							const updatedItem = await this.resolveVersionedItem(
-								existingItem,
-								updatesMap.get(pk)!,
-								relatedCollectionName,
-								subQuery,
+								depth + 1,
 							);
 
-							newRelatedArray.push(updatedItem);
-						} else {
-							newRelatedArray.push(existingItem);
-						}
+							break;
+
+						case 'o2m':
+							workingItem[fieldKey] = await this.processO2MRelation(
+								deltaValue,
+								workingItem[fieldKey],
+								relatedItemsService,
+								relatedCollectionName,
+								relatedCollectionPkField,
+								subQuery,
+								depth + 1,
+							);
+
+							break;
+
+						case 'm2a':
+							workingItem[fieldKey] = await this.processM2ARelation(
+								deltaValue,
+								workingItem[fieldKey],
+								relatedItemsService,
+								relatedCollectionName,
+								relatedCollectionPkField,
+								subQuery,
+								depth + 1,
+							);
+
+							break;
+
+						default:
+							workingItem[fieldKey] = deltaValue;
 					}
-
-					for (const createPayload of createsArray) {
-						const createdItem = await this.resolveVersionedRelations(createPayload, relatedCollectionName, subQuery);
-
-						console.dir({ createPayload, relatedCollectionName, subQuery, createdItem }, { depth: null });
-
-						newRelatedArray.push(createdItem);
-					}
-
-					workingItem[fieldKey] = newRelatedArray;
+				} catch (error) {
+					// Warn but don't break resolution
+					console.warn(`Error processing relation ${fieldKey}:`, error);
+					workingItem[fieldKey] = deltaValue;
 				}
 			}
 		}
 
+		this.processedItems.delete(mainItemData);
 		return workingItem;
 	}
 
-	private async resolveVersionedRelations(payload: Partial<Item>, collectionName: string, query: Query): Promise<Item> {
+	private async processM2ORelation(
+		deltaValue: any,
+		currentValue: any,
+		relatedItemsService: ItemsService,
+		relatedCollectionName: string,
+		relatedCollectionPkField: string | undefined,
+		subQuery: Query,
+		depth: number,
+	): Promise<any> {
+		if (deltaValue === null) {
+			return null;
+		}
+
+		// Handle new item creation
+		if (relatedCollectionPkField && !(relatedCollectionPkField in deltaValue)) {
+			return this.resolveVersionedRelations(deltaValue, relatedCollectionName, subQuery, depth);
+		}
+
+		// Handle existing item update
+		if (relatedCollectionPkField && relatedCollectionPkField in deltaValue) {
+			let currentRelatedItem = currentValue as Item | PrimaryKey | undefined;
+
+			if (currentRelatedItem && typeof currentRelatedItem !== 'object' && relatedCollectionPkField) {
+				try {
+					currentRelatedItem = await relatedItemsService.readOne(currentRelatedItem as PrimaryKey, subQuery);
+				} catch {
+					// Item might not exist or permission denied
+					return deltaValue;
+				}
+			}
+
+			if (currentRelatedItem && typeof currentRelatedItem === 'object') {
+				return this.resolveVersionedItem(currentRelatedItem, deltaValue, relatedCollectionName, subQuery, depth);
+			}
+		}
+
+		// Handle primary key linking
+		const pkToLink = deltaValue as PrimaryKey;
+
+		try {
+			const fetchedItem = await relatedItemsService.readOne(pkToLink, subQuery);
+			return fetchedItem;
+		} catch {
+			// Return original delta if fetch fails
+			return deltaValue;
+		}
+	}
+
+	private async processO2MRelation(
+		deltaValue: any,
+		currentValue: any,
+		relatedItemsService: ItemsService,
+		relatedCollectionName: string,
+		relatedCollectionPkField: string | undefined,
+		subQuery: Query,
+		depth: number,
+	): Promise<Item[]> {
+		const currentRelatedArray: Item[] = (currentValue as Item[]) || [];
+		const newRelatedArray: Item[] = [];
+
+		// Handle different delta formats
+		if (Array.isArray(deltaValue)) {
+			// Simple array format - resolve each item
+			for (const item of deltaValue) {
+				if (relatedCollectionPkField && item[relatedCollectionPkField]) {
+					const pk = item[relatedCollectionPkField] as PrimaryKey;
+
+					try {
+						const itemToAdd = await relatedItemsService.readOne(pk, subQuery);
+						if (itemToAdd) newRelatedArray.push(itemToAdd);
+					} catch {
+						// Skip items that can't be fetched
+						continue;
+					}
+				} else {
+					// New item without PK - resolve it
+					const resolvedItem = await this.resolveVersionedRelations(item, relatedCollectionName, subQuery, depth);
+					newRelatedArray.push(resolvedItem);
+				}
+			}
+		} else if (deltaValue && typeof deltaValue === 'object') {
+			const updatesMap = new Map<PrimaryKey, Partial<Item>>();
+			const createsArray: Partial<Item>[] = [];
+			const deletesSet = new Set<PrimaryKey>();
+
+			if (deltaValue.create && Array.isArray(deltaValue.create)) {
+				createsArray.push(...deltaValue.create);
+			}
+
+			if (deltaValue.update && Array.isArray(deltaValue.update) && relatedCollectionPkField) {
+				for (const item of deltaValue.update) {
+					if (item[relatedCollectionPkField]) {
+						updatesMap.set(item[relatedCollectionPkField] as PrimaryKey, item);
+					}
+				}
+			}
+
+			if (deltaValue.delete && Array.isArray(deltaValue.delete)) {
+				for (const item of deltaValue.delete) {
+					deletesSet.add(item);
+				}
+			}
+
+			for (const existingItem of currentRelatedArray) {
+				if (!relatedCollectionPkField) continue;
+
+				const pk = existingItem[relatedCollectionPkField] as PrimaryKey;
+
+				if (deletesSet.has(pk)) continue;
+
+				if (updatesMap.has(pk)) {
+					const updatedItem = await this.resolveVersionedItem(
+						existingItem,
+						updatesMap.get(pk)!,
+						relatedCollectionName,
+						subQuery,
+						depth,
+					);
+
+					newRelatedArray.push(updatedItem);
+				} else {
+					newRelatedArray.push(existingItem);
+				}
+			}
+
+			for (const createPayload of createsArray) {
+				const createdItem = await this.resolveVersionedRelations(createPayload, relatedCollectionName, subQuery, depth);
+				newRelatedArray.push(createdItem);
+			}
+		}
+
+		return newRelatedArray;
+	}
+
+	private async processM2ARelation(
+		deltaValue: any,
+		currentValue: any,
+		relatedItemsService: ItemsService,
+		relatedCollectionName: string,
+		relatedCollectionPkField: string | undefined,
+		subQuery: Query,
+		depth: number,
+	): Promise<Item[]> {
+		const newArray: Item[] = [];
+
+		if (Array.isArray(deltaValue)) {
+			for (const item of deltaValue) {
+				if (item.collection && item.item) {
+					const itemService = new ItemsService(item.collection, {
+						knex: this.knex,
+						schema: this.schema,
+						accountability: this.accountability,
+					});
+
+					try {
+						const resolvedItem = await itemService.readOne(item.item, subQuery);
+						newArray.push({ ...item, ...resolvedItem });
+					} catch {
+						newArray.push(item);
+					}
+				} else {
+					newArray.push(item);
+				}
+			}
+		} else {
+			return this.processO2MRelation(
+				deltaValue,
+				currentValue,
+				relatedItemsService,
+				relatedCollectionName,
+				relatedCollectionPkField,
+				subQuery,
+				depth,
+			);
+		}
+
+		return newArray;
+	}
+
+	private async resolveVersionedRelations(
+		payload: Partial<Item>,
+		collectionName: string,
+		query: Query,
+		depth: number = 0,
+	): Promise<Item> {
+		// Prevent infinite recursion
+		if (depth > this.MAX_RECURSION_DEPTH) {
+			return payload as Item;
+		}
+
 		const resolvedItem: Item = {};
 		const collectionDef = this.schema.collections[collectionName];
-		if (!collectionDef) throw new Error(`Collection ${collectionName} not found.`);
+
+		if (!collectionDef) {
+			throw new Error(`Collection ${collectionName} not found.`);
+		}
 
 		let fieldsToProcess =
 			query.fields && query.fields.length > 0 && !query.fields.includes('*')
@@ -517,7 +707,9 @@ export class VersionsService extends ItemsService {
 				: Object.keys(collectionDef.fields);
 
 		for (const key in payload) {
-			if (!fieldsToProcess.includes(key)) fieldsToProcess.push(key);
+			if (!fieldsToProcess.includes(key)) {
+				fieldsToProcess.push(key);
+			}
 		}
 
 		fieldsToProcess = [...new Set(fieldsToProcess)];
@@ -528,31 +720,23 @@ export class VersionsService extends ItemsService {
 
 			if (payloadValue === undefined && fieldSchema?.schema?.default_value !== undefined) {
 				resolvedItem[fieldKey] = fieldSchema.schema.default_value;
-			} else if (payloadValue !== undefined) {
-				const currentRelation = this.schema.relations.find(
+				continue;
+			}
+
+			if (payloadValue !== undefined) {
+				const relationInfo = this.schema.relations.find(
 					(r) =>
 						(r.collection === collectionName && r.field === fieldKey) ||
 						(r.related_collection === collectionName && r.meta?.one_field === fieldKey),
 				);
 
-				console.log({ collectionName, fieldKey, payloadValue, currentRelation, query });
-
-				if (!currentRelation) {
+				if (!relationInfo) {
+					// Regular field
 					resolvedItem[fieldKey] = payloadValue;
 				} else {
-					const currentRelationType = getRelationType({
-						relation: currentRelation,
-						collection: collectionName,
-						field: fieldKey,
-					});
-
-					console.log({ currentRelationType });
-
+					// Relational field - process recursively
 					const relatedCollectionName = getRelatedCollection(this.schema, collectionName, fieldKey)!;
-
-					const relatedCollectionPkField = this.schema.collections[relatedCollectionName]?.primary;
-
-					const subQuery = extractNestedQuery.call(this, query, fieldKey);
+					const subQuery = extractNestedQuery(query, fieldKey);
 
 					const relatedItemsService = new ItemsService(relatedCollectionName, {
 						knex: this.knex,
@@ -560,53 +744,70 @@ export class VersionsService extends ItemsService {
 						accountability: this.accountability,
 					});
 
-					if (currentRelationType === 'm2o') {
-						if (payloadValue === null) resolvedItem[fieldKey] = null;
-						else if (typeof payloadValue === 'object') {
-							resolvedItem[fieldKey] = await this.resolveVersionedRelations(
-								payloadValue,
-								relatedCollectionName,
-								subQuery,
-							);
-						} else {
-							const pk = payloadValue as PrimaryKey;
+					const relationType = getRelationType({
+						relation: relationInfo,
+						collection: collectionName,
+						field: fieldKey,
+					});
 
-							const fetched = await relatedItemsService.readOne(pk, subQuery);
-							resolvedItem[fieldKey] = fetched;
-						}
-					} else if (currentRelationType === 'o2m') {
-						const processedRelated: Item[] = [];
-						const newRelatedArray: Item[] = [];
-						const updatesMap = new Map<PrimaryKey, Partial<Item>>();
-						const createsArray: Partial<Item>[] = [];
-						const deletesSet = new Set<PrimaryKey>();
-
-						if (Array.isArray(payloadValue)) {
-							for (const item of payloadValue) {
-								if (relatedCollectionPkField && item[relatedCollectionPkField!]) {
-									const pk = item[relatedCollectionPkField] as PrimaryKey;
-									const itemToAdd = await relatedItemsService.readOne(pk, subQuery);
-
-									if (itemToAdd) newRelatedArray.push(itemToAdd);
+					switch (relationType) {
+						case 'm2o':
+							if (payloadValue === null) {
+								resolvedItem[fieldKey] = null;
+							} else if (typeof payloadValue === 'object' && payloadValue !== null) {
+								resolvedItem[fieldKey] = await this.resolveVersionedRelations(
+									payloadValue,
+									relatedCollectionName,
+									subQuery,
+									depth + 1,
+								);
+							} else {
+								// Primary key reference
+								try {
+									const fetched = await relatedItemsService.readOne(payloadValue as PrimaryKey, subQuery);
+									resolvedItem[fieldKey] = fetched;
+								} catch {
+									resolvedItem[fieldKey] = payloadValue;
 								}
 							}
-						} else {
-							createsArray.push(...payloadValue.create);
 
-							if (payloadValue.update && relatedCollectionPkField) {
-								for (const item of payloadValue.update) {
-									if (item[relatedCollectionPkField]) {
-										updatesMap.set(item[relatedCollectionPkField] as PrimaryKey, item);
+							break;
+
+						case 'o2m':
+							if (Array.isArray(payloadValue)) {
+								const processedRelated: Item[] = [];
+
+								for (const relatedItem of payloadValue) {
+									if (typeof relatedItem === 'object' && relatedItem !== null) {
+										const resolvedRelated = await this.resolveVersionedRelations(
+											relatedItem,
+											relatedCollectionName,
+											subQuery,
+											depth + 1,
+										);
+
+										processedRelated.push(resolvedRelated);
+									} else {
+										// Primary key reference
+										try {
+											const fetched = await relatedItemsService.readOne(relatedItem as PrimaryKey, subQuery);
+											processedRelated.push(fetched);
+										} catch {
+											// Skip items that can't be fetched
+											continue;
+										}
 									}
 								}
+
+								resolvedItem[fieldKey] = processedRelated;
+							} else {
+								resolvedItem[fieldKey] = [];
 							}
 
-							for (const item of payloadValue.delete) {
-								deletesSet.add(item);
-							}
-						}
+							break;
 
-						resolvedItem[fieldKey] = processedRelated;
+						default:
+							resolvedItem[fieldKey] = payloadValue;
 					}
 				}
 			}
