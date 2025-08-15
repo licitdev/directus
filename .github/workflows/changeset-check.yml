@@ -20,6 +20,7 @@ permissions:
 
 jobs:
   changeset-check:
+    name: Changeset Check
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'pull_request' ||
@@ -28,7 +29,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate Changeset Presence
+      - name: Validate Changeset Requirement
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
