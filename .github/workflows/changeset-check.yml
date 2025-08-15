@@ -34,62 +34,73 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const prNumber = context.payload.pull_request?.number || context.payload.issue?.number;
-            const query = `
-              query($owner:String!,$repo:String!,$pr:Int!) {
-                repository(owner:$owner,name:$repo) {
-                  pullRequest(number:$pr) {
-                    files(first:100) {
-                      nodes {
-                        path
-                        changeType
+
+            async function fetchPage(filesCursor, commentsCursor) {
+              const query = `
+                query($owner:String!,$repo:String!,$pr:Int!,$filesCursor:String,$commentsCursor:String) {
+                  repository(owner:$owner,name:$repo) {
+                    pullRequest(number:$pr) {
+                      files(first:100, after:$filesCursor) {
+                        pageInfo { hasNextPage endCursor }
+                        nodes { path changeType }
                       }
-                    }
-                    comments(first:100) {
-                      nodes {
-                        author { login }
-                        body
-                        isMinimized
+                      comments(first:100, after:$commentsCursor) {
+                        pageInfo { hasNextPage endCursor }
+                        nodes { author { login } body isMinimized }
                       }
                     }
                   }
                 }
+              `;
+
+              const vars = {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pr: prNumber,
+                filesCursor,
+                commentsCursor
+              };
+
+              return await github.graphql(query, vars);
+            }
+
+            let filesCursor = null, commentsCursor = null;
+            let shouldContinue;
+
+            do {
+              const result = await fetchPage(filesCursor, commentsCursor);
+              const pr = result.repository.pullRequest;
+
+              if (pr.files.nodes.some(f =>
+                f.path.startsWith('.changeset/') &&
+                f.path.endsWith('.md') &&
+                (f.changeType === 'ADDED' || f.changeType === 'MODIFIED')
+              )) {
+                core.info('✅ Found changeset file');
+                return;
               }
-            `;
-            const vars = {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pr: prNumber
-            };
-            const result = await github.graphql(query, vars);
 
-            const changesetFiles = result.repository.pullRequest.files.nodes.filter(file => 
-              file.path.startsWith('.changeset/') && 
-              file.path.endsWith('.md') &&
-              (file.changeType === 'ADDED' || file.changeType === 'MODIFIED')
-            );
+              const botComment = pr.comments.nodes.find(c => c.author.login === 'changeset-bot');
+              if (!botComment) {
+                core.info('✅ No changeset-bot comment found');
+                return;
+              }
+              else if (botComment.isMinimized) {
+                core.info('✅ changeset-bot comment is hidden');
+                return;
+              }
 
-            if (changesetFiles.length > 0) {
-              core.info(`✅ Found changeset files in PR: ${changesetFiles.map(f => f.path).join(', ')}`);
-              return;
-            }
+              else if (!botComment.body.includes('No Changeset found')) {
+                core.info('✅ changeset-bot comment does not indicate missing changeset');
+                return;
+              }
 
-            const csComment = result.repository.pullRequest.comments.nodes.find(c =>
-              c.author.login === 'changeset-bot'
-            );
+              const nextFilesCursor = pr.files.pageInfo.hasNextPage ? pr.files.pageInfo.endCursor : null;
+              const nextCommentsCursor = pr.comments.pageInfo.hasNextPage ? pr.comments.pageInfo.endCursor : null;
 
-            if (!csComment) {
-              core.info('✅ No changeset-bot comment found');
-              return;
-            }
+              shouldContinue = Boolean(nextFilesCursor || nextCommentsCursor);
+              filesCursor = nextFilesCursor;
+              commentsCursor = nextCommentsCursor;
+            } while (shouldContinue);
 
-            if (!csComment.body.includes('No Changeset found')) {
-              core.info('✅ changeset-bot comment does not indicate missing changeset');
-              return;
-            }
-
-            if (csComment.isMinimized) {
-              core.info('✅ changeset-bot comment is hidden');
-              return;
-            }
-
-            core.setFailed(`❌ Missing changeset - add changeset or hide changeset-bot comment`);
+            core.setFailed('❌ Missing changeset - add changeset or hide changeset-bot comment');
