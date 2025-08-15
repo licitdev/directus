@@ -59,39 +59,41 @@ jobs:
                 repo: context.repo.repo,
                 pr: prNumber,
                 filesCursor,
-                commentsCursor
+                commentsCursor,
               };
 
               return await github.graphql(query, vars);
             }
 
-            let filesCursor = null, commentsCursor = null;
+            let filesCursor = null;
+            let commentsCursor = null;
             let shouldContinue;
 
             do {
               const result = await fetchPage(filesCursor, commentsCursor);
               const pr = result.repository.pullRequest;
 
-              if (pr.files.nodes.some(f =>
-                f.path.startsWith('.changeset/') &&
-                f.path.endsWith('.md') &&
-                (f.changeType === 'ADDED' || f.changeType === 'MODIFIED')
-              )) {
+              if (
+                pr.files.nodes.some(
+                  (f) =>
+                    f.path.startsWith('.changeset/') &&
+                    f.path.endsWith('.md') &&
+                    (f.changeType === 'ADDED' || f.changeType === 'MODIFIED'),
+                )
+              ) {
                 core.info('✅ Found changeset file');
                 return;
               }
 
-              const botComment = pr.comments.nodes.find(c => c.author.login === 'changeset-bot');
+              const botComment = pr.comments.nodes.find((c) => c.author.login === 'changeset-bot');
+
               if (!botComment) {
                 core.info('✅ No changeset-bot comment found');
                 return;
-              }
-              else if (botComment.isMinimized) {
+              } else if (botComment.isMinimized) {
                 core.info('✅ changeset-bot comment is hidden');
                 return;
-              }
-
-              else if (!botComment.body.includes('No Changeset found')) {
+              } else if (!botComment.body.includes('No Changeset found')) {
                 core.info('✅ changeset-bot comment does not indicate missing changeset');
                 return;
               }
