@@ -16,11 +16,8 @@ jobs:
   changeset-check:
     name: Changeset Check
     runs-on: ubuntu-latest
-    if: |
-      github.event_name == 'pull_request' ||
-      (github.event_name == 'issue_comment' && github.event.issue.pull_request)
     steps:
-      - name: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -31,19 +28,16 @@ jobs:
           echo "✅ Chore label present"
           exit 0
 
-      - name: List changed files
+      - name: Check for Changeset
         if: ${{ ! contains(github.event.pull_request.labels.*.name, 'Chore') }}
         run: |
           git fetch origin ${{ github.event.pull_request.base.ref }}
           git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD > changed.txt
 
-      - name: Check for Changeset
-        if: ${{ ! contains(github.event.pull_request.labels.*.name, 'Chore') }}
-        run: |
           if grep -qE '^\.changeset/.*\.md$' changed.txt; then
             echo "✅ Found changeset file"
             exit 0
           fi
 
-          echo "❌ Pull request must add a changeset or have the ‘Chore’ label."
+          echo "❌ Pull request must add a changeset or have the `Chore` label."
           exit 1
