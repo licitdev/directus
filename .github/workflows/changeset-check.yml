@@ -6,11 +6,10 @@ on:
       - opened
       - synchronize
       - reopened
+      - labeled
 
 permissions:
   contents: read
-  pull-requests: read
-  issues: read
 
 jobs:
   changeset-check:
@@ -20,89 +19,28 @@ jobs:
       github.event_name == 'pull_request' ||
       (github.event_name == 'issue_comment' && github.event.issue.pull_request)
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Validate Changeset Requirement
-        uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const prNumber = context.payload.pull_request?.number || context.payload.issue?.number;
+          fetch-depth: 0
 
-            async function fetchPage(filesCursor, commentsCursor) {
-              const query = `
-                query($owner:String!,$repo:String!,$pr:Int!,$filesCursor:String,$commentsCursor:String) {
-                  repository(owner:$owner,name:$repo) {
-                    pullRequest(number:$pr) {
-                      files(first:100, after:$filesCursor) {
-                        pageInfo { hasNextPage endCursor }
-                        nodes { path changeType }
-                      }
-                      comments(first:100, after:$commentsCursor) {
-                        pageInfo { hasNextPage endCursor }
-                        nodes { author { login } body isMinimized }
-                      }
-                    }
-                  }
-                }
-              `;
+      - name: Check for Chore Label
+        if: contains(github.event.pull_request.labels.*.name, 'Chore')
+        run: |
+          echo "✅ Chore label present"
+          exit 0
 
-              const vars = {
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                pr: prNumber,
-                filesCursor,
-                commentsCursor,
-              };
+      - name: List changed files
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }}
+          git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD > changed.txt
 
-              return await github.graphql(query, vars);
-            }
+      - name: Check for Changeset
+        run: |
+          if grep -qE '^\.changeset/.*\.md$' changed.txt; then
+            echo "✅ Found changeset file"
+            exit 0
+          fi
 
-            let filesCursor = null;
-            let commentsCursor = null;
-            let shouldContinue;
-
-            do {
-              const result = await fetchPage(filesCursor, commentsCursor);
-              const pr = result.repository.pullRequest;
-
-              if (
-                pr.files.nodes.some(
-                  (f) =>
-                    f.path.startsWith('.changeset/') &&
-                    f.path.endsWith('.md') &&
-                    (f.changeType === 'ADDED' || f.changeType === 'MODIFIED'),
-                )
-              ) {
-                core.info('✅ Found changeset file');
-                return;
-              }
-
-              const botComment = pr.comments.nodes.find((c) => c.author.login === 'changeset-bot');
-
-              if (!botComment) {
-                core.info('✅ No changeset-bot comment found');
-                return;
-              } else if (botComment.isMinimized) {
-                core.info('✅ changeset-bot comment is hidden');
-                return;
-              } else if (!botComment.body.includes('No Changeset found')) {
-                core.info('✅ changeset-bot comment does not indicate missing changeset');
-                return;
-              }
-
-              const nextFilesCursor = pr.files.pageInfo.hasNextPage
-                ? pr.files.pageInfo.endCursor
-                : null;
-
-              const nextCommentsCursor = pr.comments.pageInfo.hasNextPage
-                ? pr.comments.pageInfo.endCursor
-                : null;
-
-              shouldContinue = Boolean(nextFilesCursor || nextCommentsCursor);
-              filesCursor = nextFilesCursor;
-              commentsCursor = nextCommentsCursor;
-            } while (shouldContinue);
-
-            core.setFailed('❌ Missing changeset - add changeset or hide changeset-bot comment');
+          echo "❌ Pull request must add a changeset or have the ‘Chore’ label."
+          exit 1
