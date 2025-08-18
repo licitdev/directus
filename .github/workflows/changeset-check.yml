@@ -6,12 +6,6 @@ on:
       - opened
       - synchronize
       - reopened
-      - edited
-  issue_comment:
-    types:
-      - created
-      - edited
-      - deleted
 
 permissions:
   contents: read
@@ -98,8 +92,13 @@ jobs:
                 return;
               }
 
-              const nextFilesCursor = pr.files.pageInfo.hasNextPage ? pr.files.pageInfo.endCursor : null;
-              const nextCommentsCursor = pr.comments.pageInfo.hasNextPage ? pr.comments.pageInfo.endCursor : null;
+              const nextFilesCursor = pr.files.pageInfo.hasNextPage
+                ? pr.files.pageInfo.endCursor
+                : null;
+
+              const nextCommentsCursor = pr.comments.pageInfo.hasNextPage
+                ? pr.comments.pageInfo.endCursor
+                : null;
 
               shouldContinue = Boolean(nextFilesCursor || nextCommentsCursor);
               filesCursor = nextFilesCursor;
