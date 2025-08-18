@@ -31,10 +31,9 @@ jobs:
       - name: Check for Changeset
         if: ${{ ! contains(github.event.pull_request.labels.*.name, 'Chore') }}
         run: |
-          git fetch origin ${{ github.event.pull_request.base.ref }}
-          git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD > changed.txt
+          git fetch origin main
 
-          if grep -qE '^\.changeset/.*\.md$' changed.txt; then
+          if git diff --name-only origin/main...HEAD | grep -qE '^\.changeset/.*\.md$'; then
             echo "✅ Found changeset file"
             exit 0
           fi
