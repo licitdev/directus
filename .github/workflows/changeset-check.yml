@@ -38,5 +38,5 @@ jobs:
             exit 0
           fi
 
-          echo "❌ Pull request must add a changeset or have the `Chore` label."
+          echo "❌ Pull request must add a changeset or have the 'Chore' label."
           exit 1
