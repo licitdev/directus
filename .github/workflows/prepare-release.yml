@@ -144,7 +144,6 @@ jobs:
           PR_NUMBER=$(gh pr create \
             --title "Release ${{ github.event.inputs.version }}" \
             --body-file pr-body.md \
-            --assignee "@me" \
             --label "release" \
             --head "$BRANCH_NAME" \
             --base "main" \
