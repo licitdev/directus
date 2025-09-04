@@ -1,0 +1,84 @@
+
+### 🐛 Bug Fixes & Optimizations
+
+- **@directus/storage-driver-cloudinary**
+  - Replaced tsup with tsdown ([#25750](https://github.com/directus/directus/pull/25750) by @ComfortablyCoding)
+- **@directus/storage-driver-supabase**
+  - Replaced tsup with tsdown ([#25750](https://github.com/directus/directus/pull/25750) by @ComfortablyCoding)
+- **@directus/storage-driver-azure**
+  - Replaced tsup with tsdown ([#25750](https://github.com/directus/directus/pull/25750) by @ComfortablyCoding)
+- **@directus/storage-driver-local**
+  - Replaced tsup with tsdown ([#25750](https://github.com/directus/directus/pull/25750) by @ComfortablyCoding)
+- **@directus/extensions-registry**
+  - Replaced tsup with tsdown ([#25750](https://github.com/directus/directus/pull/25750) by @ComfortablyCoding)
+- **@directus/storage-driver-gcs**
+  - Replaced tsup with tsdown ([#25750](https://github.com/directus/directus/pull/25750) by @ComfortablyCoding)
+- **@directus/storage-driver-s3**
+  - Replaced tsup with tsdown ([#25750](https://github.com/directus/directus/pull/25750) by @ComfortablyCoding)
+- **@directus/schema-builder**
+  - Replaced tsup with tsdown ([#25750](https://github.com/directus/directus/pull/25750) by @ComfortablyCoding)
+- **@directus/format-title**
+  - Replaced tsup with tsdown ([#25750](https://github.com/directus/directus/pull/25750) by @ComfortablyCoding)
+- **@directus/update-check**
+  - Replaced tsup with tsdown ([#25750](https://github.com/directus/directus/pull/25750) by @ComfortablyCoding)
+- **@directus/composables**
+  - Replaced tsup with tsdown ([#25750](https://github.com/directus/directus/pull/25750) by @ComfortablyCoding)
+- **@directus/system-data**
+  - Replaced tsup with tsdown ([#25750](https://github.com/directus/directus/pull/25750) by @ComfortablyCoding)
+- **@directus/extensions**
+  - Replaced tsup with tsdown ([#25750](https://github.com/directus/directus/pull/25750) by @ComfortablyCoding)
+- **@directus/validation**
+  - Replaced tsup with tsdown ([#25750](https://github.com/directus/directus/pull/25750) by @ComfortablyCoding)
+- **@directus/constants**
+  - Replaced tsup with tsdown ([#25750](https://github.com/directus/directus/pull/25750) by @ComfortablyCoding)
+- **@directus/pressure**
+  - Replaced tsup with tsdown ([#25750](https://github.com/directus/directus/pull/25750) by @ComfortablyCoding)
+- **@directus/storage**
+  - Replaced tsup with tsdown ([#25750](https://github.com/directus/directus/pull/25750) by @ComfortablyCoding)
+- **@directus/errors**
+  - Replaced tsup with tsdown ([#25750](https://github.com/directus/directus/pull/25750) by @ComfortablyCoding)
+- **@directus/memory**
+  - Replaced tsup with tsdown ([#25750](https://github.com/directus/directus/pull/25750) by @ComfortablyCoding)
+- **@directus/schema**
+  - Replaced tsup with tsdown ([#25750](https://github.com/directus/directus/pull/25750) by @ComfortablyCoding)
+- **@directus/stores**
+  - Replaced tsup with tsdown ([#25750](https://github.com/directus/directus/pull/25750) by @ComfortablyCoding)
+- **@directus/utils**
+  - Replaced tsup with tsdown ([#25750](https://github.com/directus/directus/pull/25750) by @ComfortablyCoding)
+- **@directus/env**
+  - Replaced tsup with tsdown ([#25750](https://github.com/directus/directus/pull/25750) by @ComfortablyCoding)
+- **@directus/sdk**
+  - Replaced tsup with tsdown ([#25750](https://github.com/directus/directus/pull/25750) by @ComfortablyCoding)
+
+### 📦 Published Versions
+
+- `@directus/app@13.14.1`
+- `@directus/api@30.0.1`
+- `@directus/composables@11.2.3`
+- `@directus/constants@13.0.3`
+- `create-directus-extension@11.0.19`
+- `@directus/env@5.1.3`
+- `@directus/errors@2.0.4`
+- `@directus/extensions@3.0.11`
+- `@directus/extensions-registry@3.0.11`
+- `@directus/extensions-sdk@16.0.2`
+- `@directus/format-title@12.0.2`
+- `@directus/memory@3.0.9`
+- `@directus/pressure@3.0.9`
+- `@directus/schema@13.0.3`
+- `@directus/schema-builder@0.0.6`
+- `@directus/storage@12.0.2`
+- `@directus/storage-driver-azure@12.0.9`
+- `@directus/storage-driver-cloudinary@12.0.9`
+- `@directus/storage-driver-gcs@12.0.9`
+- `@directus/storage-driver-local@12.0.2`
+- `@directus/storage-driver-s3@12.0.9`
+- `@directus/storage-driver-supabase@3.0.9`
+- `@directus/stores@1.0.4`
+- `@directus/system-data@3.2.2`
+- `@directus/themes@1.1.5`
+- `@directus/types@13.2.3`
+- `@directus/update-check@13.0.3`
+- `@directus/utils@13.0.10`
+- `@directus/validation@2.0.9`
+- `@directus/sdk@20.0.4`
