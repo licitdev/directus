@@ -54,6 +54,8 @@ jobs:
 
       - name: Generate release notes and update versions
         id: changeset-version
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           echo "🔄 Running changeset version..."
 
