@@ -111,7 +111,7 @@ jobs:
           git commit -m "Release $VERSION"
 
           # Push branch
-          git push origin "$BRANCH_NAME"
+          git push origin "$BRANCH_NAME" --force
 
           # Build the PR body as a multiline bash string with variable expansion
           PR_BODY="## Release $VERSION
