@@ -144,7 +144,9 @@ jobs:
           PR_NUMBER=$(gh pr create \
             --title "Release ${{ github.event.inputs.version }}" \
             --body-file pr-body.md \
-            --label "release" \
+            --label "Release" \
+            --label "Run Blackbox" \
+            --label "No Changeset" \
             --head "$BRANCH_NAME" \
             --base "main" \
             --draft=false \
