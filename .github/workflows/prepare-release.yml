@@ -103,7 +103,10 @@ jobs:
           VERSION=${{ github.event.inputs.version }}
           BRANCH_NAME="release/$VERSION"
           PR_TITLE="Release $VERSION"
-          RELEASE_NOTES="${{ steps.changeset-version.outputs.release_notes }}"
+          RELEASE_NOTES=$(cat <<EOF
+          ${{ steps.changeset-version.outputs.release_notes }}
+          EOF
+          )
           RELEASE_NOTES_ESCAPED="${RELEASE_NOTES//\`/\\\`}"
 
           # Build the PR body content
