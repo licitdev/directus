@@ -68,8 +68,12 @@ jobs:
           # The release notes generator outputs between the divider lines
           RELEASE_NOTES=$(echo "$OUTPUT" | awk -v RS="==============================================================" 'NR==3 {print}')
 
-          # Save release notes to file for the PR body
-          echo "$RELEASE_NOTES" > release-notes.md
+          # Output release notes
+          {
+            echo "release_notes<<EOF"
+            echo "$RELEASE_NOTES"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
 
           # Verify version was updated in main package
           PACKAGE_VERSION=$(node -p "require('./directus/package.json').version")
@@ -100,8 +104,8 @@ jobs:
           BRANCH_NAME="release/$VERSION"
           PR_TITLE="Release $VERSION"
 
-          # Build the PR body and save into file
-          cat > pr-body.md <<EOF
+          # Build the PR body content
+          PR_BODY=$(cat <<EOF
           **⚠️ Code freeze is in effect until this release is published.**
 
           ### ✅ Release Checklist
@@ -115,9 +119,17 @@ jobs:
           ### 🚀 Release Notes
 
           \`\`\`md
-          $(cat release-notes.md)
+          ${{ steps.changeset-version.outputs.release_notes }}
           \`\`\`
           EOF
+          )
+
+          # Output PR body
+          {
+            echo "pr_body<<EOF"
+            echo "$PR_BODY"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
 
           # Configure git and commit changes
           git checkout -b "$BRANCH_NAME"
@@ -138,13 +150,13 @@ jobs:
             echo "🔄 Updating existing PR #$EXISTING_PR"
             gh pr edit $EXISTING_PR \
               --title "$PR_TITLE" \
-              --body-file pr-body.md
+              --body "$PR_BODY"
             echo "pr_number=$EXISTING_PR" >> $GITHUB_OUTPUT
           else
             echo "✨ Creating new PR"
             NEW_PR=$(gh pr create \
               --title "$PR_TITLE" \
-              --body-file pr-body.md \
+              --body "$PR_BODY" \
               --label "Release" \
               --label "Run Blackbox" \
               --label "No Changeset" \
