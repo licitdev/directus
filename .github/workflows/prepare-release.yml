@@ -98,20 +98,7 @@ jobs:
         run: |
           VERSION=${{ github.event.inputs.version }}
           BRANCH_NAME="release/$VERSION"
-
-          # Create and checkout new branch
-          git checkout -b "$BRANCH_NAME"
-
-          # Configure git
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          # Commit changes
-          git add -A
-          git commit -m "Release $VERSION"
-
-          # Push branch
-          git push origin "$BRANCH_NAME" --force
+          PR_TITLE="Release $VERSION"
 
           # Build the PR body and save into file
           cat > pr-body.md <<EOF
@@ -132,17 +119,40 @@ jobs:
           \`\`\`
           EOF
 
-          # Create PR
-          PR_NUMBER=$(gh pr create \
-            --title "Release ${{ github.event.inputs.version }}" \
-            --body-file pr-body.md \
-            --label "Release" \
-            --label "Run Blackbox" \
-            --label "No Changeset" \
-            --head "$BRANCH_NAME" \
-            --base "main" \
-            --draft=false \
-            | grep -o '[0-9]\+$')
+          # Configure git and commit changes
+          git checkout -b "$BRANCH_NAME"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Release $VERSION"
+          git push origin "$BRANCH_NAME" --force
 
-          echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
-          echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          # Look for existing open PR with this branch
+          EXISTING_PR=$(gh pr list \
+            --state open \
+            --head "$BRANCH_NAME" \
+            --json number \
+            --jq '.[0].number' || echo "")
+
+          if [ -n "$EXISTING_PR" ]; then
+            echo "🔄 Updating existing PR #$EXISTING_PR"
+            gh pr edit $EXISTING_PR \
+              --title "$PR_TITLE" \
+              --body-file pr-body.md
+            echo "pr_number=$EXISTING_PR" >> $GITHUB_OUTPUT
+          else
+            echo "✨ Creating new PR"
+            NEW_PR=$(gh pr create \
+              --title "$PR_TITLE" \
+              --body-file pr-body.md \
+              --label "Release" \
+              --label "Run Blackbox" \
+              --label "No Changeset" \
+              --head "$BRANCH_NAME" \
+              --base "main" \
+              --draft=false \
+              --json number \
+              --jq '.number')
+            echo "pr_number=$NEW_PR" >> $GITHUB_OUTPUT
+          fi
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
