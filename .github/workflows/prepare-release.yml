@@ -113,8 +113,9 @@ jobs:
           # Push branch
           git push origin "$BRANCH_NAME" --force
 
-          # Build the PR body as a multiline bash string with variable expansion
-          PR_BODY="## Release $VERSION
+          # Build the PR body and save into file
+          cat > pr-body.md <<EOF
+          ## Release $VERSION
 
           This PR prepares the release for Directus $VERSION.
 
@@ -130,13 +131,10 @@ jobs:
 
           ### 🚀 Release Notes
 
-          ```md
+          \`\`\`md
           $(cat release-notes.md)
-          ```
-          "
-
-          # Write the PR body into a file
-          echo "$PR_BODY" > pr-body.md
+          \`\`\`
+          EOF
 
           # Create PR
           PR_NUMBER=$(gh pr create \
