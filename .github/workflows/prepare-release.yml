@@ -103,7 +103,7 @@ jobs:
           VERSION=${{ github.event.inputs.version }}
           BRANCH_NAME="release/$VERSION"
           PR_TITLE="Release $VERSION"
-          RELEASE_NOTES=$(cat <<EOF
+          RELEASE_NOTES=$(cat <<'EOF'
           ${{ steps.changeset-version.outputs.release_notes }}
           EOF
           )
