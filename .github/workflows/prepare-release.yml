@@ -115,9 +115,7 @@ jobs:
 
           # Build the PR body and save into file
           cat > pr-body.md <<EOF
-          ## Release $VERSION
-
-          This PR prepares the release for Directus $VERSION.
+          **⚠️ Code freeze is in effect until this release is published.**
 
           ### ✅ Release Checklist
 
@@ -126,8 +124,6 @@ jobs:
           - [x] Release notes generated
           - [ ] PR reviewed and approved
           - [ ] Blackbox tests passed
-
-          **⚠️ Code freeze is in effect until this release is published.**
 
           ### 🚀 Release Notes
 
