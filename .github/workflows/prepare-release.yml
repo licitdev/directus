@@ -118,10 +118,6 @@ jobs:
 
           This PR prepares the release for Directus $VERSION.
 
-          ### 🚀 Release Notes
-
-          $(cat release-notes.md)
-
           ### ✅ Release Checklist
 
           - [x] Changesets processed and cleared
@@ -132,9 +128,11 @@ jobs:
 
           **⚠️ Code freeze is in effect until this release is published.**
 
-          <!-- RELEASE_NOTES_START -->
+          ### 🚀 Release Notes
+
+          ```md
           $(cat release-notes.md)
-          <!-- RELEASE_NOTES_END -->
+          ```
           "
 
           # Write the PR body into a file
