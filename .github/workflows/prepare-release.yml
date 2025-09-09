@@ -103,10 +103,6 @@ jobs:
           VERSION=${{ github.event.inputs.version }}
           BRANCH_NAME="release/$VERSION"
           PR_TITLE="Release $VERSION"
-          RELEASE_NOTES=$(cat <<'EOF'
-          ${{ steps.changeset-version.outputs.release_notes }}
-          EOF
-          )
 
           # Build the PR body content
           PR_BODY=$(printf "**⚠️ Code freeze is in effect until this release is published.**\n\n\
@@ -116,7 +112,8 @@ jobs:
           - [x] Release notes generated\n\
           - [ ] PR reviewed and approved\n\
           - [ ] Blackbox tests passed\n\n\
-          ### 🚀 Release Notes\n%s\n" "$RELEASE_NOTES")
+          ### 🚀 Release Notes\n
+          ${{ steps.changeset-version.outputs.release_notes }}")
 
           # Output PR body
           {
