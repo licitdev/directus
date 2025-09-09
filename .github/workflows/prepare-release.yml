@@ -109,24 +109,14 @@ jobs:
           )
 
           # Build the PR body content
-          PR_BODY=$(cat <<EOF
-          **⚠️ Code freeze is in effect until this release is published.**
-
-          ### ✅ Release Checklist
-
-          - [x] Changesets processed and cleared
-          - [x] Package versions updated
-          - [x] Release notes generated
-          - [ ] PR reviewed and approved
-          - [ ] Blackbox tests passed
-
-          ### 🚀 Release Notes
-
-          \`\`\`md
-          $RELEASE_NOTES
-          \`\`\`
-          EOF
-          )
+          PR_BODY=$(printf "**⚠️ Code freeze is in effect until this release is published.**\n\n\
+          ### ✅ Release Checklist\n\
+          - [x] Changesets processed and cleared\n\
+          - [x] Package versions updated\n\
+          - [x] Release notes generated\n\
+          - [ ] PR reviewed and approved\n\
+          - [ ] Blackbox tests passed\n\n\
+          ### 🚀 Release Notes\n%s\n" "$RELEASE_NOTES")
 
           # Output PR body
           {
