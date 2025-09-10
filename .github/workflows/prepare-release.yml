@@ -105,18 +105,23 @@ jobs:
           PR_TITLE="Release $VERSION"
 
           # Build the PR body content
-          PR_BODY=$(printf "**⚠️ Code freeze is in effect until this release is published.**\n\n\
-          ### ✅ Release Checklist\n\
-          - [x] Changesets processed and cleared\n\
-          - [x] Package versions updated\n\
-          - [x] Release notes generated\n\
-          - [ ] PR reviewed and approved\n\
-          - [ ] Blackbox tests passed\n\n\
-          ### 🚀 Release Notes\n
-          ${{ steps.changeset-version.outputs.release_notes }}")
+          PR_BODY=$(cat <<EOF
+          **⚠️ Code freeze is in effect until this release is published.**
+
+          ### ✅ Release Checklist
+          - [x] Changesets processed and cleared
+          - [x] Package versions updated
+          - [x] Release notes generated
+          - [ ] PR reviewed and approved
+          - [ ] Blackbox tests passed
+
+          ### 🚀 Release Notes
+          ${{ steps.changeset-version.outputs.release_notes }}
+          EOF
+          )
 
           # Save PR body as file
-          echo "$PR_BODY" > pr-body.md
+          echo "$PR_BODY" > temp/pr-body.md
 
           # Configure git and commit changes
           git checkout -b "$BRANCH_NAME"
@@ -143,7 +148,7 @@ jobs:
             echo "✨ Creating new PR"
             NEW_PR=$(gh pr create \
               --title "$PR_TITLE" \
-              --body-file pr-body.md \
+              --body-file temp/pr-body.md \
               --label "Release" \
               --label "Run Blackbox" \
               --label "No Changeset" \
