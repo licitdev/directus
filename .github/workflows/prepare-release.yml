@@ -123,6 +123,7 @@ jobs:
           )
 
           # Save PR body as file
+          mkdir ./temp
           echo "$PR_BODY" > ./temp/pr-body.md
 
           # Configure git and commit changes
