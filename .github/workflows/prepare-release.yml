@@ -115,12 +115,8 @@ jobs:
           ### 🚀 Release Notes\n
           ${{ steps.changeset-version.outputs.release_notes }}")
 
-          # Output PR body
-          {
-            echo "pr_body<<EOF"
-            echo "$PR_BODY"
-            echo "EOF"
-          } >> $GITHUB_OUTPUT
+          # Save PR body as file
+          echo "$PR_BODY" > pr-body.md
 
           # Configure git and commit changes
           git checkout -b "$BRANCH_NAME"
@@ -147,7 +143,7 @@ jobs:
             echo "✨ Creating new PR"
             NEW_PR=$(gh pr create \
               --title "$PR_TITLE" \
-              --body "$PR_BODY" \
+              --body-file pr-body.md \
               --label "Release" \
               --label "Run Blackbox" \
               --label "No Changeset" \
