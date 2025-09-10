@@ -122,10 +122,6 @@ jobs:
           EOF
           )
 
-          # Save PR body as file
-          mkdir temp
-          echo "$PR_BODY" > temp/pr-body.md
-
           # Configure git and commit changes
           git checkout -b "$BRANCH_NAME"
           git config user.name "github-actions[bot]"
@@ -158,8 +154,7 @@ jobs:
               --head "$BRANCH_NAME" \
               --base "main" \
               --draft=false \
-              --json number \
-              --jq '.number')
+              | grep -o '[0-9]\+$')
             echo "pr_number=$NEW_PR" >> $GITHUB_OUTPUT
           fi
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
