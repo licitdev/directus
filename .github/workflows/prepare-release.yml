@@ -123,7 +123,7 @@ jobs:
           )
 
           # Save PR body as file
-          echo "$PR_BODY" > temp/pr-body.md
+          echo "$PR_BODY" > ./temp/pr-body.md
 
           # Configure git and commit changes
           git checkout -b "$BRANCH_NAME"
@@ -150,7 +150,7 @@ jobs:
             echo "✨ Creating new PR"
             NEW_PR=$(gh pr create \
               --title "$PR_TITLE" \
-              --body-file temp/pr-body.md \
+              --body-file ./temp/pr-body.md \
               --label "Release" \
               --label "Run Blackbox" \
               --label "No Changeset" \
