@@ -105,7 +105,7 @@ jobs:
           PR_TITLE="Release $VERSION"
 
           # Build the PR body content
-          PR_BODY=$(cat <<EOF
+          PR_BODY=$(cat <<'EOF'
           **⚠️ Code freeze is in effect until this release is published.**
 
           ### ✅ Release Checklist
@@ -116,7 +116,9 @@ jobs:
           - [ ] Blackbox tests passed
 
           ### 🚀 Release Notes
+          ```md
           ${{ steps.changeset-version.outputs.release_notes }}
+          ```
           EOF
           )
 
