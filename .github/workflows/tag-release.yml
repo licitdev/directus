@@ -35,15 +35,17 @@ jobs:
       - name: Extract Release Notes
         id: notes
         run: |
-          NOTES=$(cat <<'EOF'
+          PR_BODY=$(cat <<'EOF'
           ${{ github.event.pull_request.body }}
           EOF
-          | sed -n '/``````/p' | sed '1d;$d')
+          )
+
+          RELEASE_NOTES=$(printf '%s\n' "$PR_BODY" | awk '/^```md$/{flag=1; next} /^```$/{flag=0} flag')
 
           # Output release notes
           {
             echo "release_notes<<EOF"
-            echo "$NOTES"
+            echo "$RELEASE_NOTES"
             echo "EOF"
           } >> $GITHUB_OUTPUT
 
