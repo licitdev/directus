@@ -57,7 +57,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag "$TAG"
-          git push origin "$TAG"
+          git push origin "$TAG" --tags
           echo "Created and pushed tag: $TAG"
 
       - name: Wait for GitHub Release Creation
