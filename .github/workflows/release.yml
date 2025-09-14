@@ -63,9 +63,8 @@ jobs:
       - name: Create tag
         run: |
           TAG="${{ steps.extract.outputs.tag }}"
-          PR_TITLE="${{ github.event.pull_request.title }}"
           PR_NUMBER=${{ github.event.number }}
-          TAG_MESSAGE="$TAG\n\n$PR_TITLE (#$PR_NUMBER)"
+          TAG_MESSAGE="${{ github.event.pull_request.title }} (${{ github.event.pull_request.html_url }})"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag -a "$TAG" -m "$TAG_MESSAGE"
@@ -99,6 +98,8 @@ jobs:
           TAG: ${{ needs.create-tag.outputs.tag }}
           RELEASE_NOTES: ${{ needs.create-tag.outputs.release_notes }}
         run: |
+          echo "$RELEASE_NOTES"
+
           gh release create \
             "$TAG" \
             ${{ needs.check-version.outputs.prerelease == 'true' && '--prerelease' || '' }} \
