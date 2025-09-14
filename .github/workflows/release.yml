@@ -61,9 +61,12 @@ jobs:
       - name: Create tag
         run: |
           TAG=${{ steps.extract.outputs.tag }}
+          PR_TITLE=${{ github.event.pull_request.title }}
+          PR_NUMBER=${{ github.event.number }}
+          TAG_MESSAGE="$TAG\n\n$PR_TITLE (#$PR_NUMBER)"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -a "$TAG" -m "$TAG"
+          git tag -a "$TAG" -m "$TAG_MESSAGE"
           git push origin "$TAG"
 
   check-version:
