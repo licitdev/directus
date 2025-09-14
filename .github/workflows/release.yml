@@ -53,7 +53,7 @@ jobs:
 
           # Output release notes
           {
-            echo "release_notes<<EOF"
+            echo "release_notes<<'EOF'"
             echo "$RELEASE_NOTES"
             echo "EOF"
           } >> $GITHUB_OUTPUT
