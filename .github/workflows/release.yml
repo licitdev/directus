@@ -1,9 +1,9 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - 'v[0-9]*'
+  pull_request:
+    types: [closed]
+    branches: [main]
 
 permissions:
   contents: write
@@ -17,6 +17,48 @@ env:
   COSIGN_REPOSITORY: docker.io/${{ github.repository }}-signatures
 
 jobs:
+  release:
+    if:
+      github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'Release') &&
+      startsWith(github.event.pull_request.title, 'Release ')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract Version and Tag
+        id: version
+        run: |
+          # Read version from directus package.json
+          VERSION=$(node -p "require('./directus/package.json').version")
+          TAG="v$VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "Found version: $VERSION"
+          echo "Tag will be: $TAG"
+
+      - name: Extract Release Notes
+        id: notes
+        run: |
+          PR_BODY=$(cat <<'EOF'
+          ${{ github.event.pull_request.body }}
+          EOF
+          )
+
+          RELEASE_NOTES=$(printf '%s\n' "$PR_BODY" | awk '/^```md$/{flag=1; next} /^```$/{flag=0} flag')
+
+          # Output release notes
+          {
+            echo "release_notes<<EOF"
+            echo "$RELEASE_NOTES"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+
+      - name: Create tag
+        run: |
+          git tag ${{ steps.version.outputs.tag }}
+          git push origin ${{ steps.version.outputs.tag }}
+
   check-version:
     name: Check Version
     runs-on: ubuntu-latest
@@ -42,10 +84,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          TAG=${{ steps.version.outputs.tag }}
+          PRERELEASE_FLAG=$([[ ${{ needs.check-version.outputs.prerelease }} == 'true' ]] && echo "--prerelease" || echo "")
           gh release create \
-            "$GITHUB_REF_NAME" \
-            ${{ needs.check-version.outputs.prerelease == 'true' && '--prerelease' || '' }} \
-            --notes "Directus $GITHUB_REF_NAME"
+            "$TAG" \
+            $PRERELEASE_FLAG \
+            --notes "$(printf 'Directus %s\n\n%s' "$TAG" "${{ steps.notes.outputs.release_notes }}")"
+
 
   # publish-npm:
   #   name: Publish to NPM
