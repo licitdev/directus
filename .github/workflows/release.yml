@@ -62,8 +62,8 @@ jobs:
 
       - name: Create tag
         run: |
-          TAG=${{ steps.extract.outputs.tag }}
-          PR_TITLE=${{ github.event.pull_request.title }}
+          TAG="${{ steps.extract.outputs.tag }}"
+          PR_TITLE="${{ github.event.pull_request.title }}"
           PR_NUMBER=${{ github.event.number }}
           TAG_MESSAGE="$TAG\n\n$PR_TITLE (#$PR_NUMBER)"
           git config user.name "github-actions[bot]"
