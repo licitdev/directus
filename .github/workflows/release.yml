@@ -92,13 +92,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          TAG=${{ needs.create-tag.outputs.tag }}
           RELEASE_NOTES=$(cat <<'EOF'
           ${{ needs.create-tag.outputs.release_notes }}
           EOF
           )
 
           gh release create \
-            "${{ needs.create-tag.outputs.tag }}" \
+            "$TAG" \
             ${{ needs.check-version.outputs.prerelease == 'true' && '--prerelease' || '' }} \
             --notes "$RELEASE_NOTES"
 
