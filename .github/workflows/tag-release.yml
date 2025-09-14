@@ -35,11 +35,17 @@ jobs:
       - name: Extract Release Notes
         id: notes
         run: |
-          BODY="${{ github.event.pull_request.body }}"
-          NOTES=$(printf '%s\n' "$BODY" | sed -n '/``````/p' | sed '1d;$d')
-          echo "release_notes<<EOF" >> $GITHUB_OUTPUT
-          echo "$NOTES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          NOTES=$(cat <<'EOF'
+          ${{ github.event.pull_request.body }}
+          EOF
+          | sed -n '/``````/p' | sed '1d;$d')
+
+          # Output release notes
+          {
+            echo "release_notes<<EOF"
+            echo "$NOTES"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
 
       - name: Create Tag
         env:
