@@ -89,7 +89,7 @@ jobs:
 
           # Extract release notes from the output
           # The release notes generator outputs between the divider lines
-          RELEASE_NOTES=$(echo "$OUTPUT" | awk -v RS="==============================================================" 'NR==3 {print}')
+          RELEASE_NOTES=$(echo "$OUTPUT" | awk -v RS="==============================================================" 'NR==3 {print}' | sed '1{/^$/d}')
 
           # Output release notes
           {
