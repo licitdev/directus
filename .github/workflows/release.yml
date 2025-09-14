@@ -60,15 +60,6 @@ jobs:
             echo "EOF"
           } >> $GITHUB_OUTPUT
 
-      - name: Create tag
-        run: |
-          TAG="${{ steps.extract.outputs.tag }}"
-          TAG_MESSAGE="${{ github.event.pull_request.title }} (#${{ github.event.number }})"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -a -s "$TAG" -m "$TAG_MESSAGE"
-          git push origin "$TAG"
-
   check-version:
     name: Check Version
     runs-on: ubuntu-latest
@@ -91,7 +82,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Create release
+      - name: Create Tag and Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ needs.create-tag.outputs.tag }}
@@ -99,10 +90,11 @@ jobs:
         run: |
           echo "$RELEASE_NOTES"
 
-          gh release create \
-            "$TAG" \
-            ${{ needs.check-version.outputs.prerelease == 'true' && '--prerelease' || '' }} \
-            --notes "$RELEASE_NOTES"
+          gh release create "$TAG" \
+            --target "${{ github.event.pull_request.base.ref }}" \
+            --title "${{ github.event.pull_request.title }}" \
+            --notes "$RELEASE_NOTES" \
+            ${{ needs.check-version.outputs.prerelease == 'true' && '--prerelease' || '' }}
 
   # publish-npm:
   #   name: Publish to NPM
