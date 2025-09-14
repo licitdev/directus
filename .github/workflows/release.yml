@@ -29,6 +29,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Extract Version and Tag
         id: extract
@@ -53,7 +55,7 @@ jobs:
 
           # Output release notes
           {
-            echo "release_notes<<'EOF'"
+            echo "release_notes<<EOF"
             echo "$RELEASE_NOTES"
             echo "EOF"
           } >> $GITHUB_OUTPUT
@@ -94,13 +96,9 @@ jobs:
       - name: Create release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.create-tag.outputs.tag }}
+          RELEASE_NOTES: ${{ needs.create-tag.outputs.release_notes }}
         run: |
-          TAG=${{ needs.create-tag.outputs.tag }}
-          RELEASE_NOTES=$(cat <<'EOF'
-          ${{ needs.create-tag.outputs.release_notes }}
-          EOF
-          )
-
           gh release create \
             "$TAG" \
             ${{ needs.check-version.outputs.prerelease == 'true' && '--prerelease' || '' }} \
