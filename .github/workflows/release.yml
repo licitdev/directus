@@ -67,6 +67,8 @@ jobs:
     name: Create Release
     runs-on: ubuntu-latest
     needs: [extract, check-version]
+    permissions:
+      pull-requests: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
