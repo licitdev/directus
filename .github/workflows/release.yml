@@ -81,6 +81,7 @@ jobs:
 
           gh release create "$TAG" \
             --target "${{ github.event.pull_request.base.ref }}" \
+            --title "$TAG" \
             ${{ needs.check-version.outputs.prerelease == 'true' && '--prerelease' || '' }} \
             --notes "$RELEASE_NOTES"
 
