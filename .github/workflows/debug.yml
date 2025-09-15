@@ -1,0 +1,43 @@
+name: Debug
+
+on:
+  workflow_dispatch:
+
+jobs:
+  debug:
+    name: Debug
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test
+        run: |
+          # Extract the release notes from the PR body
+          PR_BODY=$(cat <<'EOF'
+          **⚠️ Code freeze is in effect until this release is published.**
+
+          ### ✅ Release Checklist
+          - [x] Changesets processed and cleared
+          - [x] Package versions updated
+          - [x] Release notes generated
+          - [x] Merge Crowdin PR: No Crowdin PR found
+          - [ ] PR reviewed and approved
+          - [ ] Blackbox tests passed
+
+          ### 🚀 Release Notes
+          ```md
+          ### 🐛 Bug Fixes & Optimizations
+
+          - **@directus/storage-driver-cloudinary**
+            - Replaced
+
+          ### 📦 Published Versions
+
+          - `@directus/app@13.14.1`
+          - `@directus/api@30.0.1`
+          ```
+          EOF
+          )
+          RELEASE_NOTES=$(awk '/^```md$/{flag=1; next} /^```$/{flag=0} flag' <<< "$PR_BODY")
+
+          echo "~~~~~~~~~ RELEASE NOTES ~~~~~~~~~"
+          echo $RELEASE_NOTES
+          echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
