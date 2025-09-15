@@ -79,9 +79,13 @@ jobs:
           ${{ github.event.pull_request.body }}
           EOF
           )
-          RELEASE_NOTES=$(printf "%s" "$PR_BODY" | awk '/^```md$/{flag=1; next} /^```$/{flag=0} flag')
+          RELEASE_NOTES=$(awk '/^```md$/{flag=1; next} /^```$/{flag=0} flag' <<< "$PR_BODY")
+
+          echo "~~~~~~~~~ RELEASE NOTES ~~~~~~~~~"
 
           echo $RELEASE_NOTES
+
+          echo "Creating GitHub Release for tag $TAG"
 
           GH_DEBUG=api gh release create "$TAG" \
             --target "${{ github.event.pull_request.base.ref }}" \
