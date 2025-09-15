@@ -79,7 +79,7 @@ jobs:
           ${{ github.event.pull_request.body }}
           EOF
           )
-          RELEASE_NOTES=$(echo "$PR_BODY" | awk '/^```md$/{flag=1; next} /^```$/{flag=0} flag')
+          RELEASE_NOTES=$(printf "%s" "$PR_BODY" | awk '/^```md$/{flag=1; next} /^```$/{flag=0} flag')
 
           echo $RELEASE_NOTES
 
