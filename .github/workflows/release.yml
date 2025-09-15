@@ -75,11 +75,7 @@ jobs:
           TAG: ${{ needs.extract.outputs.tag }}
         run: |
           # Extract the release notes from the PR body
-          PR_BODY=$(cat <<'EOF'
-          ${{ github.event.pull_request.body }}
-          EOF
-          )
-          RELEASE_NOTES=$(awk '/^```md$/{flag=1; next} /^```$/{flag=0} flag' <<< "$PR_BODY")
+          RELEASE_NOTES=$(awk '/^```md$/{flag=1; next} /^```$/{flag=0} flag' <<< "${{ github.event.pull_request.body }}")
 
           echo "~~~~~~~~~ RELEASE NOTES ~~~~~~~~~"
 
