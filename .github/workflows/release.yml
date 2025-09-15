@@ -81,11 +81,13 @@ jobs:
           )
           RELEASE_NOTES=$(printf '%s\n' "$PR_BODY" | awk '/^```md$/{flag=1; next} /^```$/{flag=0} flag')
 
-          gh release create "$TAG" \
+          echo $RELEASE_NOTES
+
+          GH_DEBUG=api gh release create "$TAG" \
             --target "${{ github.event.pull_request.base.ref }}" \
             --title "$TAG" \
-            --notes "$RELEASE_NOTES" \
-            ${{ needs.check-version.outputs.prerelease == 'true' && '--prerelease' || '' }}
+            ${{ needs.check-version.outputs.prerelease == 'true' && '--prerelease' || '' }} \
+            --notes "$RELEASE_NOTES"
 
   # publish-npm:
   #   name: Publish to NPM
