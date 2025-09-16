@@ -12,6 +12,7 @@ permissions:
   contents: write
   pull-requests: write
   issues: write
+  actions: write
 
 env:
   NODE_OPTIONS: --max_old_space_size=6144
@@ -199,6 +200,14 @@ jobs:
             echo "new_pr=true" >> $GITHUB_OUTPUT
           fi
           echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Trigger Check workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run check.yml \
+            --ref "release-${{ github.event.inputs.version }}" \
+            --field inputs.ref="release-${{ github.event.inputs.version }}"
 
       - name: Notify Slack
         if: steps.create-pr.outputs.new_pr == 'true'
