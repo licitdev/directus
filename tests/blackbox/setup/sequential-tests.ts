@@ -31,8 +31,16 @@ export const sequentialTestsList: Record<'db' | 'common', SequentialTestsList> =
 		],
 		// If specified, only run these tests sequentially
 		only: [
-			// '/tests/db/seed-database.test.ts',
-			// '/common/common.test.ts',
+			'/tests/db/seed-database.test.ts',
+			'/common/common.test.ts',
+			// '/tests/db/websocket/collaborative-editing/core.test.ts',
+			// '/tests/db/websocket/collaborative-editing/propagation.test.ts',
+			// '/tests/db/websocket/collaborative-editing/permissions.test.ts',
+			'/tests/db/websocket/collaborative-editing/relational.test.ts',
+			// '/tests/db/websocket/collaborative-editing/multi-instance.test.ts',
+			// '/tests/db/websocket/collaborative-editing/singleton.test.ts',
+			// '/tests/db/websocket/auth.test.ts',
+			// '/tests/db/websocket/general.test.ts',
 		],
 	},
 };

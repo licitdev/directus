@@ -35,6 +35,21 @@ export async function requestGraphQL(
 	return await req;
 }
 
+export function calculateMessageCount(
+	uid: WebSocketUID | undefined,
+	messages: Record<WebSocketUID, any[]>,
+	readIndexes: Record<WebSocketUID, number>,
+	messagesDefault: any[],
+	readIndexDefault: number,
+) {
+	if (uid) {
+		const index = readIndexes[uid] ?? 0;
+		return (messages[uid]?.length ?? 0) - index;
+	} else {
+		return messagesDefault.length - readIndexDefault;
+	}
+}
+
 export function createWebSocketConn(host: string, config?: WebSocketOptions) {
 	const defaults = { waitTimeout: 5000 };
 	const parsedHost = host.split('//').slice(1).join('/');
@@ -163,6 +178,10 @@ export function createWebSocketConn(host: string, config?: WebSocketOptions) {
 		}
 	};
 
+	const getUnreadMessageCount = (uid?: WebSocketUID) => {
+		return calculateMessageCount(uid, messages, readIndexes, messagesDefault, readIndexDefault);
+	};
+
 	const sendMessage = async (
 		message: Record<string, any>,
 		options?: {
@@ -242,7 +261,16 @@ export function createWebSocketConn(host: string, config?: WebSocketOptions) {
 		return;
 	});
 
-	return { conn, waitForState, getMessages, getMessageCount, sendMessage, subscribe, unsubscribe };
+	return {
+		conn,
+		waitForState,
+		getMessages,
+		getMessageCount,
+		getUnreadMessageCount,
+		sendMessage,
+		subscribe,
+		unsubscribe,
+	};
 }
 
 export function createWebSocketGql(host: string, config?: WebSocketOptionsGql) {
@@ -403,6 +431,10 @@ export function createWebSocketGql(host: string, config?: WebSocketOptionsGql) {
 		}
 	};
 
+	const getUnreadMessageCount = (uid?: WebSocketUID) => {
+		return calculateMessageCount(uid, messages, readIndexes, messagesDefault, readIndexDefault);
+	};
+
 	const subscribe = async (options: WebSocketSubscriptionOptionsGql) => {
 		const targetMessages = options.uid ? (messages[options.uid] ?? (messages[options.uid] = [])) : messagesDefault;
 		const subscriptionKey = `${options.collection}_mutated`;
@@ -448,5 +480,5 @@ export function createWebSocketGql(host: string, config?: WebSocketOptionsGql) {
 		}
 	};
 
-	return { client, getMessages, getMessageCount, subscribe, unsubscribe, waitForState };
+	return { client, getMessages, getMessageCount, getUnreadMessageCount, subscribe, unsubscribe, waitForState };
 }
