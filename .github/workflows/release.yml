@@ -122,8 +122,6 @@ jobs:
       pull-requests: write
       security-events: write
       statuses: write
-    outputs:
-      prerelease: ${{ needs.check-version.outputs.prerelease }}
     steps:
       - name: Prepare
         run: |
@@ -160,7 +158,7 @@ jobs:
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
-        if: env.DOCKERHUB_IMAGE
+        if: env.DOCKERHUB_IMAGE != ''
         with:
           registry: docker.io
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -168,7 +166,7 @@ jobs:
 
       - name: Login to GHCR
         uses: docker/login-action@v3
-        if: env.GHCR_IMAGE
+        if: env.GHCR_IMAGE != ''
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -241,7 +239,7 @@ jobs:
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@v3
-        if: env.DOCKERHUB_IMAGE
+        if: env.DOCKERHUB_IMAGE != ''
 
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -262,7 +260,7 @@ jobs:
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
-        if: env.DOCKERHUB_IMAGE
+        if: env.DOCKERHUB_IMAGE != ''
         with:
           registry: docker.io
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -270,7 +268,7 @@ jobs:
 
       - name: Login to GHCR
         uses: docker/login-action@v3
-        if: env.GHCR_IMAGE
+        if: env.GHCR_IMAGE != ''
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -278,6 +276,7 @@ jobs:
 
       - name: Create manifest list and push to Docker Hub
         id: push-dockerhub
+        if: env.DOCKERHUB_IMAGE != ''
         working-directory: ${{ runner.temp }}/digests
         run: |
           docker buildx imagetools create \
@@ -286,6 +285,7 @@ jobs:
             $(printf '${{ env.DOCKERHUB_IMAGE }}@sha256:%s ' *)
 
       - name: Create manifest list and push to GHCR
+        if: env.GHCR_IMAGE != ''
         working-directory: ${{ runner.temp }}/digests
         run: |
           docker buildx imagetools create \
@@ -295,16 +295,22 @@ jobs:
 
       - name: Get Docker Hub manifest digest
         id: get-digest
+        if: env.DOCKERHUB_IMAGE != ''
         run: |
           DIGEST=$(docker buildx imagetools inspect ${{ env.DOCKERHUB_IMAGE }}:${{ steps.meta.outputs.version }} --format '{{json .Manifest.Digest}}' | tr -d '"')
           echo "digest=$DIGEST" >> $GITHUB_OUTPUT
 
       - name: Sign Docker Hub image with GitHub OIDC Token
-        if: env.DOCKERHUB_IMAGE
+        if: env.DOCKERHUB_IMAGE != ''
         run: |
           cosign sign --yes --recursive ${{ env.DOCKERHUB_IMAGE }}@${{ steps.get-digest.outputs.digest }}
 
-      - name: Inspect images
+      - name: Inspect Docker Hub image
+        if: env.DOCKERHUB_IMAGE != ''
         run: |
           docker buildx imagetools inspect ${{ env.DOCKERHUB_IMAGE }}:${{ steps.meta.outputs.version }}
+
+      - name: Inspect GHCR image
+        if: env.GHCR_IMAGE != ''
+        run: |
           docker buildx imagetools inspect ${{ env.GHCR_IMAGE }}:${{ steps.meta.outputs.version }}
