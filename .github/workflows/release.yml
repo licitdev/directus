@@ -295,7 +295,12 @@ jobs:
         id: get-digest
         if: env.DOCKERHUB_IMAGE != ''
         run: |
+          set -euo pipefail
           DIGEST=$(docker buildx imagetools inspect ${{ env.DOCKERHUB_IMAGE }}:${{ steps.meta.outputs.version }} --format '{{json .Manifest.Digest}}' | tr -d '"')
+          if [ -z "$DIGEST" ]; then
+            echo "::error::Failed to get manifest digest for ${{ env.DOCKERHUB_IMAGE }}:${{ steps.meta.outputs.version }}"
+            exit 1
+          fi
           echo "digest=$DIGEST" >> $GITHUB_OUTPUT
 
       - name: Sign Docker Hub image with GitHub OIDC Token
