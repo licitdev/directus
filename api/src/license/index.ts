@@ -22,6 +22,7 @@ export class LicenseService {
 
 	async verify({ license_key, project_id }: VerifyLicenseRequest): Promise<VerifyLicenseResponse> {
 		const verifyUrl = `${this.baseUrl}/v1/verify`;
+
 		try {
 			const getTokenResponse = await axios.post<VerifyLicenseResponse>(verifyUrl, { license_key, project_id });
 			const { token } = getTokenResponse.data;
@@ -29,6 +30,7 @@ export class LicenseService {
 			if (typeof token !== 'string' || !token) {
 				throw new Error('Missing or invalid license token.');
 			}
+
 			return { token };
 		} catch (error) {
 			this.logger.error(`Failed to verify license key. Error: ${error}`);
