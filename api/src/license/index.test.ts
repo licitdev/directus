@@ -11,9 +11,12 @@ let mockVerify: ReturnType<typeof vi.fn>;
 beforeEach(() => {
 	mockVerify = vi.fn();
 
-	vi.mocked(LicensingService).mockImplementation(() => ({
-		verify: mockVerify,
-	}) as any);
+	vi.mocked(LicensingService).mockImplementation(
+		() =>
+			({
+				verify: mockVerify,
+			}) as any,
+	);
 });
 
 afterEach(() => {
@@ -23,11 +26,7 @@ afterEach(() => {
 test('getToken instantiates LicensingService and calls verify with params', async () => {
 	mockVerify.mockResolvedValue({ license_token: 'stored-token' });
 
-	const params = {
-		license_key: 'my-key',
-		project_id: 'project-id',
-		public_url: 'https://example.com',
-	};
+	const params = { license_key: 'my-key' };
 
 	const result = await getToken(params);
 
@@ -42,11 +41,7 @@ test('getToken returns the result of verify', async () => {
 	const tokenPayload = { license_token: 'jwt-token-123' };
 	mockVerify.mockResolvedValue(tokenPayload);
 
-	const result = await getToken({
-		license_key: 'k',
-		project_id: 'p',
-		public_url: 'https://u.com',
-	});
+	const result = await getToken({ license_key: 'k' });
 
 	expect(result).toBe(tokenPayload);
 });
@@ -54,11 +49,5 @@ test('getToken returns the result of verify', async () => {
 test('getToken propagates errors from verify', async () => {
 	mockVerify.mockRejectedValue(new Error('Verification failed'));
 
-	await expect(
-		getToken({
-			license_key: 'k',
-			project_id: 'p',
-			public_url: 'https://u.com',
-		}),
-	).rejects.toThrow('Verification failed');
+	await expect(getToken({ license_key: 'k' })).rejects.toThrow('Verification failed');
 });
