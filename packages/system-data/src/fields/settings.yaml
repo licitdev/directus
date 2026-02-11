@@ -50,6 +50,16 @@ fields:
   - field: project_status
     hidden: true
 
+  - field: license_token
+    interface: input-hash
+    special:
+      - encrypt
+    options:
+      iconRight: lock
+      masked: true
+      autocomplete: 'off'
+    width: half
+
   - field: modules_divider
     interface: presentation-divider
     options:
@@ -593,16 +603,6 @@ fields:
 
   - field: project_id
     hidden: true
-
-  - field: license_token
-    interface: input-hash
-    special:
-      - encrypt
-    options:
-      iconRight: lock
-      masked: true
-      autocomplete: 'off'
-    width: full
 
   ### Appearance Settings ###
   # The theming_group is rendered on the Appearance page in the app
