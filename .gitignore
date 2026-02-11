@@ -29,6 +29,7 @@ debug
 !.vscode/extensions.json
 !.vscode/settings.json
 .idea/
+.junie/
 *.code-workspace
 .history/
 *.sublime-settings
