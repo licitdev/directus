@@ -43,7 +43,6 @@ test('constructor strips trailing slash from LICENSING_SERVICE_URL', async () =>
 	vi.mocked(useEnv).mockReturnValue({ LICENSING_SERVICE_URL: baseUrl } as any);
 
 	tracker.on.select('directus_settings').response([{ project_id: 'proj' }]);
-	tracker.on.update('directus_settings').response(1);
 
 	vi.mocked(global.fetch).mockResolvedValue({
 		ok: true,
@@ -60,7 +59,6 @@ test('constructor strips trailing slash from LICENSING_SERVICE_URL', async () =>
 test('verify POSTs to /v1/verify with request body using project_id from directus_settings', async () => {
 	vi.mocked(useEnv).mockReturnValue({ LICENSING_SERVICE_URL: 'https://license.example.com' } as any);
 	tracker.on.select('directus_settings').response([{ project_id: 'project-uuid' }]);
-	tracker.on.update('directus_settings').response(1);
 
 	vi.mocked(global.fetch).mockResolvedValue({
 		ok: true,
@@ -84,10 +82,9 @@ test('verify POSTs to /v1/verify with request body using project_id from directu
 	);
 });
 
-test('verify returns license_token and persists to directus_settings', async () => {
+test('verify returns license_token', async () => {
 	vi.mocked(useEnv).mockReturnValue({ LICENSING_SERVICE_URL: 'https://license.example.com' } as any);
 	tracker.on.select('directus_settings').response([{ project_id: 'proj' }]);
-	tracker.on.update('directus_settings').response(1);
 
 	vi.mocked(global.fetch).mockResolvedValue({
 		ok: true,
@@ -99,9 +96,6 @@ test('verify returns license_token and persists to directus_settings', async () 
 	const result = await service.verify({ license_key: 'key' });
 
 	expect(result).toEqual({ license_token: 'jwt-token-from-service' });
-	const updateCalls = tracker.history.update;
-	expect(updateCalls).toHaveLength(1);
-	expect(updateCalls[0]?.bindings).toContain('jwt-token-from-service');
 });
 
 test('verify throws when response is not ok', async () => {
@@ -152,26 +146,10 @@ test('verify throws when token is not a string', async () => {
 	);
 });
 
-test('verify throws when persistence updates zero rows', async () => {
-	vi.mocked(useEnv).mockReturnValue({ LICENSING_SERVICE_URL: 'https://license.example.com' } as any);
-	tracker.on.select('directus_settings').response([{ project_id: 'proj' }]);
-	tracker.on.update('directus_settings').response(0);
-
-	vi.mocked(global.fetch).mockResolvedValue({
-		ok: true,
-		json: vi.fn().mockResolvedValue({ token: 'valid-token' }),
-	} as unknown as Response);
-
-	const service = new LicenseService();
-
-	await expect(service.verify({ license_key: 'key' })).rejects.toThrow('Failed to persist license_token');
-});
-
 test('verify uses provided knex when passed in constructor', async () => {
 	const customKnex = knex({ client: MockClient });
 	const customTracker = createTracker(customKnex);
 	customTracker.on.select('directus_settings').response([{ project_id: 'proj' }]);
-	customTracker.on.update('directus_settings').response(1);
 
 	vi.mocked(useEnv).mockReturnValue({ LICENSING_SERVICE_URL: 'https://license.example.com' } as any);
 
@@ -184,5 +162,5 @@ test('verify uses provided knex when passed in constructor', async () => {
 
 	await service.verify({ license_key: 'key' });
 
-	expect(customTracker.history.update).toHaveLength(1);
+	expect(customTracker.history.select).toHaveLength(1);
 });

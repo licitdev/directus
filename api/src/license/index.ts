@@ -50,12 +50,6 @@ export class LicenseService {
 			throw new Error('Failed to verify license_key. Invalid license_token received.');
 		}
 
-		const updated = await this.knex('directus_settings').update({ license_token: token }).where({ project_id });
-
-		if (updated === 0) {
-			throw new Error('Failed to persist license_token');
-		}
-
 		return { license_token: token };
 	}
 }
