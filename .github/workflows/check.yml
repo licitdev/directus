@@ -4,10 +4,12 @@ on:
   pull_request:
     branches:
       - main
+      - feat/key
 
   push:
     branches:
       - main
+      - feat/key
 
 permissions:
   contents: read
