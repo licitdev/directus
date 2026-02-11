@@ -51,9 +51,9 @@ fields:
     hidden: true
 
   - field: license_token
-    interface: input-hash
     special:
       - encrypt
+    interface: input-hash
     options:
       iconRight: lock
       masked: true
