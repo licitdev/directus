@@ -142,6 +142,7 @@
 		"ioredis": "catalog:",
 		"ip-matching": "catalog:",
 		"isolated-vm": "catalog:",
+		"jose": "catalog:",
 		"joi": "catalog:",
 		"jose": "catalog:",
 		"js-yaml": "catalog:",
