@@ -1,8 +1,8 @@
 import { useEnv } from '@directus/env';
-import { getDatabase } from '../database/index.js';
-import { useLogger } from '../logger/index.js';
 import type { Knex } from 'knex';
 import type { Logger } from 'pino';
+import { getDatabase } from '../database/index.js';
+import { useLogger } from '../logger/index.js';
 import type { GetTokenRequest, GetTokenResponse, VerifyLicenseRequest, VerifyLicenseResponse } from './types.js';
 
 export class LicenseService {
