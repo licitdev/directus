@@ -1,0 +1,5 @@
+---
+'@directus/api': major
+---
+
+WIP
