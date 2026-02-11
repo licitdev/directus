@@ -1,4 +1,5 @@
 import { useEnv } from '@directus/env';
+import axios from 'axios';
 import type { Knex } from 'knex';
 import type { Logger } from 'pino';
 import { getDatabase } from '../database/index.js';
@@ -29,27 +30,17 @@ export class LicenseService {
 
 		const getTokenPayload: GetTokenRequest = { license_key, project_id };
 
-		const getTokenResponse = await fetch(verifyUrl, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify(getTokenPayload),
-		});
+		try {
+			const getTokenResponse = await axios.post<GetTokenResponse>(verifyUrl, getTokenPayload);
+			const { token } = getTokenResponse.data;
 
-		if (!getTokenResponse.ok) {
-			const text = await getTokenResponse.text();
-			this.logger.error(`Failed to verify license_key. Error: ${text}`);
-			throw new Error(`Failed to verify license_key.`);
+			if (typeof token !== 'string' || !token) {
+				throw new Error('Missing or invalid license token.');
+			}
+			return { license_token: token };
+		} catch (error) {
+			this.logger.error(`Failed to verify license key. Error: ${error}`);
+			throw new Error(`Failed to verify license key.`);
 		}
-
-		const data: GetTokenResponse = await getTokenResponse.json();
-		const { token } = data || {};
-
-		if (typeof token !== 'string') {
-			throw new Error('Failed to verify license_key. Invalid license_token received.');
-		}
-
-		return { license_token: token };
 	}
 }
