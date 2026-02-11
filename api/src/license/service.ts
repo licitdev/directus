@@ -22,6 +22,7 @@ export class LicensingService {
 
 	async verify(params: VerifyLicenseRequestType): Promise<VerifyResponseType> {
 		const verifyUrl = `${this.baseUrl}/v1/verify`;
+		const settings = await this.knex.select('project_id').from('directus_settings').first();
 
 		const response = await fetch(verifyUrl, {
 			method: 'POST',
@@ -30,8 +31,7 @@ export class LicensingService {
 			},
 			body: JSON.stringify({
 				license_key: params.license_key ?? 'directus-test',
-				project_id: params.project_id ?? 'directus-test',
-				public_url: params.public_url ?? 'http://localhost:3000/',
+				project_id: settings?.project_id ?? 'directus-test',
 			}),
 		});
 
@@ -53,6 +53,6 @@ export class LicensingService {
 			throw new Error('Failed to persist license_token: no directus_settings row updated');
 		}
 
-		return {license_token: licenseToken} as VerifyResponseType;
+		return { license_token: licenseToken } as VerifyResponseType;
 	}
 }
