@@ -4,7 +4,8 @@ import { createTracker, MockClient } from 'knex-mock-client';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { getDatabase } from '../../../database/index.js';
 import * as license from '../../../license/index.js';
-import verify from './index.js';
+import * as tokenUtils from '../../../utils/verify-token.js';
+import validate from './index.js';
 
 vi.mock('inquirer');
 
@@ -14,8 +15,9 @@ vi.mock('@directus/env', () => ({
 
 vi.mock('../../../database/index.js');
 vi.mock('../../../license/index.js');
+vi.mock('../../../utils/verify-token.js');
 
-describe('CLI license verify command', () => {
+describe('CLI license validate command', () => {
 	const db = knex({ client: MockClient });
 	const tracker = createTracker(db);
 
@@ -42,32 +44,39 @@ describe('CLI license verify command', () => {
 		tracker.on.select('directus_settings').response([{ project_id: 'project-uuid' }]);
 		tracker.on.update('directus_settings').response(1);
 
-		const verifyLicenseMock = vi.fn().mockResolvedValue({ token: 'jwt-token' });
-		vi.mocked(license.verify).mockImplementation(verifyLicenseMock);
+		const validateLicenseMock = vi.fn().mockResolvedValue({ token: 'jwt-token' });
+		vi.mocked(license.validate).mockImplementation(validateLicenseMock);
 
-		await verify();
+		const payload = { plan: 'pro' };
+		const verifyTokenMock = vi.fn().mockResolvedValue(payload);
+		vi.mocked(tokenUtils.verify).mockImplementation(verifyTokenMock);
+
+		await validate();
 
 		expect(inquirer.prompt).toHaveBeenCalledTimes(1);
 
-		expect(verifyLicenseMock).toHaveBeenCalledWith({
+		expect(validateLicenseMock).toHaveBeenCalledWith({
 			license_key: 'my-license-key',
 			project_id: 'project-uuid',
 			public_url: 'https://project.example.com',
 		});
 
+		expect(verifyTokenMock).toHaveBeenCalledWith('jwt-token');
+
 		expect(tracker.history.update).toHaveLength(1);
 		expect(writeSpy).toHaveBeenCalledWith('License verified.\n');
+		expect(writeSpy).toHaveBeenCalledWith(`${JSON.stringify(payload, null, 2)}\n`);
 		expect(exitSpy).toHaveBeenCalledWith(0);
 	});
 
-	test('rejects when verify throws', async () => {
+	test('rejects when validate throws', async () => {
 		vi.mocked(inquirer.prompt).mockResolvedValue({ license_key: 'bad-key' } as any);
 
 		tracker.on.select('directus_settings').response([{ project_id: 'project-uuid' }]);
 
-		vi.mocked(license.verify).mockRejectedValue(new Error('bad license'));
+		vi.mocked(license.validate).mockRejectedValue(new Error('bad license'));
 
-		await expect(verify()).rejects.toThrow('bad license');
+		await expect(validate()).rejects.toThrow('bad license');
 		expect(writeSpy).not.toHaveBeenCalledWith('License verified.\n');
 		expect(exitSpy).not.toHaveBeenCalledWith(0);
 	});

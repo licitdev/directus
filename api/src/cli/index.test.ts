@@ -5,7 +5,7 @@ import { startServer } from '../server.js';
 import bootstrap from './commands/bootstrap/index.js';
 import dbMigrate from './commands/database/migrate.js';
 import init from './commands/init/index.js';
-import verify from './commands/license/index.js';
+import validate from './commands/license/index.js';
 import { apply } from './commands/schema/apply.js';
 import usersCreate from './commands/users/create.js';
 import { loadExtensions } from './load-extensions.js';
@@ -97,10 +97,10 @@ describe('createCli', () => {
 			expect(bootstrap).toHaveBeenCalledTimes(1);
 		});
 
-		test('Should call verify when verify command is invoked', async () => {
-			await program.parseAsync(['node', 'directus', 'verify']);
+		test('Should call validate when validate command is invoked', async () => {
+			await program.parseAsync(['node', 'directus', 'validate']);
 
-			expect(verify).toHaveBeenCalledTimes(1);
+			expect(validate).toHaveBeenCalledTimes(1);
 		});
 
 		test.each([

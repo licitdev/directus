@@ -1,9 +1,10 @@
 import { useEnv } from '@directus/env';
 import inquirer from 'inquirer';
 import { getDatabase } from '../../../database/index.js';
-import { verify as verifyLicense } from '../../../license/index.js';
+import { validate as validateLicense } from '../../../license/index.js';
+import { verify } from '../../../utils/verify-token.js';
 
-export default async function verify(): Promise<void> {
+export default async function validate(): Promise<void> {
 	const { license_key } = await inquirer.prompt([
 		{
 			type: 'input',
@@ -22,9 +23,13 @@ export default async function verify(): Promise<void> {
 		throw new Error('Missing or invalid PUBLIC_URL environment variable.');
 	}
 
-	const { token } = await verifyLicense({ license_key, project_id, public_url });
+	const { token } = await validateLicense({ license_key, project_id, public_url });
 
 	await database('directus_settings').update({ license_token: token }).where({ project_id });
+
+	const payload = await verify(token);
+
 	process.stdout.write('License verified.\n');
+	process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
 	process.exit(0);
 }
