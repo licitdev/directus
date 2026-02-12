@@ -45,6 +45,10 @@ vi.mock('./commands/users/create.js', () => ({
 	default: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock('./commands/license/index.js', () => ({
+	default: vi.fn().mockResolvedValue(undefined),
+}));
+
 describe('createCli', () => {
 	let program: Command;
 
