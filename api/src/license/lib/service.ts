@@ -1,8 +1,9 @@
 import { useEnv } from '@directus/env';
 import type { Knex } from 'knex';
-import getDatabase from '../database/index.js';
-import type { VerifyLicenseRequestType, VerifyLicenseResponseType } from './types/index.js';
-import type { VerifyResponseType } from './types/response.js';
+import getDatabase from '../../database/index.js';
+import type { VerifyLicenseRequestType, VerifyLicenseResponseType } from '../types/index.js';
+import type { VerifyResponseType } from '../types/response.js';
+import { setLicenseCaches } from './use-license.js';
 
 export class LicensingService {
 	private knex: Knex;
@@ -53,6 +54,7 @@ export class LicensingService {
 			throw new Error('Failed to persist license_token: no directus_settings row updated');
 		}
 
+		await setLicenseCaches(licenseToken);
 		return { license_token: licenseToken } as VerifyResponseType;
 	}
 }

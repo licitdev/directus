@@ -2,14 +2,18 @@ import { useEnv } from '@directus/env';
 import knex from 'knex';
 import { createTracker, MockClient } from 'knex-mock-client';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import getDatabase from '../database/index.js';
+import getDatabase from '../../database/index.js';
 import { LicensingService } from './service.js';
 
 vi.mock('@directus/env', () => ({
 	useEnv: vi.fn().mockReturnValue({}),
 }));
 
-vi.mock('../database/index.js');
+vi.mock('../../database/index.js');
+
+vi.mock('./use-license.js', () => ({
+	setLicenseCaches: vi.fn().mockResolvedValue(undefined),
+}));
 
 const db = knex({ client: MockClient });
 const tracker = createTracker(db);
