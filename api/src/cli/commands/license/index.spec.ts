@@ -38,6 +38,7 @@ describe('CLI license verify command', () => {
 		tracker.on.update('directus_settings').response(1);
 
 		const verifyMock = vi.fn().mockResolvedValue({ token: 'jwt-token' });
+
 		vi.mocked(LicenseService).mockImplementation(
 			() =>
 				({

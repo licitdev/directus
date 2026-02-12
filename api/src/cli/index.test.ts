@@ -5,9 +5,9 @@ import { startServer } from '../server.js';
 import bootstrap from './commands/bootstrap/index.js';
 import dbMigrate from './commands/database/migrate.js';
 import init from './commands/init/index.js';
+import verify from './commands/license/index.js';
 import { apply } from './commands/schema/apply.js';
 import usersCreate from './commands/users/create.js';
-import verify from './commands/license/index.js';
 import { loadExtensions } from './load-extensions.js';
 import { createCli } from './index.js';
 
