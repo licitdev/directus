@@ -55,7 +55,7 @@ describe('CLI license verify command', () => {
 		expect(exitSpy).toHaveBeenCalledWith(0);
 	});
 
-	test('writes error message and exits with code 1 when verify throws', async () => {
+	test('rejects when verify throws', async () => {
 		vi.mocked(inquirer.prompt).mockResolvedValue({ license_key: 'bad-key' } as any);
 
 		tracker.on.select('directus_settings').response([{ project_id: 'project-uuid' }]);
@@ -67,9 +67,8 @@ describe('CLI license verify command', () => {
 				}) as any,
 		);
 
-		await verify();
-
-		expect(writeSpy).toHaveBeenCalledWith('Failed to verify license key.\n');
-		expect(exitSpy).toHaveBeenCalledWith(1);
+		await expect(verify()).rejects.toThrow('bad license');
+		expect(writeSpy).not.toHaveBeenCalledWith('License verified.\n');
+		expect(exitSpy).not.toHaveBeenCalledWith(0);
 	});
 });
