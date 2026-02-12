@@ -1,7 +1,7 @@
 import { useEnv } from '@directus/env';
 import axios from 'axios';
 import { afterEach, expect, test, vi } from 'vitest';
-import { LicenseService } from './index.js';
+import { verify } from './index.js';
 
 vi.mock('@directus/env', () => ({
 	useEnv: vi.fn().mockReturnValue({}),
@@ -13,31 +13,38 @@ afterEach(() => {
 	vi.clearAllMocks();
 });
 
-test('constructor throws when LICENSING_SERVICE_URL is missing', () => {
+test('verify throws when LICENSING_SERVICE_URL is missing', async () => {
 	vi.mocked(useEnv).mockReturnValue({});
 
-	expect(() => new LicenseService()).toThrow('Missing or invalid LICENSING_SERVICE_URL environment variable.');
+	await expect(
+		verify({ license_key: 'key', project_id: 'id', public_url: 'https://project.example.com' }),
+	).rejects.toThrow('Missing or invalid LICENSING_SERVICE_URL environment variable.');
 });
 
-test('constructor throws when LICENSING_SERVICE_URL is not a string', () => {
+test('verify throws when LICENSING_SERVICE_URL is not a string', async () => {
 	vi.mocked(useEnv).mockReturnValue({ LICENSING_SERVICE_URL: 123 } as any);
 
-	expect(() => new LicenseService()).toThrow('Missing or invalid LICENSING_SERVICE_URL environment variable.');
+	await expect(
+		verify({ license_key: 'key', project_id: 'id', public_url: 'https://project.example.com' }),
+	).rejects.toThrow('Missing or invalid LICENSING_SERVICE_URL environment variable.');
 });
 
-test('constructor strips trailing slash from LICENSING_SERVICE_URL', async () => {
+test('verify strips trailing slash from LICENSING_SERVICE_URL', async () => {
 	const baseUrl = 'https://license.example.com/';
 	vi.mocked(useEnv).mockReturnValue({ LICENSING_SERVICE_URL: baseUrl } as any);
 
 	vi.mocked(axios.post).mockResolvedValue({ data: { token: 't' } } as any);
 
-	const service = new LicenseService();
-
-	await service.verify({ license_key: 'directus-license-key', project_id: 'directus-project-id' });
+	await verify({
+		license_key: 'directus-license-key',
+		project_id: 'directus-project-id',
+		public_url: 'https://project.example.com',
+	});
 
 	expect(axios.post).toHaveBeenCalledWith('https://license.example.com/v1/verify', {
 		license_key: 'directus-license-key',
 		project_id: 'directus-project-id',
+		public_url: 'https://project.example.com',
 	});
 });
 
@@ -46,13 +53,16 @@ test('verify POSTs to /v1/verify with request body using project_id from directu
 
 	vi.mocked(axios.post).mockResolvedValue({ data: { token: 'stored-token' } } as any);
 
-	const service = new LicenseService();
-
-	await service.verify({ license_key: 'directus-license-key', project_id: 'project-uuid' });
+	await verify({
+		license_key: 'directus-license-key',
+		project_id: 'project-uuid',
+		public_url: 'https://project.example.com',
+	});
 
 	expect(axios.post).toHaveBeenCalledWith('https://license.example.com/v1/verify', {
 		license_key: 'directus-license-key',
 		project_id: 'project-uuid',
+		public_url: 'https://project.example.com',
 	});
 });
 
@@ -61,9 +71,11 @@ test('verify returns license_token', async () => {
 
 	vi.mocked(axios.post).mockResolvedValue({ data: { token: 'jwt-token-from-service' } } as any);
 
-	const service = new LicenseService();
-
-	const result = await service.verify({ license_key: 'directus-license-key', project_id: 'directus-project-id' });
+	const result = await verify({
+		license_key: 'directus-license-key',
+		project_id: 'directus-project-id',
+		public_url: 'https://project.example.com',
+	});
 
 	expect(result).toEqual({ token: 'jwt-token-from-service' });
 });
@@ -73,10 +85,12 @@ test('verify throws when response is not ok', async () => {
 
 	vi.mocked(axios.post).mockRejectedValue(new Error('Invalid license'));
 
-	const service = new LicenseService();
-
 	await expect(
-		service.verify({ license_key: 'directus-license-key', project_id: 'directus-project-id' }),
+		verify({
+			license_key: 'directus-license-key',
+			project_id: 'directus-project-id',
+			public_url: 'https://project.example.com',
+		}),
 	).rejects.toThrow('Failed to verify license key.');
 });
 
@@ -85,10 +99,12 @@ test('verify throws when response has no token', async () => {
 
 	vi.mocked(axios.post).mockResolvedValue({ data: {} } as any);
 
-	const service = new LicenseService();
-
 	await expect(
-		service.verify({ license_key: 'directus-license-key', project_id: 'directus-project-id' }),
+		verify({
+			license_key: 'directus-license-key',
+			project_id: 'directus-project-id',
+			public_url: 'https://project.example.com',
+		}),
 	).rejects.toThrow('Failed to verify license key.');
 });
 
@@ -97,9 +113,11 @@ test('verify throws when token is not a string', async () => {
 
 	vi.mocked(axios.post).mockResolvedValue({ data: { token: 123 } } as any);
 
-	const service = new LicenseService();
-
 	await expect(
-		service.verify({ license_key: 'directus-license-key', project_id: 'directus-project-id' }),
+		verify({
+			license_key: 'directus-license-key',
+			project_id: 'directus-project-id',
+			public_url: 'https://project.example.com',
+		}),
 	).rejects.toThrow('Failed to verify license key.');
 });

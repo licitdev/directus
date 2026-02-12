@@ -3,10 +3,15 @@ import knex from 'knex';
 import { createTracker, MockClient } from 'knex-mock-client';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { getDatabase } from '../../../database/index.js';
-import { LicenseService } from '../../../license/index.js';
+import * as license from '../../../license/index.js';
 import verify from './index.js';
 
 vi.mock('inquirer');
+
+vi.mock('@directus/env', () => ({
+	useEnv: vi.fn().mockReturnValue({ PUBLIC_URL: 'https://project.example.com' }),
+}));
+
 vi.mock('../../../database/index.js');
 vi.mock('../../../license/index.js');
 
@@ -37,19 +42,19 @@ describe('CLI license verify command', () => {
 		tracker.on.select('directus_settings').response([{ project_id: 'project-uuid' }]);
 		tracker.on.update('directus_settings').response(1);
 
-		const verifyMock = vi.fn().mockResolvedValue({ token: 'jwt-token' });
-
-		vi.mocked(LicenseService).mockImplementation(
-			() =>
-				({
-					verify: verifyMock,
-				}) as any,
-		);
+		const verifyLicenseMock = vi.fn().mockResolvedValue({ token: 'jwt-token' });
+		vi.mocked(license.verify).mockImplementation(verifyLicenseMock);
 
 		await verify();
 
 		expect(inquirer.prompt).toHaveBeenCalledTimes(1);
-		expect(verifyMock).toHaveBeenCalledWith({ license_key: 'my-license-key', project_id: 'project-uuid' });
+
+		expect(verifyLicenseMock).toHaveBeenCalledWith({
+			license_key: 'my-license-key',
+			project_id: 'project-uuid',
+			public_url: 'https://project.example.com',
+		});
+
 		expect(tracker.history.update).toHaveLength(1);
 		expect(writeSpy).toHaveBeenCalledWith('License verified.\n');
 		expect(exitSpy).toHaveBeenCalledWith(0);
@@ -60,12 +65,7 @@ describe('CLI license verify command', () => {
 
 		tracker.on.select('directus_settings').response([{ project_id: 'project-uuid' }]);
 
-		vi.mocked(LicenseService).mockImplementation(
-			() =>
-				({
-					verify: vi.fn().mockRejectedValue(new Error('bad license')),
-				}) as any,
-		);
+		vi.mocked(license.verify).mockRejectedValue(new Error('bad license'));
 
 		await expect(verify()).rejects.toThrow('bad license');
 		expect(writeSpy).not.toHaveBeenCalledWith('License verified.\n');
