@@ -2,6 +2,7 @@ import { Command, Option } from 'commander';
 import { version } from 'directus/version';
 import emitter from '../emitter.js';
 import { startServer } from '../server.js';
+import verifyLicense from './commands/license/index.js';
 import bootstrap from './commands/bootstrap/index.js';
 import count from './commands/count/index.js';
 import dbInstall from './commands/database/install.js';
@@ -87,6 +88,8 @@ export async function createCli(): Promise<Command> {
 		.description('Initialize or update the database')
 		.option('--skipAdminInit', 'Skips the creation of the default Admin Role and User')
 		.action(bootstrap);
+
+	program.command('verify').description('Verify a Directus license key').action(verifyLicense);
 
 	const schemaCommands = program.command('schema');
 

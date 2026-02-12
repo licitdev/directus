@@ -7,6 +7,7 @@ import dbMigrate from './commands/database/migrate.js';
 import init from './commands/init/index.js';
 import { apply } from './commands/schema/apply.js';
 import usersCreate from './commands/users/create.js';
+import verify from './commands/license/index.js';
 import { loadExtensions } from './load-extensions.js';
 import { createCli } from './index.js';
 
@@ -90,6 +91,12 @@ describe('createCli', () => {
 			await program.parseAsync(['node', 'directus', 'bootstrap']);
 
 			expect(bootstrap).toHaveBeenCalledTimes(1);
+		});
+
+		test('Should call verify when verify command is invoked', async () => {
+			await program.parseAsync(['node', 'directus', 'verify']);
+
+			expect(verify).toHaveBeenCalledTimes(1);
 		});
 
 		test.each([
