@@ -1,6 +1,12 @@
 import { useEnv } from '@directus/env';
+import {
+	InvalidLicenseConfigError,
+	InvalidLicenseKeyError,
+	InvalidLicenseTokenError,
+	isDirectusError,
+} from '@directus/errors';
+import type { AxiosError } from 'axios';
 import axios from 'axios';
-import { useLogger } from '../logger/index.js';
 import type { ValidateLicenseRequest, ValidateLicenseResponse } from './types.js';
 
 export async function validate({
@@ -9,11 +15,10 @@ export async function validate({
 	public_url,
 }: ValidateLicenseRequest): Promise<ValidateLicenseResponse> {
 	const env = useEnv();
-	const logger = useLogger();
 	const url = env['LICENSE_SERVER_URL'];
 
 	if (typeof url !== 'string' || !url) {
-		throw new Error('Missing or invalid LICENSE_SERVER_URL environment variable.');
+		throw new InvalidLicenseConfigError({ reason: 'LICENSE_SERVER_URL is missing or not a string' });
 	}
 
 	const baseUrl = url.replace(/\/$/, '');
@@ -29,12 +34,16 @@ export async function validate({
 		const { token } = getTokenResponse.data;
 
 		if (typeof token !== 'string' || !token) {
-			throw new Error('Missing or invalid license token.');
+			throw new InvalidLicenseTokenError();
 		}
 
 		return { token };
 	} catch (error) {
-		logger.error(`Failed to verify license key. Error: ${error}`);
-		throw new Error(`Failed to verify license key.`);
+		if (isDirectusError(error)) throw error;
+		if (!axios.isAxiosError(error)) throw error;
+
+		const axiosError = error as AxiosError<{ error?: string }>;
+		const reason = axiosError.response?.data?.error ?? axiosError.message ?? String(axiosError);
+		throw new InvalidLicenseKeyError({ reason });
 	}
 }

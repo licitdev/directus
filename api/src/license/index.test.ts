@@ -1,4 +1,5 @@
 import { useEnv } from '@directus/env';
+import { InvalidLicenseConfigError, InvalidLicenseKeyError } from '@directus/errors';
 import axios from 'axios';
 import { afterEach, expect, test, vi } from 'vitest';
 import { validate } from './index.js';
@@ -13,23 +14,23 @@ afterEach(() => {
 	vi.clearAllMocks();
 });
 
-test('validate throws when LICENSE_SERVER_URL is missing', async () => {
+test('validate throws InvalidLicenseConfigError when LICENSE_SERVER_URL is missing', async () => {
 	vi.mocked(useEnv).mockReturnValue({});
 
 	await expect(
 		validate({ license_key: 'key', project_id: 'id', public_url: 'https://project.example.com' }),
-	).rejects.toThrow('Missing or invalid LICENSE_SERVER_URL environment variable.');
+	).rejects.toThrow('Missing or invalid license configuration. LICENSE_SERVER_URL is missing or not a string.');
 });
 
-test('validate throws when LICENSE_SERVER_URL is not a string', async () => {
+test('validate throws InvalidLicenseConfigError when LICENSE_SERVER_URL is not a string', async () => {
 	vi.mocked(useEnv).mockReturnValue({ LICENSE_SERVER_URL: 123 } as any);
 
 	await expect(
 		validate({ license_key: 'key', project_id: 'id', public_url: 'https://project.example.com' }),
-	).rejects.toThrow('Missing or invalid LICENSE_SERVER_URL environment variable.');
+	).rejects.toThrow(InvalidLicenseConfigError);
 });
 
-test('validate strips trailing slash from LICENSING_SERVICE_URL', async () => {
+test('validate strips trailing slash from LICENSE_SERVER_URL', async () => {
 	const baseUrl = 'https://license.example.com/';
 	vi.mocked(useEnv).mockReturnValue({ LICENSE_SERVER_URL: baseUrl } as any);
 
@@ -80,7 +81,7 @@ test('validate returns license_token', async () => {
 	expect(result).toEqual({ token: 'jwt-token-from-service' });
 });
 
-test('validate throws when response is not ok', async () => {
+test('validate rethrows non-Axios errors', async () => {
 	vi.mocked(useEnv).mockReturnValue({ LICENSE_SERVER_URL: 'https://license.example.com' } as any);
 
 	vi.mocked(axios.post).mockRejectedValue(new Error('Invalid license'));
@@ -91,10 +92,31 @@ test('validate throws when response is not ok', async () => {
 			project_id: 'directus-project-id',
 			public_url: 'https://project.example.com',
 		}),
-	).rejects.toThrow('Failed to verify license key.');
+	).rejects.toThrow('Invalid license');
 });
 
-test('validate throws when response has no token', async () => {
+test('validate throws InvalidLicenseKeyError when axios returns an error', async () => {
+	vi.mocked(useEnv).mockReturnValue({ LICENSE_SERVER_URL: 'https://license.example.com' } as any);
+
+	const axiosError = Object.assign(new Error('Request failed with status code 400'), {
+		isAxiosError: true,
+		response: { data: { error: 'Bad license key' } },
+	});
+
+	vi.mocked(axios.post).mockRejectedValue(axiosError);
+	vi.mocked(axios.isAxiosError).mockReturnValue(true);
+
+	const err = await validate({
+		license_key: 'directus-license-key',
+		project_id: 'directus-project-id',
+		public_url: 'https://project.example.com',
+	}).catch((e) => e);
+
+	expect(err).toBeInstanceOf(InvalidLicenseKeyError);
+	expect((err as Error).message).toBe('Bad license key');
+});
+
+test('validate throws InvalidLicenseTokenError when response has no token', async () => {
 	vi.mocked(useEnv).mockReturnValue({ LICENSE_SERVER_URL: 'https://license.example.com' } as any);
 
 	vi.mocked(axios.post).mockResolvedValue({ data: {} } as any);
@@ -105,10 +127,10 @@ test('validate throws when response has no token', async () => {
 			project_id: 'directus-project-id',
 			public_url: 'https://project.example.com',
 		}),
-	).rejects.toThrow('Failed to verify license key.');
+	).rejects.toThrow('Missing or invalid license token.');
 });
 
-test('validate throws when token is not a string', async () => {
+test('validate throws InvalidLicenseTokenError when token is not a string', async () => {
 	vi.mocked(useEnv).mockReturnValue({ LICENSE_SERVER_URL: 'https://license.example.com' } as any);
 
 	vi.mocked(axios.post).mockResolvedValue({ data: { token: 123 } } as any);
@@ -119,5 +141,5 @@ test('validate throws when token is not a string', async () => {
 			project_id: 'directus-project-id',
 			public_url: 'https://project.example.com',
 		}),
-	).rejects.toThrow('Failed to verify license key.');
+	).rejects.toThrow('Missing or invalid license token.');
 });

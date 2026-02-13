@@ -89,7 +89,7 @@ export async function createCli(): Promise<Command> {
 		.option('--skipAdminInit', 'Skips the creation of the default Admin Role and User')
 		.action(bootstrap);
 
-	program.command('validate').description('Validate a Directus license key').action(validateLicense);
+	program.command('validate').description('Validate a Directus license key').option('--key <value>', 'The license key to validate').action(validateLicense);
 
 	const schemaCommands = program.command('schema');
 

@@ -161,5 +161,14 @@ describe('createCli', () => {
 				expect.anything(),
 			);
 		});
+
+		test('Should parse validate command options correctly', async () => {
+			await program.parseAsync(['node', 'directus', 'validate', '--key', 'my-license-key']);
+
+			expect(validate).toHaveBeenCalledWith(
+				expect.objectContaining({ key: 'my-license-key' }),
+				expect.anything(),
+			);
+		});
 	});
 });

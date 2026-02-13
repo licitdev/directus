@@ -9,10 +9,10 @@ export async function verify(token: string) {
 		throw new Error('Missing or invalid LICENSE_PUBLIC_KEY environment variable.');
 	}
 
-	const key = await importSPKI(publicKey, 'Ed25519');
+	const key = await importSPKI(publicKey, 'EdDSA');
 
 	const { payload } = await jwtVerify(token, key, {
-		algorithms: ['Ed25519'],
+		algorithms: ['EdDSA'],
 	});
 
 	return payload;

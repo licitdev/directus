@@ -41,8 +41,8 @@ test('verify imports public key and verifies token', async () => {
 
 	const result = await verify('jwt-token');
 
-	expect(importSPKI).toHaveBeenCalledWith(pem, 'Ed25519');
-	expect(jwtVerify).toHaveBeenCalledWith('jwt-token', key, { algorithms: ['Ed25519'] });
+	expect(importSPKI).toHaveBeenCalledWith(pem, 'EdDSA');
+	expect(jwtVerify).toHaveBeenCalledWith('jwt-token', key, { algorithms: ['EdDSA'] });
 	expect(result).toEqual(payload);
 });
 
