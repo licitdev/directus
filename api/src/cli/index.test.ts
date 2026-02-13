@@ -97,8 +97,8 @@ describe('createCli', () => {
 			expect(bootstrap).toHaveBeenCalledTimes(1);
 		});
 
-		test('Should call validate when validate command is invoked', async () => {
-			await program.parseAsync(['node', 'directus', 'validate']);
+		test('Should call validate when license:validate command is invoked', async () => {
+			await program.parseAsync(['node', 'directus', 'license:validate']);
 
 			expect(validate).toHaveBeenCalledTimes(1);
 		});
@@ -162,8 +162,8 @@ describe('createCli', () => {
 			);
 		});
 
-		test('Should parse validate command options correctly', async () => {
-			await program.parseAsync(['node', 'directus', 'validate', '--key', 'my-license-key']);
+		test('Should parse license:validate command options correctly', async () => {
+			await program.parseAsync(['node', 'directus', 'license:validate', '--key', 'my-license-key']);
 
 			expect(validate).toHaveBeenCalledWith(expect.objectContaining({ key: 'my-license-key' }), expect.anything());
 		});

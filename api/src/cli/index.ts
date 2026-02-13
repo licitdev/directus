@@ -90,7 +90,7 @@ export async function createCli(): Promise<Command> {
 		.action(bootstrap);
 
 	program
-		.command('validate')
+		.command('license:validate')
 		.description('Validate a Directus license key')
 		.option('--key <value>', 'The license key to validate')
 		.action(validateLicense);
