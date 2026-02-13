@@ -9,5 +9,5 @@ export const messageConstructor = ({ reason }: InvalidLicenseConfigErrorExtensio
 
 export const InvalidLicenseConfigError = createError<InvalidLicenseConfigErrorExtensions>(
 	ErrorCode.InvalidLicenseConfig,
-	messageConstructor
+	messageConstructor,
 );
