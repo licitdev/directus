@@ -1,6 +1,7 @@
 import { useEnv } from '@directus/env';
 import { importSPKI, jwtVerify } from 'jose';
 import type { Knex } from 'knex';
+import { getCache, getCacheValue, setCacheValue } from '../../cache.js';
 import getDatabase from '../../database/index.js';
 import type { GetCachedPayloadOptions } from '../types/get-cached-payload.js';
 import type { LicenseTokenPayload } from '../types/index.js';
@@ -10,29 +11,41 @@ export type { GetCachedPayloadOptions };
 /**
  * License payload cache (getCachedPayload / getFeature).
  *
- * **In-memory only:** Cache is stored in process memory.
+ * Uses system cache from api/src/cache.ts (Keyv-based, memory or redis).
+ * Validity is governed by the JWT payload's exp claim; no separate TTL.
  */
 
-/** TTL for the license cache in milliseconds. Cache is considered stale after this duration. */
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 1 day
-
-/** Module-level cache for the raw license token. */
-let cachedLicenseToken: string | null = null;
-
-/** Module-level cache for the decoded payload. Only set when decode succeeds with a valid payload. */
-let cachedPayload: LicenseTokenPayload | null = null;
-
-/** Timestamp when the cache was last set (for TTL invalidation). */
-let cacheTimestamp = 0;
+/** Cache key for license data (token + payload). */
+const LICENSE_CACHE_KEY = 'license';
 
 /** In-flight load promise so concurrent getCachedPayload callers share one load. */
 let inFlightLoadPromise: Promise<LicenseTokenPayload | null> | null = null;
 
-function updateCache(token: string, payload: LicenseTokenPayload): LicenseTokenPayload {
-	cachedLicenseToken = token;
-	cachedPayload = payload;
-	cacheTimestamp = Date.now();
+function isPayloadExpired(payload: LicenseTokenPayload): boolean {
+	const exp = payload['exp'];
+	if (typeof exp !== 'number') return false;
+
+	return exp * 1000 < Date.now();
+}
+
+async function writeToCache(token: string, payload: LicenseTokenPayload): Promise<LicenseTokenPayload> {
+	const { systemCache } = getCache();
+	await setCacheValue(systemCache, LICENSE_CACHE_KEY, { token, payload });
 	return payload;
+}
+
+async function readFromCache(): Promise<{ token: string; payload: LicenseTokenPayload } | null> {
+	const { systemCache } = getCache();
+
+	const data = (await getCacheValue(systemCache, LICENSE_CACHE_KEY)) as
+		| { token?: string; payload?: LicenseTokenPayload }
+		| undefined;
+
+	if (!data || typeof data.token !== 'string' || !data.payload) return null;
+
+	if (isPayloadExpired(data.payload)) return null;
+
+	return { token: data.token, payload: data.payload };
 }
 
 /**
@@ -64,36 +77,36 @@ async function safeDecodeLicenseToken(token: string): Promise<LicenseTokenPayloa
 	}
 }
 
-/** Clears the in-memory cache and any in-flight lock. Next getCachedPayload() will refetch from DB. */
-export function resetLicenseCache(): void {
-	cachedLicenseToken = null;
-	cachedPayload = null;
-	cacheTimestamp = 0;
+/** Clears the license cache and any in-flight lock. Next getCachedPayload() will refetch from DB. */
+export async function resetLicenseCache(): Promise<void> {
 	inFlightLoadPromise = null;
+	const { systemCache } = getCache();
+	await systemCache.delete(LICENSE_CACHE_KEY);
 }
 
 export async function setLicenseCaches(token: string | null): Promise<void> {
 	if (!token) {
-		resetLicenseCache();
+		await resetLicenseCache();
 		return;
 	}
 
 	const payload = await safeDecodeLicenseToken(token);
 
 	if (payload === null) {
-		resetLicenseCache();
+		await resetLicenseCache();
 		throw new Error(
 			'Failed to decode license token. Check LICENSE_PUBLIC_KEY and token validity. Verify cannot succeed without a populated cache.',
 		);
 	}
 
-	updateCache(token, payload);
+	await writeToCache(token, payload);
 	inFlightLoadPromise = null;
 }
 
-/** Returns the cached raw license token. */
-export function getCachedLicenseToken(): string | null {
-	return cachedLicenseToken;
+/** Returns the cached raw license token, or null if not cached or expired. */
+export async function getCachedLicenseToken(): Promise<string | null> {
+	const entry = await readFromCache();
+	return entry?.token ?? null;
 }
 
 async function fetchLicenseTokenFromSettings(knex?: Knex): Promise<string | null> {
@@ -104,9 +117,9 @@ async function fetchLicenseTokenFromSettings(knex?: Knex): Promise<string | null
 }
 
 /**
- * Returns the cached payload. If not cached or TTL expired: fetches license_token from directus_settings,
- * decodes it, updates cache and cacheTimestamp. Token removal from DB invalidates cache immediately.
- * Does not query DB when cache is valid and within TTL.
+ * Returns the cached payload. If not cached or JWT expired: fetches license_token from directus_settings,
+ * decodes it, and updates the cache. Token removal from DB invalidates cache immediately.
+ * Does not query DB when cache is valid and JWT not expired.
  *
  * @param knex - Optional Knex instance
  * @param options - Optional token-change detection (runs when cache is within TTL)
@@ -116,15 +129,14 @@ export async function getCachedPayload(
 	options?: GetCachedPayloadOptions,
 ): Promise<LicenseTokenPayload | null> {
 	const { detectTokenChange } = options ?? {};
-	const now = Date.now();
-	const withinTtl = cachedPayload !== null && now - cacheTimestamp < CACHE_TTL_MS;
+	const entry = await readFromCache();
 
-	if (withinTtl) {
+	if (entry) {
 		if (detectTokenChange) {
 			const currentToken = await fetchLicenseTokenFromSettings(knex);
 
-			if (currentToken !== cachedLicenseToken) {
-				resetLicenseCache();
+			if (currentToken !== entry.token) {
+				await resetLicenseCache();
 
 				if (currentToken === null) {
 					return null;
@@ -136,15 +148,11 @@ export async function getCachedPayload(
 					return null;
 				}
 
-				return updateCache(currentToken, payload);
+				return writeToCache(currentToken, payload);
 			}
 		}
 
-		return cachedPayload;
-	}
-
-	if (cachedPayload !== null) {
-		resetLicenseCache();
+		return entry.payload;
 	}
 
 	if (inFlightLoadPromise !== null) {
@@ -156,18 +164,18 @@ export async function getCachedPayload(
 			const token = await fetchLicenseTokenFromSettings(knex);
 
 			if (token === null) {
-				resetLicenseCache();
+				await resetLicenseCache();
 				return null;
 			}
 
 			const payload = await safeDecodeLicenseToken(token);
 
 			if (payload === null) {
-				resetLicenseCache();
+				await resetLicenseCache();
 				return null;
 			}
 
-			return updateCache(token, payload);
+			return writeToCache(token, payload);
 		} finally {
 			inFlightLoadPromise = null;
 		}

@@ -1,3 +1,4 @@
+import Keyv from 'keyv';
 import knex from 'knex';
 import { createTracker, MockClient } from 'knex-mock-client';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
@@ -16,13 +17,29 @@ vi.mock('jose', () => ({
 
 vi.mock('../../database/index.js');
 
+const systemCache = new Keyv();
+
+vi.mock('../../cache.js', async (importOriginal) => {
+	const actual = await importOriginal<typeof import('../../cache.js')>();
+	return {
+		...actual,
+		getCache: vi.fn(() => ({
+			cache: null,
+			systemCache,
+			deploymentCache: new Keyv(),
+			localSchemaCache: new Keyv(),
+			lockCache: new Keyv(),
+		})),
+	};
+});
+
 const db = knex({ client: MockClient });
 const tracker = createTracker(db);
 
 vi.mocked(getDatabase).mockReturnValue(db);
 
-beforeEach(() => {
-	resetLicenseCache();
+beforeEach(async () => {
+	await resetLicenseCache();
 	tracker.reset();
 	vi.mocked(getDatabase).mockReturnValue(db);
 });

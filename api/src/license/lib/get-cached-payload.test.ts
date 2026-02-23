@@ -1,4 +1,5 @@
 import { useEnv } from '@directus/env';
+import Keyv from 'keyv';
 import knex from 'knex';
 import { createTracker, MockClient } from 'knex-mock-client';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
@@ -22,20 +23,35 @@ vi.mock('jose', () => ({
 
 vi.mock('../../database/index.js');
 
+const systemCache = new Keyv();
+vi.mock('../../cache.js', async (importOriginal) => {
+	const actual = await importOriginal<typeof import('../../cache.js')>();
+	return {
+		...actual,
+		getCache: vi.fn(() => ({
+			cache: null,
+			systemCache,
+			deploymentCache: new Keyv(),
+			localSchemaCache: new Keyv(),
+			lockCache: new Keyv(),
+		})),
+	};
+});
+
 const db = knex({ client: MockClient });
 const tracker = createTracker(db);
 
 vi.mocked(getDatabase).mockReturnValue(db);
 
-beforeEach(() => {
+beforeEach(async () => {
 	vi.mocked(useEnv).mockReturnValue({ LICENSE_PUBLIC_KEY: 'mock-key' } as any);
-	resetLicenseCache();
+	await resetLicenseCache();
 	tracker.reset();
 	vi.mocked(getDatabase).mockReturnValue(db);
 });
 
-afterEach(() => {
-	resetLicenseCache();
+afterEach(async () => {
+	await resetLicenseCache();
 	vi.clearAllMocks();
 });
 
@@ -45,7 +61,7 @@ test('resetLicenseCache clears cache so getCachedPayload refetches', async () =>
 	const payload1 = await getCachedPayload();
 	expect(payload1).not.toBeNull();
 
-	resetLicenseCache();
+	await resetLicenseCache();
 	tracker.on.select('directus_settings').response([{ license_token: 'another-token' }]);
 
 	const payload2 = await getCachedPayload();
@@ -55,10 +71,10 @@ test('resetLicenseCache clears cache so getCachedPayload refetches', async () =>
 
 test('setLicenseCaches with null calls resetLicenseCache', async () => {
 	await setLicenseCaches('valid-jwt');
-	expect(getCachedLicenseToken()).not.toBeNull();
+	expect(await getCachedLicenseToken()).not.toBeNull();
 
 	await setLicenseCaches(null);
-	expect(getCachedLicenseToken()).toBeNull();
+	expect(await getCachedLicenseToken()).toBeNull();
 
 	tracker.on.select('directus_settings').response([{ license_token: null }]);
 	const payload = await getCachedPayload();
@@ -67,7 +83,7 @@ test('setLicenseCaches with null calls resetLicenseCache', async () => {
 
 test('setLicenseCaches with token decodes and populates cache', async () => {
 	await setLicenseCaches('valid-jwt');
-	expect(getCachedLicenseToken()).toBe('valid-jwt');
+	expect(await getCachedLicenseToken()).toBe('valid-jwt');
 	const payload = await getCachedPayload();
 	expect(payload).toEqual({ featureA: true, featureB: { maxRoles: 5 } });
 });
@@ -80,13 +96,13 @@ test('setLicenseCaches throws when decode returns null', async () => {
 		'Failed to decode license token. Check LICENSE_PUBLIC_KEY and token validity.',
 	);
 
-	expect(getCachedLicenseToken()).toBeNull();
+	expect(await getCachedLicenseToken()).toBeNull();
 });
 
 test('getCachedLicenseToken returns cached token after setLicenseCaches', async () => {
-	expect(getCachedLicenseToken()).toBeNull();
+	expect(await getCachedLicenseToken()).toBeNull();
 	await setLicenseCaches('cached-token');
-	expect(getCachedLicenseToken()).toBe('cached-token');
+	expect(await getCachedLicenseToken()).toBe('cached-token');
 });
 
 test('getCachedPayload returns null when no token in DB', async () => {
@@ -101,7 +117,7 @@ test('getCachedPayload fetches from DB and decodes when cache empty', async () =
 
 	const payload = await getCachedPayload();
 	expect(payload).toEqual({ featureA: true, featureB: { maxRoles: 5 } });
-	expect(getCachedLicenseToken()).toBe('db-token');
+	expect(await getCachedLicenseToken()).toBe('db-token');
 });
 
 test('getCachedPayload returns cached payload without DB query when within TTL', async () => {
@@ -136,18 +152,18 @@ test('getCachedPayload with detectTokenChange reloads when token changed in DB',
 
 	const payload = await getCachedPayload(undefined, { detectTokenChange: true });
 	expect(payload).toEqual({ featureA: false, featureB: { maxRoles: 10 } });
-	expect(getCachedLicenseToken()).toBe('new-token');
+	expect(await getCachedLicenseToken()).toBe('new-token');
 });
 
 test('getCachedPayload resets cache and returns null when decode fails after fetch', async () => {
-	resetLicenseCache();
+	await resetLicenseCache();
 	tracker.on.select('directus_settings').response([{ license_token: 'token' }]);
 	const { jwtVerify } = await import('jose');
 	vi.mocked(jwtVerify).mockResolvedValueOnce({ payload: null } as any);
 
 	const payload = await getCachedPayload();
 	expect(payload).toBeNull();
-	expect(getCachedLicenseToken()).toBeNull();
+	expect(await getCachedLicenseToken()).toBeNull();
 });
 
 test('decodeLicenseToken throws when LICENSE_PUBLIC_KEY missing', async () => {
@@ -160,7 +176,7 @@ test('decodeLicenseToken throws when LICENSE_PUBLIC_KEY missing', async () => {
 });
 
 test('concurrent getCachedPayload callers share one in-flight load', async () => {
-	resetLicenseCache();
+	await resetLicenseCache();
 	vi.mocked(getDatabase).mockReturnValue(db);
 	tracker.on.select('directus_settings').response([{ license_token: 'shared-token' }]);
 
