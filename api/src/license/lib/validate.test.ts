@@ -1,5 +1,5 @@
 import { useEnv } from '@directus/env';
-import { InvalidLicenseConfigError, InvalidLicenseKeyError } from '@directus/errors';
+import { InvalidLicenseConfigError, InvalidLicenseKeyError, ServiceUnavailableError } from '@directus/errors';
 import axios from 'axios';
 import { afterEach, expect, test, vi } from 'vitest';
 import { validate } from './validate.js';
@@ -95,12 +95,12 @@ test('validate rethrows non-Axios errors', async () => {
 	).rejects.toThrow('Invalid license');
 });
 
-test('validate throws InvalidLicenseKeyError when axios returns an error', async () => {
+test('validate throws InvalidLicenseKeyError for 403', async () => {
 	vi.mocked(useEnv).mockReturnValue({ LICENSE_SERVER_URL: 'https://license.example.com' } as any);
 
-	const axiosError = Object.assign(new Error('Request failed with status code 400'), {
+	const axiosError = Object.assign(new Error('Request failed with status code 403'), {
 		isAxiosError: true,
-		response: { data: { error: 'Bad license key' } },
+		response: { data: { error: 'Forbidden' }, status: 403 },
 	});
 
 	vi.mocked(axios.post).mockRejectedValue(axiosError);
@@ -113,7 +113,70 @@ test('validate throws InvalidLicenseKeyError when axios returns an error', async
 	}).catch((e) => e);
 
 	expect(err).toBeInstanceOf(InvalidLicenseKeyError);
-	expect((err as Error).message).toBe('Bad license key');
+	expect((err as Error).message).toBe('Forbidden');
+});
+
+test('validate throws InvalidLicenseKeyError for 400', async () => {
+	vi.mocked(useEnv).mockReturnValue({ LICENSE_SERVER_URL: 'https://license.example.com' } as any);
+
+	const axiosError = Object.assign(new Error('Request failed with status code 400'), {
+		isAxiosError: true,
+		response: { data: { error: 'Bad Request' }, status: 400 },
+	});
+
+	vi.mocked(axios.post).mockRejectedValue(axiosError);
+	vi.mocked(axios.isAxiosError).mockReturnValue(true);
+
+	const err = await validate({
+		license_key: 'directus-license-key',
+		project_id: 'directus-project-id',
+		public_url: 'https://project.example.com',
+	}).catch((e) => e);
+
+	expect(err).toBeInstanceOf(InvalidLicenseKeyError);
+	expect((err as Error).message).toBe('Bad Request');
+});
+
+test('validate throws ServiceUnavailableError for 429', async () => {
+	vi.mocked(useEnv).mockReturnValue({ LICENSE_SERVER_URL: 'https://license.example.com' } as any);
+
+	const axiosError = Object.assign(new Error('Request failed with status code 429'), {
+		isAxiosError: true,
+		response: { data: { error: 'Rate limit exceeded' }, status: 429 },
+	});
+
+	vi.mocked(axios.post).mockRejectedValue(axiosError);
+	vi.mocked(axios.isAxiosError).mockReturnValue(true);
+
+	const err = await validate({
+		license_key: 'directus-license-key',
+		project_id: 'directus-project-id',
+		public_url: 'https://project.example.com',
+	}).catch((e) => e);
+
+	expect(err).toBeInstanceOf(ServiceUnavailableError);
+	expect((err as Error).message).toBe('Service "License Server" is unavailable. Too many requests.');
+});
+
+test('validate throws ServiceUnavailableError for 500 or network errors', async () => {
+	vi.mocked(useEnv).mockReturnValue({ LICENSE_SERVER_URL: 'https://license.example.com' } as any);
+
+	const axiosError = Object.assign(new Error('Network error'), {
+		isAxiosError: true,
+		response: undefined,
+	});
+
+	vi.mocked(axios.post).mockRejectedValue(axiosError);
+	vi.mocked(axios.isAxiosError).mockReturnValue(true);
+
+	const err = await validate({
+		license_key: 'directus-license-key',
+		project_id: 'directus-project-id',
+		public_url: 'https://project.example.com',
+	}).catch((e) => e);
+
+	expect(err).toBeInstanceOf(ServiceUnavailableError);
+	expect((err as Error).message).toBe('Service "License Server" is unavailable. Network error.');
 });
 
 test('validate throws InvalidLicenseTokenError when response has no token', async () => {
