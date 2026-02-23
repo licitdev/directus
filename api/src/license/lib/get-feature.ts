@@ -1,4 +1,5 @@
 import type { Knex } from 'knex';
+import { get, has } from 'lodash-es';
 import type { GetCachedPayloadOptions } from '../types/get-cached-payload.js';
 import { getCachedPayload } from './get-cached-payload.js';
 
@@ -17,20 +18,9 @@ export async function getFeature(path: string, knex?: Knex, options?: GetCachedP
 		throw new Error(`License payload not available`);
 	}
 
-	const parts = path.split('.');
-	let current: unknown = payload;
-
-	for (const key of parts) {
-		if (current === null || current === undefined || typeof current !== 'object') {
-			throw new Error(`License field does not exist: ${path}`);
-		}
-
-		if (!(key in (current as Record<string, unknown>))) {
-			throw new Error(`License field does not exist: ${path}`);
-		}
-
-		current = (current as Record<string, unknown>)[key];
+	if (!has(payload as object, path)) {
+		throw new Error(`License field does not exist: ${path}`);
 	}
 
-	return current;
+	return get(payload as object, path);
 }
