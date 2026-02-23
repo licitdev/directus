@@ -25,6 +25,8 @@ export async function validate({
 	const baseUrl = url.replace(/\/$/, '');
 	const verifyUrl = `${baseUrl}/v1/validate`;
 
+	let token: string;
+
 	try {
 		const getTokenResponse = await axios.post<ValidateLicenseResponse>(verifyUrl, {
 			license_key,
@@ -32,12 +34,13 @@ export async function validate({
 			public_url,
 		});
 
-		const { token } = getTokenResponse.data;
+		const { token: responseToken } = getTokenResponse.data;
 
 		if (typeof token !== 'string' || !token) {
-			throw new InvalidLicenseTokenError();
+			throw new Error('Missing or invalid license token.');
 		}
 
+		await setLicenseCaches(token);
 		return { token };
 	} catch (error) {
 		if (isDirectusError(error)) throw error;
@@ -61,4 +64,7 @@ export async function validate({
 
 		throw new InvalidLicenseKeyError({ reason });
 	}
+
+	await setLicenseCaches(token);
+	return { token };
 }

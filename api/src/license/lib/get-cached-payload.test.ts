@@ -1,3 +1,4 @@
+import { useEnv } from '@directus/env';
 import knex from 'knex';
 import { createTracker, MockClient } from 'knex-mock-client';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
@@ -6,10 +7,9 @@ import {
 	decodeLicenseToken,
 	getCachedLicenseToken,
 	getCachedPayload,
-	getFeature,
 	resetLicenseCache,
 	setLicenseCaches,
-} from './use-license.js';
+} from './get-cached-payload.js';
 
 vi.mock('@directus/env', () => ({
 	useEnv: vi.fn().mockReturnValue({ LICENSE_PUBLIC_KEY: 'mock-key' }),
@@ -27,8 +27,7 @@ const tracker = createTracker(db);
 
 vi.mocked(getDatabase).mockReturnValue(db);
 
-beforeEach(async () => {
-	const { useEnv } = await import('@directus/env');
+beforeEach(() => {
 	vi.mocked(useEnv).mockReturnValue({ LICENSE_PUBLIC_KEY: 'mock-key' } as any);
 	resetLicenseCache();
 	tracker.reset();
@@ -149,31 +148,6 @@ test('getCachedPayload resets cache and returns null when decode fails after fet
 	const payload = await getCachedPayload();
 	expect(payload).toBeNull();
 	expect(getCachedLicenseToken()).toBeNull();
-});
-
-test('getFeature returns value at dot-notation path', async () => {
-	const { jwtVerify } = await import('jose');
-
-	vi.mocked(jwtVerify).mockResolvedValue({
-		payload: { featureA: true, featureB: { maxRoles: 5 } },
-	} as any);
-
-	await setLicenseCaches('token');
-	const value = await getFeature('featureB.maxRoles');
-	expect(value).toBe(5);
-});
-
-test('getFeature throws when payload not available', async () => {
-	tracker.on.select('directus_settings').response([{ license_token: null }]);
-
-	await expect(getFeature('featureA')).rejects.toThrow('License payload not available');
-});
-
-test('getFeature throws when field does not exist', async () => {
-	await setLicenseCaches('token');
-
-	await expect(getFeature('missing')).rejects.toThrow('License field does not exist: missing');
-	await expect(getFeature('featureB.missing')).rejects.toThrow('License field does not exist: featureB.missing');
 });
 
 test('decodeLicenseToken throws when LICENSE_PUBLIC_KEY missing', async () => {

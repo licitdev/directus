@@ -2,7 +2,10 @@ import { useEnv } from '@directus/env';
 import { importSPKI, jwtVerify } from 'jose';
 import type { Knex } from 'knex';
 import getDatabase from '../../database/index.js';
+import type { GetCachedPayloadOptions } from '../types/get-cached-payload.js';
 import type { LicenseTokenPayload } from '../types/index.js';
+
+export type { GetCachedPayloadOptions };
 
 /**
  * License payload cache (getCachedPayload / getFeature).
@@ -24,6 +27,13 @@ let cacheTimestamp = 0;
 
 /** In-flight load promise so concurrent getCachedPayload callers share one load. */
 let inFlightLoadPromise: Promise<LicenseTokenPayload | null> | null = null;
+
+function updateCache(token: string, payload: LicenseTokenPayload): LicenseTokenPayload {
+	cachedLicenseToken = token;
+	cachedPayload = payload;
+	cacheTimestamp = Date.now();
+	return payload;
+}
 
 /**
  * Decodes and verifies the license JWT (Ed25519) and returns the payload.
@@ -77,9 +87,7 @@ export async function setLicenseCaches(token: string | null): Promise<void> {
 		);
 	}
 
-	cachedLicenseToken = token;
-	cachedPayload = payload;
-	cacheTimestamp = Date.now();
+	updateCache(token, payload);
 	inFlightLoadPromise = null;
 }
 
@@ -93,11 +101,6 @@ async function fetchLicenseTokenFromSettings(knex?: Knex): Promise<string | null
 	const row = await db.select('license_token').from('directus_settings').first();
 	const token = row?.license_token;
 	return typeof token === 'string' ? token : null;
-}
-
-export interface GetCachedPayloadOptions {
-	/** If true, re-fetch token from DB and reload when token differs from cached (supports token change detection). */
-	detectTokenChange?: boolean;
 }
 
 /**
@@ -133,10 +136,7 @@ export async function getCachedPayload(
 					return null;
 				}
 
-				cachedLicenseToken = currentToken;
-				cachedPayload = payload;
-				cacheTimestamp = Date.now();
-				return cachedPayload;
+				return updateCache(currentToken, payload);
 			}
 		}
 
@@ -167,43 +167,11 @@ export async function getCachedPayload(
 				return null;
 			}
 
-			cachedLicenseToken = token;
-			cachedPayload = payload;
-			cacheTimestamp = Date.now();
-			return cachedPayload;
+			return updateCache(token, payload);
 		} finally {
 			inFlightLoadPromise = null;
 		}
 	})();
 
 	return inFlightLoadPromise;
-}
-
-/**
- * Returns the value at the given dot-notation path in the cached payload (e.g. "featureB.maxRoles").
- * Preserves original data types. Throws if the field does not exist.
- */
-export async function getFeature(path: string, knex?: Knex, options?: GetCachedPayloadOptions): Promise<unknown> {
-	const payload = await getCachedPayload(knex, options);
-
-	if (payload === null || payload === undefined) {
-		throw new Error(`License payload not available`);
-	}
-
-	const parts = path.split('.');
-	let current: unknown = payload;
-
-	for (const key of parts) {
-		if (current === null || current === undefined || typeof current !== 'object') {
-			throw new Error(`License field does not exist: ${path}`);
-		}
-
-		if (!(key in (current as Record<string, unknown>))) {
-			throw new Error(`License field does not exist: ${path}`);
-		}
-
-		current = (current as Record<string, unknown>)[key];
-	}
-
-	return current;
 }
