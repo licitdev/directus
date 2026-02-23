@@ -16,10 +16,6 @@ vi.mock('axios', () => ({
 
 vi.mock('../../database/index.js');
 
-vi.mock('./get-cached-payload.js', () => ({
-	setLicenseCaches: vi.fn().mockResolvedValue(undefined),
-}));
-
 const db = knex({ client: MockClient });
 const tracker = createTracker(db);
 

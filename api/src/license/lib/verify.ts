@@ -2,7 +2,6 @@ import { useEnv } from '@directus/env';
 import axios from 'axios';
 import getDatabase from '../../database/index.js';
 import type { VerifyLicenseRequest, VerifyLicenseResponse, VerifyOptions } from '../types/verify.js';
-import { setLicenseCaches } from './get-cached-payload.js';
 
 /** Response shape from the licensing service /v1/verify endpoint. */
 interface VerifyServiceResponse {
@@ -10,10 +9,12 @@ interface VerifyServiceResponse {
 }
 
 /**
- * Verify a license key with the licensing service. Optionally persist the returned token
- * to directus_settings.license_token and always updates the in-memory cache.
+ * Verify a license key with the licensing service and return the token.
+ * Optionally persist the returned token to directus_settings.license_token.
  *
  * Uses LICENSING_SERVICE_URL and reads project_id from directus_settings when not provided.
+ * Does not cache the decoded payload; callers should call setLicenseCaches(token) at their
+ * entry point when they want to populate the license cache.
  */
 export async function verify(
 	params: VerifyLicenseRequest = {},
@@ -62,6 +63,5 @@ export async function verify(
 		}
 	}
 
-	await setLicenseCaches(token);
 	return { license_token: token };
 }
