@@ -2,7 +2,7 @@ import { useEnv } from '@directus/env';
 import { InvalidLicenseConfigError, InvalidLicenseKeyError } from '@directus/errors';
 import axios from 'axios';
 import { afterEach, expect, test, vi } from 'vitest';
-import { validate } from './index.js';
+import { validate } from './validate.js';
 
 vi.mock('@directus/env', () => ({
 	useEnv: vi.fn().mockReturnValue({}),
