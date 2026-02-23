@@ -24,6 +24,7 @@ vi.mock('jose', () => ({
 vi.mock('../../database/index.js');
 
 const systemCache = new Keyv();
+
 vi.mock('../../cache.js', async (importOriginal) => {
 	const actual = await importOriginal<typeof import('../../cache.js')>();
 	return {
