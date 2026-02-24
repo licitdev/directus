@@ -4,9 +4,9 @@ import { getDatabase } from '../../database/index.js';
 import { readCacheTokenPayload, writeCacheTokenPayload } from '../../utils/cache-token-payload.js';
 import { verify } from '../../utils/verify-token.js';
 
-export async function getFeature(path: string): Promise<unknown> {
-	if (!path) {
-		throw new Error('Feature path must not be empty');
+export async function getFeature(featureName: string): Promise<Record<string, unknown>> {
+	if (!featureName) {
+		throw new Error('Feature name must not be empty');
 	}
 
 	let payload = await readCacheTokenPayload();
@@ -29,9 +29,11 @@ export async function getFeature(path: string): Promise<unknown> {
 		throw new Error('License payload is not found');
 	}
 
-	if (!has(payload as object, path)) {
-		throw new Error('Feature path does not exist: ${path}');
+	const featurePath = `metadata.entitlements.${featureName}`;
+
+	if (!has(payload, featurePath)) {
+		throw new Error(`Feature "${featureName}" does not exist in license entitlements`);
 	}
 
-	return get(payload as object, path);
+	return get(payload, featurePath);
 }

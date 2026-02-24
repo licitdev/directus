@@ -14,28 +14,30 @@ afterEach(() => {
 });
 
 describe('getFeature', () => {
-	test('throws when path is empty', async () => {
-		await expect(getFeature('')).rejects.toThrow('Feature path must not be empty');
+	test('throws when feature name is empty', async () => {
+		await expect(getFeature('')).rejects.toThrow('Feature name must not be empty');
 	});
 
-	test('returns value from cached payload when available', async () => {
+	test('returns feature data from cached payload when available', async () => {
 		const cachedPayload = {
-			features: {
-				myFeature: 'enabled',
+			metadata: {
+				entitlements: {
+					featureA: { key1: 'value1' },
+				},
 			},
 		};
 
 		vi.mocked(readCacheTokenPayload).mockResolvedValue(cachedPayload as any);
 
-		const result = await getFeature('features.myFeature');
+		const result = await getFeature('featureA');
 
-		expect(result).toBe('enabled');
+		expect(result).toEqual({ key1: 'value1' });
 		expect(getDatabase).not.toHaveBeenCalled();
 		expect(verify).not.toHaveBeenCalled();
 		expect(writeCacheTokenPayload).not.toHaveBeenCalled();
 	});
 
-	test('loads payload from database, verifies token, caches it and returns feature', async () => {
+	test('loads payload from database, verifies token, caches it and returns feature data', async () => {
 		vi.mocked(readCacheTokenPayload).mockResolvedValue(undefined);
 
 		const first = vi.fn().mockResolvedValue({ license_token: 'jwt-token' });
@@ -49,14 +51,16 @@ describe('getFeature', () => {
 		vi.mocked(getDatabase).mockReturnValue(db as any);
 
 		const verifiedPayload = {
-			features: {
-				myFeature: 123,
+			metadata: {
+				entitlements: {
+					featureA: { key1: 'value1' },
+				},
 			},
 		};
 
 		vi.mocked(verify).mockResolvedValue(verifiedPayload as any);
 
-		const result = await getFeature('features.myFeature');
+		const result = await getFeature('featureA');
 
 		expect(getDatabase).toHaveBeenCalled();
 		expect(db.select).toHaveBeenCalledWith('license_token');
@@ -64,7 +68,7 @@ describe('getFeature', () => {
 		expect(first).toHaveBeenCalled();
 		expect(verify).toHaveBeenCalledWith('jwt-token');
 		expect(writeCacheTokenPayload).toHaveBeenCalledWith(verifiedPayload);
-		expect(result).toBe(123);
+		expect(result).toEqual({ key1: 'value1' });
 	});
 
 	test('throws InvalidLicenseTokenError when token verification fails', async () => {
@@ -82,7 +86,7 @@ describe('getFeature', () => {
 
 		vi.mocked(verify).mockRejectedValue(new Error('invalid token'));
 
-		await expect(getFeature('features.myFeature')).rejects.toThrow(InvalidLicenseTokenError);
+		await expect(getFeature('featureA')).rejects.toThrow(InvalidLicenseTokenError);
 
 		expect(writeCacheTokenPayload).not.toHaveBeenCalled();
 	});
@@ -100,21 +104,25 @@ describe('getFeature', () => {
 
 		vi.mocked(getDatabase).mockReturnValue(db as any);
 
-		await expect(getFeature('features.myFeature')).rejects.toThrow('License payload is not found');
+		await expect(getFeature('featureA')).rejects.toThrow('License payload is not found');
 
 		expect(verify).not.toHaveBeenCalled();
 		expect(writeCacheTokenPayload).not.toHaveBeenCalled();
 	});
 
-	test('throws when feature path does not exist in payload', async () => {
+	test('throws when feature does not exist in entitlements', async () => {
 		const cachedPayload = {
-			features: {
-				otherFeature: true,
+			metadata: {
+				entitlements: {
+					otherFeature: { key1: 'value1' },
+				},
 			},
 		};
 
 		vi.mocked(readCacheTokenPayload).mockResolvedValue(cachedPayload as any);
 
-		await expect(getFeature('features.missingFeature')).rejects.toThrow('Feature path does not exist: ${path}');
+		await expect(getFeature('missingFeature')).rejects.toThrow(
+			'Feature "missingFeature" does not exist in license entitlements',
+		);
 	});
 });
