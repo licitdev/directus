@@ -4,6 +4,7 @@ import { createTracker, MockClient } from 'knex-mock-client';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { getDatabase } from '../../../database/index.js';
 import * as license from '../../../license/index.js';
+import * as cacheTokenUtils from '../../../utils/cache-token-payload.js';
 import * as tokenUtils from '../../../utils/verify-token.js';
 import validate from './index.js';
 
@@ -15,6 +16,7 @@ vi.mock('@directus/env', () => ({
 
 vi.mock('../../../database/index.js');
 vi.mock('../../../license/index.js');
+vi.mock('../../../utils/cache-token-payload.js');
 vi.mock('../../../utils/verify-token.js');
 
 describe('CLI license validate command', () => {
@@ -66,6 +68,7 @@ describe('CLI license validate command', () => {
 
 		expect(verifyTokenMock).toHaveBeenCalledWith('jwt-token');
 		expect(tracker.history.update).toHaveLength(1);
+		expect(cacheTokenUtils.writeCacheTokenPayload).toHaveBeenCalledWith(payload);
 		expect(writeSpy).toHaveBeenCalledWith('License verified.\n');
 		expect(writeSpy).toHaveBeenCalledWith(`${JSON.stringify(payload, null, 2)}\n`);
 		expect(exitSpy).toHaveBeenCalledWith(0);
@@ -94,6 +97,7 @@ describe('CLI license validate command', () => {
 
 		expect(verifyTokenMock).toHaveBeenCalledWith('jwt-token');
 		expect(tracker.history.update).toHaveLength(1);
+		expect(cacheTokenUtils.writeCacheTokenPayload).toHaveBeenCalledWith(payload);
 		expect(writeSpy).toHaveBeenCalledWith('License verified.\n');
 		expect(exitSpy).toHaveBeenCalledWith(0);
 	});
