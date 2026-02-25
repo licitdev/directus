@@ -15,7 +15,7 @@ afterEach(() => {
 describe('cache-token-payload utilities', () => {
 	test('writeCacheTokenPayload writes payload to system cache with fixed key', async () => {
 		const mockSystemCache = {};
-		vi.mocked(cache.getCache).mockReturnValue({ systemCache: mockSystemCache } as any);
+		vi.mocked(cache.getCache).mockReturnValue({ systemCache: mockSystemCache } as ReturnType<typeof cache.getCache>);
 
 		const payload = { plan: 'pro', seats: 10 };
 
@@ -29,7 +29,7 @@ describe('cache-token-payload utilities', () => {
 		const mockSystemCache = {};
 		const cachedPayload = { plan: 'free' };
 
-		vi.mocked(cache.getCache).mockReturnValue({ systemCache: mockSystemCache } as any);
+		vi.mocked(cache.getCache).mockReturnValue({ systemCache: mockSystemCache } as ReturnType<typeof cache.getCache>);
 		vi.mocked(cache.getCacheValue).mockResolvedValue(cachedPayload);
 
 		const result = await readCacheTokenPayload();

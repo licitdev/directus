@@ -1,7 +1,7 @@
 import { get, has } from 'lodash-es';
 import { getLicensePayload } from './get-license-payload.js';
 
-export async function getFeature(featureName: string): Promise<unknown> {
+export async function getFeature(featureName: string): Promise<Record<string, unknown>> {
 	if (!featureName) {
 		throw new Error('Feature name must not be empty');
 	}
@@ -18,5 +18,5 @@ export async function getFeature(featureName: string): Promise<unknown> {
 		throw new Error(`Feature "${featureName}" does not exist in license entitlements`);
 	}
 
-	return get(payload, featurePath);
+	return get(payload, featurePath) as Record<string, unknown>;
 }

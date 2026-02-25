@@ -3,7 +3,7 @@ import { getDatabase } from '../../database/index.js';
 import { readCacheTokenPayload, writeCacheTokenPayload } from '../../utils/cache-token-payload.js';
 import { verify } from '../../utils/verify-token.js';
 
-export async function getLicensePayload(): Promise<Record<string, unknown>> {
+export async function getLicensePayload(): Promise<Record<string, unknown> | undefined> {
 	let payload = await readCacheTokenPayload();
 
 	if (!payload) {
@@ -12,8 +12,8 @@ export async function getLicensePayload(): Promise<Record<string, unknown>> {
 
 		if (settings?.license_token) {
 			try {
-				payload = (await verify(settings.license_token)) as Record<string, unknown>;
-				await writeCacheTokenPayload(payload as Record<string, any>);
+				payload = await verify(settings.license_token);
+				await writeCacheTokenPayload(payload);
 			} catch {
 				throw new InvalidLicenseTokenError();
 			}

@@ -1,4 +1,5 @@
 import { InvalidLicenseTokenError } from '@directus/errors';
+import type { Knex } from 'knex';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { getDatabase } from '../../database/index.js';
 import { readCacheTokenPayload, writeCacheTokenPayload } from '../../utils/cache-token-payload.js';
@@ -17,7 +18,7 @@ describe('getLicensePayload', () => {
 	test('returns cached payload when available', async () => {
 		const cachedPayload = { metadata: { entitlements: { featureA: {} } } };
 
-		vi.mocked(readCacheTokenPayload).mockResolvedValue(cachedPayload as any);
+		vi.mocked(readCacheTokenPayload).mockResolvedValue(cachedPayload);
 
 		const result = await getLicensePayload();
 
@@ -36,13 +37,13 @@ describe('getLicensePayload', () => {
 			select: vi.fn().mockReturnThis(),
 			from: vi.fn().mockReturnThis(),
 			first,
-		};
+		} as unknown as Knex;
 
-		vi.mocked(getDatabase).mockReturnValue(db as any);
+		vi.mocked(getDatabase).mockReturnValue(db);
 
 		const verifiedPayload = { plan: 'pro', metadata: {} };
 
-		vi.mocked(verify).mockResolvedValue(verifiedPayload as any);
+		vi.mocked(verify).mockResolvedValue(verifiedPayload);
 
 		const result = await getLicensePayload();
 
@@ -64,9 +65,9 @@ describe('getLicensePayload', () => {
 			select: vi.fn().mockReturnThis(),
 			from: vi.fn().mockReturnThis(),
 			first,
-		};
+		} as unknown as Knex;
 
-		vi.mocked(getDatabase).mockReturnValue(db as any);
+		vi.mocked(getDatabase).mockReturnValue(db);
 		vi.mocked(verify).mockRejectedValue(new Error('invalid token'));
 
 		await expect(getLicensePayload()).rejects.toThrow(InvalidLicenseTokenError);
@@ -83,9 +84,9 @@ describe('getLicensePayload', () => {
 			select: vi.fn().mockReturnThis(),
 			from: vi.fn().mockReturnThis(),
 			first,
-		};
+		} as unknown as Knex;
 
-		vi.mocked(getDatabase).mockReturnValue(db as any);
+		vi.mocked(getDatabase).mockReturnValue(db);
 
 		const result = await getLicensePayload();
 
@@ -103,9 +104,9 @@ describe('getLicensePayload', () => {
 			select: vi.fn().mockReturnThis(),
 			from: vi.fn().mockReturnThis(),
 			first,
-		};
+		} as unknown as Knex;
 
-		vi.mocked(getDatabase).mockReturnValue(db as any);
+		vi.mocked(getDatabase).mockReturnValue(db);
 
 		const result = await getLicensePayload();
 

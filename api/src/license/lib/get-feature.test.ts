@@ -22,7 +22,7 @@ describe('getFeature', () => {
 			},
 		};
 
-		vi.mocked(getLicensePayload).mockResolvedValue(cachedPayload as any);
+		vi.mocked(getLicensePayload).mockResolvedValue(cachedPayload);
 
 		const result = await getFeature('featureA');
 
@@ -30,7 +30,7 @@ describe('getFeature', () => {
 	});
 
 	test('throws when license payload is not found', async () => {
-		vi.mocked(getLicensePayload).mockResolvedValue(undefined as any);
+		vi.mocked(getLicensePayload).mockResolvedValue(undefined);
 
 		await expect(getFeature('featureA')).rejects.toThrow('License payload is not found');
 	});
@@ -44,7 +44,7 @@ describe('getFeature', () => {
 			},
 		};
 
-		vi.mocked(getLicensePayload).mockResolvedValue(cachedPayload as any);
+		vi.mocked(getLicensePayload).mockResolvedValue(cachedPayload);
 
 		await expect(getFeature('missingFeature')).rejects.toThrow(
 			'Feature "missingFeature" does not exist in license entitlements',
