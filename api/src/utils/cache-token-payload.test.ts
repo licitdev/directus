@@ -21,7 +21,7 @@ describe('cache-token-payload utilities', () => {
 
 		await writeCacheTokenPayload(payload);
 
-		expect(cache.getCache).toHaveBeenCalled();
+		expect(cache.getCache).toHaveBeenCalledOnce();
 		expect(cache.setCacheValue).toHaveBeenCalledWith(mockSystemCache, 'licenseTokenPayload', payload);
 	});
 
@@ -34,7 +34,7 @@ describe('cache-token-payload utilities', () => {
 
 		const result = await readCacheTokenPayload();
 
-		expect(cache.getCache).toHaveBeenCalled();
+		expect(cache.getCache).toHaveBeenCalledOnce();
 		expect(cache.getCacheValue).toHaveBeenCalledWith(mockSystemCache, 'licenseTokenPayload');
 		expect(result).toEqual(cachedPayload);
 	});
