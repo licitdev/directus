@@ -1,7 +1,7 @@
 import inquirer from 'inquirer';
 import knex from 'knex';
 import { createTracker, MockClient } from 'knex-mock-client';
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, type MockInstance, test, vi } from 'vitest';
 import { getDatabase } from '../../../database/index.js';
 import * as license from '../../../license/index.js';
 import * as cacheTokenUtils from '../../../utils/cache-token-payload.js';
@@ -23,13 +23,13 @@ describe('CLI license validate command', () => {
 	const db = knex({ client: MockClient });
 	const tracker = createTracker(db);
 
-	let exitSpy: any;
-	let stderrSpy: any;
-	let writeSpy: any;
+	let exitSpy: MockInstance;
+	let stderrSpy: MockInstance;
+	let writeSpy: MockInstance;
 
 	beforeEach(() => {
 		vi.clearAllMocks();
-		vi.mocked(getDatabase).mockReturnValue(db as any);
+		vi.mocked(getDatabase).mockReturnValue(db);
 
 		exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
 		stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
@@ -44,7 +44,7 @@ describe('CLI license validate command', () => {
 	});
 
 	test('verifies license and updates settings on success when key is prompted', async () => {
-		vi.mocked(inquirer.prompt).mockResolvedValue({ licenseKey: 'my-license-key' } as any);
+		vi.mocked(inquirer.prompt).mockResolvedValue({ licenseKey: 'my-license-key' });
 
 		tracker.on.select('directus_settings').response([{ project_id: 'project-uuid' }]);
 		tracker.on.update('directus_settings').response(1);
@@ -63,7 +63,6 @@ describe('CLI license validate command', () => {
 		expect(validateLicenseMock).toHaveBeenCalledWith({
 			license_key: 'my-license-key',
 			project_id: 'project-uuid',
-			public_url: 'https://project.example.com',
 		});
 
 		expect(verifyTokenMock).toHaveBeenCalledWith('jwt-token');
@@ -92,7 +91,6 @@ describe('CLI license validate command', () => {
 		expect(validateLicenseMock).toHaveBeenCalledWith({
 			license_key: 'passed-license-key',
 			project_id: 'project-uuid',
-			public_url: 'https://project.example.com',
 		});
 
 		expect(verifyTokenMock).toHaveBeenCalledWith('jwt-token');
@@ -103,7 +101,7 @@ describe('CLI license validate command', () => {
 	});
 
 	test('writes error to stderr and exits 1 when validate throws', async () => {
-		vi.mocked(inquirer.prompt).mockResolvedValue({ licenseKey: 'bad-key' } as any);
+		vi.mocked(inquirer.prompt).mockResolvedValue({ licenseKey: 'bad-key' });
 
 		tracker.on.select('directus_settings').response([{ project_id: 'project-uuid' }]);
 

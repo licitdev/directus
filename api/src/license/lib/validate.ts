@@ -8,6 +8,7 @@ import {
 } from '@directus/errors';
 import type { AxiosError } from 'axios';
 import axios from 'axios';
+import { getDatabase } from '../../database/index.js';
 import type { ValidateLicenseRequest, ValidateLicenseResponse } from '../types/index.js';
 
 export async function validate({
@@ -20,6 +21,28 @@ export async function validate({
 
 	if (typeof url !== 'string' || !url) {
 		throw new InvalidLicenseConfigError({ reason: 'LICENSE_SERVER_URL is missing or not a string' });
+	}
+
+	if (!project_id) {
+		const database = getDatabase();
+		const settingsRow = await database.select('project_id').from('directus_settings').first();
+		const projectId = settingsRow?.project_id;
+
+		if (typeof projectId !== 'string' || !projectId) {
+			throw new InvalidLicenseConfigError({ reason: 'project_id is missing or not a string' });
+		}
+
+		project_id = projectId;
+	}
+
+	if (!public_url) {
+		const publicUrl = env['PUBLIC_URL'];
+
+		if (typeof publicUrl !== 'string' || !publicUrl) {
+			throw new InvalidLicenseConfigError({ reason: 'PUBLIC_URL is missing or not a string' });
+		}
+
+		public_url = publicUrl;
 	}
 
 	const baseUrl = url.replace(/\/$/, '');

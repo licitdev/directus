@@ -1,4 +1,3 @@
-import { useEnv } from '@directus/env';
 import inquirer from 'inquirer';
 import { getDatabase } from '../../../database/index.js';
 import { validate as validateLicense } from '../../../license/index.js';
@@ -22,14 +21,7 @@ export default async function validate({ key }: { key?: string }): Promise<void>
 		const database = getDatabase();
 		const { project_id } = await database.select('project_id').from('directus_settings').first();
 
-		const env = useEnv();
-		const public_url = env['PUBLIC_URL'];
-
-		if (typeof public_url !== 'string' || !public_url) {
-			throw new Error('Missing or invalid PUBLIC_URL environment variable.');
-		}
-
-		const { token } = await validateLicense({ license_key: key as string, project_id, public_url });
+		const { token } = await validateLicense({ license_key: key as string, project_id });
 
 		await database('directus_settings').update({ license_token: token }).where({ project_id });
 
