@@ -1,6 +1,8 @@
+import { useEnv } from '@directus/env';
 import { ErrorCode, ForbiddenError, isDirectusError, RouteNotFoundError } from '@directus/errors';
 import { format } from 'date-fns';
 import { Router } from 'express';
+import { validate as validateLicense } from '../license/index.js';
 import { respond } from '../middleware/respond.js';
 import { SettingsService } from '../services/index.js';
 import { ServerService } from '../services/server.js';
@@ -94,6 +96,32 @@ router.post(
 			throw new ForbiddenError();
 		}
 
+		const settingsService = new SettingsService({ schema: req.schema });
+
+		let licenseToken: string | null = null;
+
+		const licenseKey = req.body.license_key;
+
+		if (typeof licenseKey === 'string' && licenseKey.trim() !== '') {
+			const env = useEnv();
+			const publicUrl = env['PUBLIC_URL'];
+
+			if (typeof publicUrl !== 'string' || publicUrl === '') {
+				throw new Error('PUBLIC_URL environment variable is required to validate the license key.');
+			}
+
+			const settings = await settingsService.readSingleton({ fields: ['project_id'] });
+			const projectId = settings?.['project_id'] as string | undefined;
+
+			const { token } = await validateLicense({
+				license_key: licenseKey.trim(),
+				...(projectId !== undefined && { project_id: projectId }),
+				public_url: publicUrl,
+			});
+
+			licenseToken = token;
+		}
+
 		try {
 			await createAdmin(req.schema, {
 				email: req.body.project_owner,
@@ -104,7 +132,11 @@ router.post(
 
 			const settingsService = new SettingsService({ schema: req.schema });
 
-			settingsService.setOwner(req.body);
+			await settingsService.setOwner(req.body);
+
+			if (licenseToken !== null) {
+				await settingsService.upsertSingleton({ license_token: licenseToken });
+			}
 		} catch (error: any) {
 			if (isDirectusError(error, ErrorCode.Forbidden)) {
 				return next();

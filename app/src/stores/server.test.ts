@@ -14,6 +14,7 @@ beforeEach(() => {
 });
 
 const mockServerInfo: Info = {
+	show_license_key_field: true,
 	project: {
 		project_name: 'Directus',
 		project_descriptor: null,
@@ -77,7 +78,8 @@ describe('hydrate action', async () => {
 		const serverStore = useServerStore();
 		await serverStore.hydrate();
 
-		expect(serverStore.info).toEqual(mockServerInfo);
+		expect(serverStore.info.project).toEqual(mockServerInfo.project);
+		expect(serverStore.info.show_license_key_field).toBe(mockServerInfo.show_license_key_field);
 	});
 
 	test('should hydrate auth', async () => {

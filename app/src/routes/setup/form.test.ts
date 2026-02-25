@@ -8,6 +8,12 @@ vi.mock('@/stores/relations', () => ({
 	}),
 }));
 
+vi.mock('@/stores/server', () => ({
+	useServerStore: () => ({
+		info: { show_license_key_field: true },
+	}),
+}));
+
 vi.mock('vue-i18n', () => ({
 	useI18n: () => ({
 		t: () => '',
@@ -25,19 +31,25 @@ test('useFormFields for setup', () => {
 		'password',
 		'password_confirm',
 		'project_usage',
+		'license_key',
 	]);
 });
 
 test('useFormFields for modal/edit', () => {
 	const result = useFormFields(false, ref(defaultValues));
 
-	expect(result.value.map((field) => field.field)).toEqual(['project_owner', 'project_usage']);
+	expect(result.value.map((field) => field.field)).toEqual(['project_owner', 'project_usage', 'license_key']);
 });
 
 test('useFormFields with project_usage = commercial', () => {
 	const result = useFormFields(false, ref({ ...defaultValues, project_usage: 'commercial' }));
 
-	expect(result.value.map((field) => field.field)).toEqual(['project_owner', 'project_usage', 'org_name']);
+	expect(result.value.map((field) => field.field)).toEqual([
+		'project_owner',
+		'project_usage',
+		'org_name',
+		'license_key',
+	]);
 });
 
 test('validate on invalid setup form', () => {
