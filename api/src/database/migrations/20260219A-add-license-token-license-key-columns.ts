@@ -3,7 +3,7 @@ import type { Knex } from 'knex';
 export async function up(knex: Knex): Promise<void> {
 	await knex.schema.alterTable('directus_settings', (table) => {
 		table.text('license_token').defaultTo(null).nullable();
-		table.text('license_key').defaultTo(null).nullable();
+		table.string('license_key').defaultTo(null).nullable();
 	});
 }
 
