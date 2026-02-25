@@ -69,6 +69,11 @@ export class ServerService {
 
 		info['setupCompleted'] = setupComplete;
 
+		const licenseKeyFromEnv = env['DIRECTUS_LICENSE_KEY'];
+
+		info['show_license_key_field'] =
+			licenseKeyFromEnv === undefined || licenseKeyFromEnv === null || String(licenseKeyFromEnv).trim() === '';
+
 		if (this.accountability?.user) {
 			info['mcp_enabled'] = toBoolean(env['MCP_ENABLED'] ?? true);
 			info['ai_enabled'] = toBoolean(env['AI_ENABLED'] ?? true);

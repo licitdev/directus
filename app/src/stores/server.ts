@@ -69,6 +69,7 @@ export type Info = {
 				collaborativeEditing?: boolean;
 		  };
 	version?: string;
+	show_license_key_field?: boolean;
 	extensions?: {
 		limit: number | null;
 	};
@@ -128,6 +129,7 @@ export const useServerStore = defineStore('serverStore', () => {
 		info.mcp_enabled = serverInfoResponse.data.data?.mcp_enabled;
 		info.ai_enabled = serverInfoResponse.data.data?.ai_enabled;
 		info.setupCompleted = serverInfoResponse.data.data?.setupCompleted;
+		info.show_license_key_field = serverInfoResponse.data.data?.show_license_key_field ?? true;
 		info.queryLimit = serverInfoResponse.data.data?.queryLimit;
 		info.extensions = serverInfoResponse.data.data?.extensions;
 		info.websocket = serverInfoResponse.data.data?.websocket;

@@ -37,6 +37,8 @@ setup_accept_license: I accept the terms of the {directusBsl} and {privacyPolicy
 setup_marketing_emails: Send me product updates and release notes
 setup_launch: Launch Directus
 setup_project: Setup Project
+license_key: License Key
+license_key_placeholder: Enter your license key
 first_name: First Name
 last_name: Last Name
 admin_email: Admin Email
