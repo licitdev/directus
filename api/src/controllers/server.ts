@@ -102,7 +102,9 @@ router.post(
 
 		const licenseKey = req.body.license_key;
 
-		if (typeof licenseKey === 'string' && licenseKey.trim() !== '') {
+		const trimmedLicenseKey = typeof licenseKey === 'string' ? licenseKey.trim() : null;
+
+		if (trimmedLicenseKey) {
 			const env = useEnv();
 			const publicUrl = env['PUBLIC_URL'];
 
@@ -110,11 +112,11 @@ router.post(
 				throw new Error('PUBLIC_URL environment variable is required to validate the license key.');
 			}
 
-			const settings = await settingsService.readSingleton({ fields: ['project_id'] });
-			const projectId = settings?.['project_id'] as string | undefined;
+			const settings = await settingsService.readSingleton({ fields: ['project_id'] }) as { project_id?: string };
+			const projectId = settings.project_id;
 
 			const { token } = await validateLicense({
-				license_key: licenseKey.trim(),
+				license_key: trimmedLicenseKey,
 				...(projectId !== undefined && { project_id: projectId }),
 				public_url: publicUrl,
 			});
