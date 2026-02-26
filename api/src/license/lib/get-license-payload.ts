@@ -13,10 +13,11 @@ export async function getLicensePayload(): Promise<Record<string, unknown> | und
 		if (settings?.license_token) {
 			try {
 				payload = await verify(settings.license_token);
-				await writeCacheTokenPayload(payload);
 			} catch {
 				throw new InvalidLicenseTokenError();
 			}
+
+			await writeCacheTokenPayload(payload);
 		}
 	}
 
