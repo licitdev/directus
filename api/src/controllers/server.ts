@@ -112,7 +112,7 @@ router.post(
 				throw new Error('PUBLIC_URL environment variable is required to validate the license key.');
 			}
 
-			const settings = await settingsService.readSingleton({ fields: ['project_id'] }) as { project_id?: string };
+			const settings = (await settingsService.readSingleton({ fields: ['project_id'] })) as { project_id?: string };
 			const projectId = settings.project_id;
 
 			const { token } = await validateLicense({
