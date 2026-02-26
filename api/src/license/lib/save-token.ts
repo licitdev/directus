@@ -1,8 +1,9 @@
 import { getDatabase } from '../../database/index.js';
+import { writeCacheTokenPayload } from '../../utils/cache-token-payload.js';
 import { verify } from '../../utils/verify-token.js';
 
 export async function saveToken(license_token: string, project_id?: string): Promise<void> {
-	await verify(license_token);
+	const payload = await verify(license_token);
 
 	const database = getDatabase();
 
@@ -18,4 +19,5 @@ export async function saveToken(license_token: string, project_id?: string): Pro
 	}
 
 	await database('directus_settings').update({ license_token }).where({ project_id });
+	await writeCacheTokenPayload(payload);
 }
