@@ -18,5 +18,5 @@ export async function getFeature<T = unknown>(featureName: string): Promise<T> {
 		throw new Error(`Feature "${featureName}" does not exist in license entitlements`);
 	}
 
-	return get(payload, featurePath) as Record<string, unknown>;
+	return get(payload, featurePath) as T;
 }
