@@ -2,22 +2,22 @@ import { getDatabase } from '../../database/index.js';
 import { writeCacheTokenPayload } from '../../utils/cache-token-payload.js';
 import { verify } from '../../utils/verify-token.js';
 
-export async function saveToken(license_token: string, project_id?: string): Promise<void> {
-	const payload = await verify(license_token);
+export async function saveToken(licenseToken: string, projectId?: string): Promise<void> {
+	const payload = await verify(licenseToken);
 
 	const database = getDatabase();
 
-	if (!project_id) {
+	if (!projectId) {
 		const settingsRow = await database.select('project_id').from('directus_settings').first();
-		const projectId = settingsRow?.project_id;
+		const storedProjectId = settingsRow?.project_id;
 
-		if (typeof projectId !== 'string' || !projectId) {
+		if (typeof storedProjectId !== 'string' || !storedProjectId) {
 			throw new Error('project_id is missing or not a string');
 		}
 
-		project_id = projectId;
+		projectId = storedProjectId;
 	}
 
-	await database('directus_settings').update({ license_token }).where({ project_id });
+	await database('directus_settings').update({ license_token: licenseToken }).where({ project_id: projectId });
 	await writeCacheTokenPayload(payload);
 }

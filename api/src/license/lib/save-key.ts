@@ -1,18 +1,18 @@
 import { getDatabase } from '../../database/index.js';
 
-export async function saveKey(license_key: string, project_id?: string): Promise<void> {
+export async function saveKey(licenseKey: string, projectId?: string): Promise<void> {
 	const database = getDatabase();
 
-	if (!project_id) {
+	if (!projectId) {
 		const settingsRow = await database.select('project_id').from('directus_settings').first();
-		const projectId = settingsRow?.project_id;
+		const storedProjectId = settingsRow?.project_id;
 
-		if (typeof projectId !== 'string' || !projectId) {
+		if (typeof storedProjectId !== 'string' || !storedProjectId) {
 			throw new Error('project_id is missing or not a string');
 		}
 
-		project_id = projectId;
+		projectId = storedProjectId;
 	}
 
-	await database('directus_settings').update({ license_key }).where({ project_id });
+	await database('directus_settings').update({ license_key: licenseKey }).where({ project_id: projectId });
 }
