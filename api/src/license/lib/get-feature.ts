@@ -1,7 +1,7 @@
 import { get, has } from 'lodash-es';
 import { getLicensePayload } from './get-license-payload.js';
 
-export async function getFeature(featureName: string): Promise<Record<string, unknown>> {
+export async function getFeature<T = unknown>(featureName: string): Promise<T> {
 	if (!featureName) {
 		throw new Error('Feature name must not be empty');
 	}
