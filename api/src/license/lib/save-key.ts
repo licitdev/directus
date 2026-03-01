@@ -1,11 +1,13 @@
 import { getDatabase } from '../../database/index.js';
+import { encrypt } from '../../utils/encrypt.js';
+import { getProjectId } from '../../utils/get-project-id.js';
+import { getSecret } from '../../utils/get-secret.js';
 
 export async function saveKey(licenseKey: string, projectId?: string): Promise<void> {
 	const database = getDatabase();
 
 	if (!projectId) {
-		const settingsRow = await database.select('project_id').from('directus_settings').first();
-		const storedProjectId = settingsRow?.project_id;
+		const storedProjectId = await getProjectId();
 
 		if (typeof storedProjectId !== 'string' || !storedProjectId) {
 			throw new Error('project_id is missing or not a string');
@@ -14,5 +16,8 @@ export async function saveKey(licenseKey: string, projectId?: string): Promise<v
 		projectId = storedProjectId;
 	}
 
-	await database('directus_settings').update({ license_key: licenseKey }).where({ project_id: projectId });
+	const secret = getSecret();
+	const encryptedKey = await encrypt(licenseKey, secret);
+
+	await database('directus_settings').update({ license_key: encryptedKey }).where({ project_id: projectId });
 }

@@ -1,9 +1,10 @@
 export type ValidateLicenseRequest = {
-	license_key: string;
-	project_id?: string;
-	public_url?: string;
+	licenseKey: string;
+	projectId?: string;
+	publicUrl?: string;
 };
 
 export type ValidateLicenseResponse = {
 	token: string;
+	projectId: string;
 };

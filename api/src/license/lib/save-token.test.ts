@@ -1,12 +1,17 @@
+import type { Knex } from 'knex';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { getDatabase } from '../../database/index.js';
 import * as cacheTokenPayload from '../../utils/cache-token-payload.js';
+import * as encryptUtils from '../../utils/encrypt.js';
+import * as getSecretUtils from '../../utils/get-secret.js';
 import { verify } from '../../utils/verify-token.js';
 import { saveToken } from './save-token.js';
 
 vi.mock('../../database/index.js');
 vi.mock('../../utils/verify-token.js');
 vi.mock('../../utils/cache-token-payload.js');
+vi.mock('../../utils/encrypt.js');
+vi.mock('../../utils/get-secret.js');
 
 function createDbMock() {
 	const first = vi.fn();
@@ -17,7 +22,7 @@ function createDbMock() {
 		select: vi.fn().mockReturnThis(),
 		from: vi.fn().mockReturnThis(),
 		first,
-	}) as unknown as ReturnType<typeof getDatabase>;
+	}) as unknown as Knex;
 
 	return { db, first, where, update };
 }
@@ -27,35 +32,43 @@ describe('saveToken', () => {
 		vi.clearAllMocks();
 	});
 
-	test('verifies token, updates directus_settings, and writes payload to cache when project_id is provided', async () => {
+	test('verifies token, encrypts it, updates directus_settings, and writes payload to cache when project_id is provided', async () => {
 		const { db, where, update } = createDbMock();
 		const payload = { plan: 'pro', metadata: {} };
 		vi.mocked(getDatabase).mockReturnValue(db);
+		vi.mocked(getSecretUtils.getSecret).mockReturnValue('test-secret');
+		vi.mocked(encryptUtils.encrypt).mockResolvedValue('encrypted-token');
 		vi.mocked(verify).mockResolvedValue(payload);
 
 		await saveToken('jwt-token', 'project-uuid');
 
 		expect(verify).toHaveBeenCalledWith('jwt-token');
+		expect(getSecretUtils.getSecret).toHaveBeenCalled();
+		expect(encryptUtils.encrypt).toHaveBeenCalledWith('jwt-token', 'test-secret');
 		expect(db.select).not.toHaveBeenCalled();
 		expect(db.from).not.toHaveBeenCalled();
-		expect(update).toHaveBeenCalledWith({ license_token: 'jwt-token' });
+		expect(update).toHaveBeenCalledWith({ license_token: 'encrypted-token' });
 		expect(where).toHaveBeenCalledWith({ project_id: 'project-uuid' });
 		expect(cacheTokenPayload.writeCacheTokenPayload).toHaveBeenCalledWith(payload);
 	});
 
-	test('loads project_id from directus_settings and writes payload to cache when project_id is not provided', async () => {
-		const { db, first, where } = createDbMock();
+	test('loads project_id from directus_settings, encrypts token, and writes payload to cache when project_id is not provided', async () => {
+		const { db, first, where, update } = createDbMock();
 		const payload = { plan: 'pro', metadata: {} };
 		first.mockResolvedValue({ project_id: 'resolved-id' });
 		vi.mocked(getDatabase).mockReturnValue(db);
+		vi.mocked(getSecretUtils.getSecret).mockReturnValue('test-secret');
+		vi.mocked(encryptUtils.encrypt).mockResolvedValue('encrypted-token');
 		vi.mocked(verify).mockResolvedValue(payload);
 
 		await saveToken('jwt-token');
 
 		expect(verify).toHaveBeenCalledWith('jwt-token');
+		expect(encryptUtils.encrypt).toHaveBeenCalledWith('jwt-token', 'test-secret');
 		expect(db.select).toHaveBeenCalledWith('project_id');
 		expect(db.from).toHaveBeenCalledWith('directus_settings');
 		expect(first).toHaveBeenCalledOnce();
+		expect(update).toHaveBeenCalledWith({ license_token: 'encrypted-token' });
 		expect(where).toHaveBeenCalledWith({ project_id: 'resolved-id' });
 		expect(cacheTokenPayload.writeCacheTokenPayload).toHaveBeenCalledWith(payload);
 	});
