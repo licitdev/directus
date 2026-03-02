@@ -35,9 +35,7 @@ describe('CLI license validate command', () => {
 	test('verifies license, saves token, key and project_id on success when key is prompted', async () => {
 		vi.mocked(inquirer.prompt).mockResolvedValue({ licenseKey: 'my-license-key' });
 
-		const validateLicenseMock = vi
-			.fn()
-			.mockResolvedValue({ token: 'jwt-token', projectId: 'returned-project-id' });
+		const validateLicenseMock = vi.fn().mockResolvedValue({ token: 'jwt-token', projectId: 'returned-project-id' });
 
 		vi.mocked(license.validate).mockImplementation(validateLicenseMock);
 
@@ -58,9 +56,7 @@ describe('CLI license validate command', () => {
 	});
 
 	test('verifies license, saves token and key on success when key is passed', async () => {
-		const validateLicenseMock = vi
-			.fn()
-			.mockResolvedValue({ token: 'jwt-token', projectId: 'returned-project-id' });
+		const validateLicenseMock = vi.fn().mockResolvedValue({ token: 'jwt-token', projectId: 'returned-project-id' });
 
 		vi.mocked(license.validate).mockImplementation(validateLicenseMock);
 
