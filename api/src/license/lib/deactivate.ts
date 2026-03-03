@@ -2,26 +2,23 @@ import { useEnv } from '@directus/env';
 import {
 	InvalidLicenseConfigError,
 	InvalidLicenseKeyError,
-	InvalidLicenseTokenError,
 	isDirectusError,
 	ServiceUnavailableError,
 } from '@directus/errors';
-import type { AxiosError } from 'axios';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { getProjectId } from '../../utils/get-project-id.js';
-import type { ValidateLicenseRequest, ValidateLicenseResponse } from '../types/index.js';
+import type { DeactivateLicenseRequest, DeactivateLicenseResponse } from '../types/index.js';
 
-export async function validate({
-	licenseKey,
-	projectId,
-	publicUrl,
-}: ValidateLicenseRequest): Promise<ValidateLicenseResponse> {
+export async function deactivate({ licenseKey, projectId }: DeactivateLicenseRequest): Promise<void> {
 	const env = useEnv();
 	const url = env['LICENSE_SERVER_URL'];
 
 	if (typeof url !== 'string' || !url) {
 		throw new InvalidLicenseConfigError({ reason: 'LICENSE_SERVER_URL is missing or not a string' });
 	}
+
+	const baseUrl = url.replace(/\/$/, '');
+	const deactivateUrl = `${baseUrl}/v1/deactivate`;
 
 	if (!projectId) {
 		const storedProjectId = await getProjectId();
@@ -33,33 +30,17 @@ export async function validate({
 		projectId = storedProjectId;
 	}
 
-	if (!publicUrl) {
-		const envPublicUrl = env['PUBLIC_URL'];
-
-		if (typeof envPublicUrl !== 'string' || !envPublicUrl) {
-			throw new InvalidLicenseConfigError({ reason: 'PUBLIC_URL is missing or not a string' });
-		}
-
-		publicUrl = envPublicUrl;
-	}
-
-	const baseUrl = url.replace(/\/$/, '');
-	const verifyUrl = `${baseUrl}/v1/validate`;
-
 	try {
-		const getTokenResponse = await axios.post<ValidateLicenseResponse>(verifyUrl, {
+		const response = await axios.post<DeactivateLicenseResponse>(deactivateUrl, {
 			license_key: licenseKey,
 			project_id: projectId,
-			public_url: publicUrl,
 		});
 
-		const { token, projectId: newProjectId } = getTokenResponse.data;
+		const { success } = response.data;
 
-		if (typeof token !== 'string' || !token) {
-			throw new InvalidLicenseTokenError();
+		if (!success) {
+			throw new Error('Failed to deactivate license');
 		}
-
-		return { token, projectId: newProjectId };
 	} catch (error) {
 		if (isDirectusError(error)) throw error;
 		if (!axios.isAxiosError(error)) throw error;
