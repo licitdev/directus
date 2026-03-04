@@ -1,8 +1,4 @@
-import {
-	InvalidLicenseKeyError,
-	isDirectusError,
-	ServiceUnavailableError,
-} from '@directus/errors';
+import { InvalidLicenseKeyError, isDirectusError, ServiceUnavailableError } from '@directus/errors';
 import type { AxiosError } from 'axios';
 import axios from 'axios';
 

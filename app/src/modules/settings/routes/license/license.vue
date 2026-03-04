@@ -5,11 +5,11 @@ import { useI18n } from 'vue-i18n';
 import SettingsNavigation from '../../components/navigation.vue';
 import LicenseKeyInput from '@/components/license-key-input.vue';
 import VBreadcrumb from '@/components/v-breadcrumb.vue';
-import VNotice from '@/components/v-notice.vue';
 import VButton from '@/components/v-button.vue';
 import VDrawer from '@/components/v-drawer.vue';
 import VIcon from '@/components/v-icon/v-icon.vue';
 import VInput from '@/components/v-input.vue';
+import VNotice from '@/components/v-notice.vue';
 import { useServerStore } from '@/stores/server';
 import { useSettingsStore } from '@/stores/settings';
 import { PrivateView } from '@/views/private';
@@ -26,7 +26,11 @@ const savedSuccessfully = ref(false);
 const saveError = ref<string | null>(null);
 
 const licenseSource = computed(() => info.value.license_source ?? null);
-const tierName = computed(() => (info.value.license?.metadata?.policy?.name as string | undefined) ?? t('settings_license_tier'));
+
+const tierName = computed(
+	() => (info.value.license?.metadata?.policy?.name as string | undefined) ?? t('settings_license_tier'),
+);
+
 const drawerPayload = computed(() => (savedSuccessfully.value ? info.value.license : null));
 
 function openDrawer() {
@@ -39,13 +43,13 @@ function openDrawer() {
 async function saveLicenseKey() {
 	saveError.value = null;
 	saving.value = true;
+
 	try {
 		await settingsStore.updateSettings({ license_key: editingKey.value || null });
 		await serverStore.hydrate();
 		savedSuccessfully.value = true;
 	} catch (err: any) {
-		saveError.value =
-			err?.response?.data?.errors?.[0]?.message ?? err?.message ?? t('unexpected_error');
+		saveError.value = err?.response?.data?.errors?.[0]?.message ?? err?.message ?? t('unexpected_error');
 	} finally {
 		saving.value = false;
 	}

@@ -69,7 +69,7 @@ const showStatus = computed(() => Boolean(activePayload.value?.valid));
 			</I18nT>
 		</VNotice>
 
-		<div v-if="(info.show_license_key_field ?? true)" class="license-field">
+		<div v-if="info.show_license_key_field ?? true" class="license-field">
 			<label class="license-label">
 				{{ t('license_key') }}
 				<span class="optional">({{ t('setup_optional') }})</span>

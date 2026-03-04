@@ -15,8 +15,7 @@ export function useLicensePreview() {
 			const res = await api.post('/server/check-license', { license_key: key });
 			previewPayload.value = res.data.data ?? null;
 		} catch (err: any) {
-			validationError.value =
-				err?.response?.data?.errors?.[0]?.message ?? err?.message ?? 'Validation failed';
+			validationError.value = err?.response?.data?.errors?.[0]?.message ?? err?.message ?? 'Validation failed';
 		} finally {
 			validating.value = false;
 		}

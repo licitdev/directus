@@ -1,10 +1,8 @@
 import { useEnv } from '@directus/env';
-import {
-	InvalidLicenseConfigError,
-} from '@directus/errors';
+import { InvalidLicenseConfigError } from '@directus/errors';
 import axios from 'axios';
 
-export async function checkLicense({ licenseKey }: {licenseKey: string}) {
+export async function checkLicense({ licenseKey }: { licenseKey: string }) {
 	const env = useEnv();
 	const url = env['LICENSE_SERVER_URL'];
 

@@ -11,6 +11,11 @@ import { getLicensePayload } from './get-license-payload.js';
 import { validate } from './validate.js';
 
 vi.mock('../../database/index.js');
+
+vi.mock('../../logger/index.js', () => ({
+	useLogger: vi.fn().mockReturnValue({ warn: vi.fn() }),
+}));
+
 vi.mock('../../utils/cache-token-payload.js');
 vi.mock('../../utils/encrypt.js');
 vi.mock('../../utils/get-secret.js');
@@ -131,9 +136,9 @@ describe('getLicensePayload', () => {
 			const result = await getLicensePayload();
 
 			expect(validate).toHaveBeenCalledWith({
-				license_key: 'ENV-KEY-1234',
-				project_id: 'proj-1',
-				public_url: 'http://localhost:8055',
+				licenseKey: 'ENV-KEY-1234',
+				projectId: 'proj-1',
+				publicUrl: 'http://localhost:8055',
 			});
 
 			expect(verify).toHaveBeenCalledWith('env-jwt-token');

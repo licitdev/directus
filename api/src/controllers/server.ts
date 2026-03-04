@@ -1,6 +1,7 @@
 import { ErrorCode, ForbiddenError, InvalidPayloadError, isDirectusError, RouteNotFoundError } from '@directus/errors';
 import { format } from 'date-fns';
 import { Router } from 'express';
+import { checkLicense } from '../license/lib/check-license.js';
 import { resolvePublicUrl } from '../license/lib/license-context.js';
 import { validateAndGetToken } from '../license/lib/validate-and-get-token.js';
 import { useLogger } from '../logger/index.js';
@@ -11,7 +12,6 @@ import { SpecificationService } from '../services/specifications.js';
 import asyncHandler from '../utils/async-handler.js';
 import { createAdmin } from '../utils/create-admin.js';
 import { verify } from '../utils/verify-token.js';
-import { checkLicense } from '../license/lib/check-license.js';
 
 const router = Router();
 
@@ -188,7 +188,7 @@ router.post(
 	asyncHandler(async (req, res, next) => {
 		const licenseKey = typeof req.body.license_key === 'string' ? req.body.license_key.trim() : null;
 
-		const payload = await checkLicense({licenseKey});
+		const payload = await checkLicense({ licenseKey });
 
 		res.locals['payload'] = { data: payload };
 		return next();
