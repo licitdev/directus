@@ -80,6 +80,7 @@ export default defineConfig({
 	}),
 	test: {
 		environment: 'happy-dom',
+		setupFiles: ['./src/__tests__/setup.ts'],
 		deps: {
 			optimizer: {
 				web: {
