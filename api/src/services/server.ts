@@ -9,6 +9,7 @@ import { merge } from 'lodash-es';
 import { getCache } from '../cache.js';
 import { FILE_UPLOADS, RESUMABLE_UPLOADS } from '../constants.js';
 import getDatabase, { hasDatabaseConnection } from '../database/index.js';
+import { getLicensePayload } from '../license/lib/get-license-payload.js';
 import { useLogger } from '../logger/index.js';
 import getMailer from '../mailer.js';
 import { rateLimiterGlobal } from '../middleware/rate-limiter-global.js';
@@ -68,6 +69,11 @@ export class ServerService {
 		info['project'] = projectInfo;
 
 		info['setupCompleted'] = setupComplete;
+
+		const hasEnvLicenseKey =
+			typeof env['DIRECTUS_LICENSE_KEY'] === 'string' && String(env['DIRECTUS_LICENSE_KEY']).trim() !== '';
+
+		info['show_license_key_field'] = !hasEnvLicenseKey;
 
 		if (this.accountability?.user) {
 			info['mcp_enabled'] = toBoolean(env['MCP_ENABLED'] ?? true);
@@ -149,6 +155,24 @@ export class ServerService {
 		}
 
 		if (this.accountability?.user || !setupComplete) info['version'] = version;
+
+		if (this.accountability?.user) {
+			if (hasEnvLicenseKey) {
+				info['license_source'] = 'env';
+			} else {
+				const licenseSettings = (await this.settingsService.readSingleton({
+					fields: ['license_key'],
+				})) as { license_key?: string | null };
+
+				info['license_source'] = licenseSettings.license_key ? 'settings' : null;
+			}
+
+			try {
+				info['license'] = (await getLicensePayload()) ?? null;
+			} catch {
+				info['license'] = null;
+			}
+		}
 
 		return info;
 	}

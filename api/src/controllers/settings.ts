@@ -1,13 +1,13 @@
 import { ErrorCode, isDirectusError } from '@directus/errors';
 import express from 'express';
-import { isNull } from 'lodash-es';
-import { deactivate, getKey, validate } from '../license/index.js';
+import { handleLicenseApiError } from '../license/lib/handle-api-error.js';
+import { resolvePublicUrl } from '../license/lib/license-context.js';
+import { validateAndGetToken } from '../license/lib/validate-and-get-token.js';
 import { respond } from '../middleware/respond.js';
 import useCollection from '../middleware/use-collection.js';
-import { SettingsService } from '../services/settings.js';
+import { SettingsService } from '../services/index.js';
 import asyncHandler from '../utils/async-handler.js';
-import { deleteCacheTokenPayload, writeCacheTokenPayload } from '../utils/cache-token-payload.js';
-import { verify } from '../utils/verify-token.js';
+import { clearCacheTokenPayload } from '../utils/cache-token-payload.js';
 
 const router = express.Router();
 
@@ -51,29 +51,33 @@ router.patch(
 			schema: req.schema,
 		});
 
-		const licenseKey = req.body.license_key;
+		const body = { ...req.body };
+		const trimmedLicenseKey = typeof body.license_key === 'string' ? body.license_key.trim() : null;
 
-		if (licenseKey && typeof licenseKey === 'string') {
-			const { token, projectId } = await validate({ licenseKey });
-			const payload = await verify(token);
-			await writeCacheTokenPayload(payload);
-			req.body.license_token = token;
+		if (trimmedLicenseKey) {
+			try {
+				const settings = (await service.readSingleton({ fields: ['project_id'] })) as {
+					project_id?: string;
+				};
 
-			if (projectId) {
-				req.body.project_id = projectId;
+				const token = await validateAndGetToken(trimmedLicenseKey, {
+					...(settings?.project_id && { projectId: settings.project_id }),
+					publicUrl: resolvePublicUrl(),
+				});
+
+				body.license_key = trimmedLicenseKey;
+				body.license_token = token;
+				await clearCacheTokenPayload();
+			} catch (error) {
+				handleLicenseApiError(error);
 			}
-		} else if (isNull(licenseKey)) {
-			const currentLicenseKey = await getKey();
-
-			if (currentLicenseKey) {
-				await deactivate({ licenseKey: currentLicenseKey });
-			}
-
-			req.body.license_token = null;
-			await deleteCacheTokenPayload();
+		} else if (body.license_key === '' || body.license_key === null) {
+			body.license_key = null;
+			body.license_token = null;
+			await clearCacheTokenPayload();
 		}
 
-		await service.upsertSingleton(req.body);
+		await service.upsertSingleton(body);
 
 		try {
 			const record = await service.readSingleton(req.sanitizedQuery);

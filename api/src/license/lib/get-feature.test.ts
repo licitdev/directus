@@ -13,41 +13,87 @@ describe('getFeature', () => {
 		await expect(getFeature('')).rejects.toThrow('Feature name must not be empty');
 	});
 
-	test('returns feature data when payload contains the feature', async () => {
-		const cachedPayload = {
-			metadata: {
-				entitlements: {
-					featureA: { key1: 'value1' },
-				},
-			},
-		};
-
-		vi.mocked(getLicensePayload).mockResolvedValue(cachedPayload);
-
-		const result = await getFeature('featureA');
-
-		expect(result).toEqual({ key1: 'value1' });
-	});
-
 	test('throws when license payload is not found', async () => {
 		vi.mocked(getLicensePayload).mockResolvedValue(undefined);
 
 		await expect(getFeature('featureA')).rejects.toThrow('License payload is not found');
 	});
 
-	test('throws when feature does not exist in entitlements', async () => {
-		const cachedPayload = {
-			metadata: {
-				entitlements: {
-					otherFeature: { key1: 'value1' },
+	describe('object format entitlements', () => {
+		test('returns feature data when payload contains the feature', async () => {
+			const cachedPayload = {
+				metadata: {
+					entitlements: {
+						featureA: { key1: 'value1' },
+					},
 				},
-			},
-		};
+			};
 
-		vi.mocked(getLicensePayload).mockResolvedValue(cachedPayload);
+			vi.mocked(getLicensePayload).mockResolvedValue(cachedPayload);
 
-		await expect(getFeature('missingFeature')).rejects.toThrow(
-			'Feature "missingFeature" does not exist in license entitlements',
-		);
+			const result = await getFeature('featureA');
+
+			expect(result).toEqual({ key1: 'value1' });
+		});
+
+		test('throws when feature does not exist in entitlements', async () => {
+			const cachedPayload = {
+				metadata: {
+					entitlements: {
+						otherFeature: { key1: 'value1' },
+					},
+				},
+			};
+
+			vi.mocked(getLicensePayload).mockResolvedValue(cachedPayload);
+
+			await expect(getFeature('missingFeature')).rejects.toThrow(
+				'Feature "missingFeature" does not exist in license entitlements',
+			);
+		});
+	});
+
+	describe('array format entitlements (licensing-service current format)', () => {
+		test('returns feature metadata when found in array', async () => {
+			const cachedPayload = {
+				metadata: {
+					entitlements: [{ name: 'featureA', key1: 'value1' }],
+				},
+			};
+
+			vi.mocked(getLicensePayload).mockResolvedValue(cachedPayload);
+
+			const result = await getFeature('featureA');
+
+			expect(result).toEqual({ key1: 'value1' });
+		});
+
+		test('returns empty object for entitlement with no extra metadata', async () => {
+			const cachedPayload = {
+				metadata: {
+					entitlements: [{ name: 'sso' }],
+				},
+			};
+
+			vi.mocked(getLicensePayload).mockResolvedValue(cachedPayload);
+
+			const result = await getFeature('sso');
+
+			expect(result).toEqual({});
+		});
+
+		test('throws when feature does not exist in array', async () => {
+			const cachedPayload = {
+				metadata: {
+					entitlements: [{ name: 'otherFeature' }],
+				},
+			};
+
+			vi.mocked(getLicensePayload).mockResolvedValue(cachedPayload);
+
+			await expect(getFeature('missingFeature')).rejects.toThrow(
+				'Feature "missingFeature" does not exist in license entitlements',
+			);
+		});
 	});
 });

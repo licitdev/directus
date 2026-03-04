@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import * as cache from '../cache.js';
-import { deleteCacheTokenPayload, readCacheTokenPayload, writeCacheTokenPayload } from './cache-token-payload.js';
+import { clearCacheTokenPayload, readCacheTokenPayload, writeCacheTokenPayload } from './cache-token-payload.js';
 
 vi.mock('../cache.js', () => ({
 	getCache: vi.fn(),
@@ -39,7 +39,7 @@ describe('cache-token-payload utilities', () => {
 		expect(result).toEqual(cachedPayload);
 	});
 
-	test('deleteCacheTokenPayload deletes payload from system cache with fixed key', async () => {
+	test('clearCacheTokenPayload deletes payload from system cache with fixed key', async () => {
 		const deleteMock = vi.fn().mockResolvedValue(undefined);
 		const mockSystemCache = { delete: deleteMock };
 
@@ -47,7 +47,7 @@ describe('cache-token-payload utilities', () => {
 			systemCache: mockSystemCache,
 		} as unknown as ReturnType<typeof cache.getCache>);
 
-		await deleteCacheTokenPayload();
+		await clearCacheTokenPayload();
 
 		expect(cache.getCache).toHaveBeenCalledOnce();
 		expect(deleteMock).toHaveBeenCalledWith('licenseTokenPayload');

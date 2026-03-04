@@ -5,3 +5,4 @@ export * from './lib/get-license-payload.js';
 export * from './lib/save-key.js';
 export * from './lib/save-token.js';
 export * from './lib/validate-and-save.js';
+export * from './lib/get-feature.js';
