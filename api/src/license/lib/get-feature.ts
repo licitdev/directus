@@ -14,9 +14,6 @@ export async function getFeature<T = unknown>(featureName: string): Promise<T> {
 
 	const entitlements = get(payload, 'metadata.entitlements');
 
-	// Support both formats from the licensing-service:
-	//   - Array format: [{ name: 'sso', ...metadata }]
-	//   - Object format: { sso: { ...metadata } }  (preferred, keyed by name)
 	if (Array.isArray(entitlements)) {
 		const entry = entitlements.find((e: Record<string, unknown>) => e['name'] === featureName);
 

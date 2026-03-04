@@ -89,7 +89,6 @@ export function useFormFields(
 
 	return computed(() => {
 		const fields: DeepPartial<Field>[] = [];
-		// Hide License Key input when DIRECTUS_LICENSE_KEY is set in .env or hideLicenseKey is true
 		const showLicenseKeyField = serverStore.info.show_license_key_field ?? true;
 
 		if (register) {

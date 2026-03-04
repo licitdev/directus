@@ -43,7 +43,6 @@ export async function getLicensePayload(): Promise<Record<string, unknown> | und
 			await writeCacheTokenPayload(payload);
 			return payload;
 		} catch {
-			// Env key validation failed — treat as no license, do not throw
 		}
 	}
 
