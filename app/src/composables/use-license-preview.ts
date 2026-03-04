@@ -12,7 +12,7 @@ export function useLicensePreview() {
 		validationError.value = null;
 
 		try {
-			const res = await api.post('/server/validate-license', { license_key: key });
+			const res = await api.post('/server/check-license', { license_key: key });
 			previewPayload.value = res.data.data ?? null;
 		} catch (err: any) {
 			validationError.value =

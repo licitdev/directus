@@ -49,9 +49,9 @@ watchDebounced(
 );
 
 const activePayload = computed(() => props.licensePayload ?? previewPayload.value);
-const expiryFormatted = computed(() => activePayload.value?.metadata?.license?.expiry?.slice(0, 10) ?? null);
-const tierName = computed(() => activePayload.value?.metadata?.policy?.name ?? null);
-const showStatus = computed(() => Boolean(activePayload.value));
+const expiryFormatted = computed(() => activePayload.value?.expiry?.slice(0, 10) ?? null);
+const tierName = computed(() => activePayload.value?.policy ?? null);
+const showStatus = computed(() => Boolean(activePayload.value?.valid));
 </script>
 
 <template>
@@ -95,7 +95,7 @@ const showStatus = computed(() => Boolean(activePayload.value));
 				</span>
 				<span v-if="tierName" class="status-item">
 					<VIcon name="check_circle" class="status-icon" />
-					{{ t('license_tier', { tier: tierName }) }}
+					{{ tierName }}
 				</span>
 				<span v-if="expiryFormatted" class="status-item">
 					<VIcon name="check_circle" class="status-icon" />

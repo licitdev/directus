@@ -1,0 +1,21 @@
+import { useEnv } from '@directus/env';
+import {
+	InvalidLicenseConfigError,
+} from '@directus/errors';
+import axios from 'axios';
+
+export async function checkLicense({ licenseKey }: {licenseKey: string}) {
+	const env = useEnv();
+	const url = env['LICENSE_SERVER_URL'];
+
+	if (typeof url !== 'string' || !url) {
+		throw new InvalidLicenseConfigError({ reason: 'LICENSE_SERVER_URL is missing or not a string' });
+	}
+
+	const baseUrl = url.replace(/\/$/, '');
+	const checkLicenseUrl = `${baseUrl}/v1/check`;
+
+	const response = await axios.post(checkLicenseUrl, { license_key: licenseKey });
+
+	return response.data;
+}
