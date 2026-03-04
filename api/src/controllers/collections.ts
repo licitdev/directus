@@ -1,6 +1,9 @@
-import { ErrorCode, isDirectusError } from '@directus/errors';
+import { useEnv } from '@directus/env';
+import { ErrorCode, isDirectusError, LimitExceededError } from '@directus/errors';
 import type { Item } from '@directus/types';
 import { Router } from 'express';
+import getDatabase from '../database/index.js';
+import { getFeature } from '../license/index.js';
 import { respond } from '../middleware/respond.js';
 import { validateBatch } from '../middleware/validate-batch.js';
 import { CollectionsService } from '../services/collections.js';
@@ -8,6 +11,8 @@ import { MetaService } from '../services/meta.js';
 import asyncHandler from '../utils/async-handler.js';
 
 const router = Router();
+const env = useEnv();
+const defaultCollectionsLimit = env['ENTITLEMENTS_COLLECTION_DEFAULT_LIMIT'];
 
 router.post(
 	'/',
@@ -19,6 +24,17 @@ router.post(
 
 		const attemptConcurrentIndex =
 			'concurrentIndexCreation' in req.query && req.query['concurrentIndexCreation'] !== 'false';
+
+		const db = getDatabase();
+		const collectionsCountResult = await db('directus_collections').count({ count: '*' }).first();
+		const collectionsCount = Number(collectionsCountResult?.['count'] ?? 0);
+
+		const collectionFeature = await getFeature<{ limit: number }>('collections');
+		const collectionsLimit = collectionFeature?.limit ?? Number(defaultCollectionsLimit);
+
+		if (collectionsCount >= collectionsLimit) {
+			throw new LimitExceededError({ category: 'collections' });
+		}
 
 		if (Array.isArray(req.body)) {
 			const collectionKey = await collectionsService.createMany(req.body, {

@@ -9,6 +9,7 @@ import { merge } from 'lodash-es';
 import { getCache } from '../cache.js';
 import { FILE_UPLOADS, RESUMABLE_UPLOADS } from '../constants.js';
 import getDatabase, { hasDatabaseConnection } from '../database/index.js';
+import { getFeature } from '../license/index.js';
 import { useLogger } from '../logger/index.js';
 import getMailer from '../mailer.js';
 import { rateLimiterGlobal } from '../middleware/rate-limiter-global.js';
@@ -145,6 +146,24 @@ export class ServerService {
 					tus: true,
 					chunkSize: RESUMABLE_UPLOADS.CHUNK_SIZE,
 				};
+			}
+
+			info['entitlements'] = {};
+
+			const defaultCollectionsLimit = env['ENTITLEMENTS_COLLECTION_DEFAULT_LIMIT'];
+
+			if (defaultCollectionsLimit) {
+				info['entitlements']['collections_limit'] = Number(defaultCollectionsLimit);
+			}
+
+			try {
+				const collectionsFeature = await getFeature<{ limit: number }>('collections');
+
+				if (collectionsFeature.limit) {
+					info['entitlements']['collections_limit'] = collectionsFeature.limit;
+				}
+			} catch (error) {
+				logger.warn(error, '[license] Failed to load feature entitlements');
 			}
 		}
 
