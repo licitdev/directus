@@ -11,6 +11,7 @@ import { SpecificationService } from '../services/specifications.js';
 import asyncHandler from '../utils/async-handler.js';
 import { createAdmin } from '../utils/create-admin.js';
 import { verify } from '../utils/verify-token.js';
+import { checkLicense } from '../license/lib/check-license.js';
 
 const router = Router();
 
@@ -175,6 +176,19 @@ router.post(
 		});
 
 		const payload = await verify(token);
+
+		res.locals['payload'] = { data: payload };
+		return next();
+	}),
+	respond,
+);
+
+router.post(
+	'/check-license',
+	asyncHandler(async (req, res, next) => {
+		const licenseKey = typeof req.body.license_key === 'string' ? req.body.license_key.trim() : null;
+
+		const payload = await checkLicense({licenseKey});
 
 		res.locals['payload'] = { data: payload };
 		return next();
