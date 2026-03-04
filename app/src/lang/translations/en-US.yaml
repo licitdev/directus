@@ -786,6 +786,9 @@ sidebar: Sidebar
 duration: Duration
 charset: Charset
 second: second
+users_limit_modal_title: You have reached the max limit allowed for your tier.
+users_limit_admin_modal_description: You can also purchase additional add-ons for more feature unlock.
+users_limit_modal_description: Contact your administrator to unlock more.
 file_moved: File Moved
 collection_created: Collection Created
 modified_on: Modified On
