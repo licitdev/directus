@@ -41,6 +41,7 @@ export class ServerService {
 
 	async serverInfo(): Promise<Record<string, any>> {
 		const info: Record<string, any> = {};
+		const isAdmin = this.accountability?.admin === true;
 		const setupComplete = await this.isSetupCompleted();
 
 		const projectInfo = await this.settingsService.readSingleton({
@@ -150,20 +151,22 @@ export class ServerService {
 
 			info['entitlements'] = {};
 
-			const defaultCollectionsLimit = env['ENTITLEMENTS_COLLECTION_DEFAULT_LIMIT'];
+			if (isAdmin) {
+				const defaultCollectionsLimit = env['ENTITLEMENTS_COLLECTION_DEFAULT_LIMIT'];
 
-			if (defaultCollectionsLimit) {
-				info['entitlements']['collections_limit'] = Number(defaultCollectionsLimit);
-			}
-
-			try {
-				const collectionsFeature = await getFeature<{ limit: number }>('collections');
-
-				if (collectionsFeature.limit) {
-					info['entitlements']['collections_limit'] = collectionsFeature.limit;
+				if (defaultCollectionsLimit) {
+					info['entitlements']['collections_limit'] = Number(defaultCollectionsLimit);
 				}
-			} catch (error) {
-				logger.warn(error, '[license] Failed to load feature entitlements');
+
+				try {
+					const collectionsFeature = await getFeature<{ limit: number }>('collections');
+
+					if (collectionsFeature.limit) {
+						info['entitlements']['collections_limit'] = collectionsFeature.limit;
+					}
+				} catch (error) {
+					logger.warn(error, '[license] Failed to load feature entitlements');
+				}
 			}
 		}
 
