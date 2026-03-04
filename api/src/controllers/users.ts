@@ -1,15 +1,18 @@
+import { useEnv } from '@directus/env';
 import {
 	ErrorCode,
 	ForbiddenError,
 	InvalidCredentialsError,
 	InvalidPayloadError,
 	isDirectusError,
+	LimitExceededError,
 } from '@directus/errors';
 import type { PrimaryKey, RegisterUserInput } from '@directus/types';
 import express from 'express';
 import Joi from 'joi';
 import { DEFAULT_AUTH_PROVIDER } from '../constants.js';
 import { getDatabase } from '../database/index.js';
+import { getFeature } from '../license/index.js';
 import checkRateLimit from '../middleware/rate-limiter-registration.js';
 import { respond } from '../middleware/respond.js';
 import useCollection from '../middleware/use-collection.js';
@@ -22,12 +25,25 @@ import asyncHandler from '../utils/async-handler.js';
 import { sanitizeQuery } from '../utils/sanitize-query.js';
 
 const router = express.Router();
+const env = useEnv();
+const defaultUsersLimit = env['ENTITLEMENTS_USERS_DEFAULT_LIMIT'];
 
 router.use(useCollection('directus_users'));
 
 router.post(
 	'/',
 	asyncHandler(async (req, res, next) => {
+		const db = getDatabase();
+		const usersCountResult = await db('directus_users').where('status', 'active').count({ count: '*' }).first();
+		const usersCount = Number(usersCountResult?.['count'] ?? 0);
+
+		const usersFeature = await getFeature<{ limit?: number }>('users');
+		const usersLimit = usersFeature?.limit ?? Number(defaultUsersLimit);
+
+		if (usersLimit && usersCount >= usersLimit) {
+			throw new LimitExceededError({ category: 'users' });
+		}
+
 		const service = new UsersService({
 			accountability: req.accountability,
 			schema: req.schema,

@@ -32,6 +32,7 @@ export type Info = {
 	entitlements: {
 		collections_limit?: number;
 		collections_warning_limit?: number;
+		users_limit?: number;
 	};
 	rateLimit?:
 		| false
