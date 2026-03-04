@@ -13,7 +13,6 @@ import qs from 'qs';
 import createApp from './app.js';
 import getDatabase from './database/index.js';
 import emitter from './emitter.js';
-import { getLicensePayload, validateAndSave } from './license/index.js';
 import { useLogger } from './logger/index.js';
 import { getAddress } from './utils/get-address.js';
 import { getConfigFromEnv } from './utils/get-config-from-env.js';
@@ -162,23 +161,6 @@ export async function createServer(): Promise<http.Server> {
 
 export async function startServer(): Promise<void> {
 	const server = await createServer();
-
-	const licenseKey = env['DIRECTUS_LICENSE_KEY'];
-	let licenseTokenPayload = null;
-
-	try {
-		licenseTokenPayload = await getLicensePayload();
-	} catch (err) {
-		logger.warn(err, 'License token payload could not be retrieved');
-	}
-
-	if (typeof licenseKey === 'string' && !licenseTokenPayload) {
-		try {
-			await validateAndSave(licenseKey);
-		} catch (err) {
-			logger.warn(err, 'License Key from DIRECTUS_LICENSE_KEY env could not be validated and saved');
-		}
-	}
 
 	const host = env['HOST'] as string;
 	const path = env['UNIX_SOCKET_PATH'] as string | undefined;

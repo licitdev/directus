@@ -1,16 +1,12 @@
-import { ErrorCode, ForbiddenError, InvalidPayloadError, isDirectusError, RouteNotFoundError } from '@directus/errors';
+import { ErrorCode, ForbiddenError, isDirectusError, RouteNotFoundError } from '@directus/errors';
 import { format } from 'date-fns';
 import { Router } from 'express';
-import { resolvePublicUrl } from '../license/lib/license-context.js';
-import { validateAndGetToken } from '../license/lib/validate-and-get-token.js';
-import { useLogger } from '../logger/index.js';
 import { respond } from '../middleware/respond.js';
 import { SettingsService } from '../services/index.js';
 import { ServerService } from '../services/server.js';
 import { SpecificationService } from '../services/specifications.js';
 import asyncHandler from '../utils/async-handler.js';
 import { createAdmin } from '../utils/create-admin.js';
-import { verify } from '../utils/verify-token.js';
 
 const router = Router();
 
@@ -98,28 +94,6 @@ router.post(
 			throw new ForbiddenError();
 		}
 
-		const settingsService = new SettingsService({ schema: req.schema });
-		const logger = useLogger();
-		let licenseToken: string | null = null;
-
-		const licenseKey = req.body.license_key;
-		const trimmedLicenseKey = typeof licenseKey === 'string' ? licenseKey.trim() : null;
-
-		if (trimmedLicenseKey) {
-			try {
-				const settings = (await settingsService.readSingleton({ fields: ['project_id'] })) as {
-					project_id?: string;
-				};
-
-				licenseToken = await validateAndGetToken(trimmedLicenseKey, {
-					...(settings?.project_id && { projectId: settings.project_id }),
-					publicUrl: resolvePublicUrl(),
-				});
-			} catch (err) {
-				logger.warn({ err }, 'License key validation failed during setup — proceeding without license.');
-			}
-		}
-
 		try {
 			await createAdmin(req.schema, {
 				email: req.body.project_owner,
@@ -128,14 +102,9 @@ router.post(
 				last_name: req.body.last_name,
 			});
 
-			await settingsService.setOwner(req.body);
+			const settingsService = new SettingsService({ schema: req.schema });
 
-			if (licenseToken !== null) {
-				await settingsService.upsertSingleton({
-					license_key: trimmedLicenseKey,
-					license_token: licenseToken,
-				});
-			}
+			settingsService.setOwner(req.body);
 		} catch (error: any) {
 			if (isDirectusError(error, ErrorCode.Forbidden)) {
 				return next();
@@ -144,39 +113,6 @@ router.post(
 			throw error;
 		}
 
-		return next();
-	}),
-	respond,
-);
-
-router.post(
-	'/validate-license',
-	asyncHandler(async (req, res, next) => {
-		const licenseKey = typeof req.body.license_key === 'string' ? req.body.license_key.trim() : null;
-
-		if (!licenseKey) {
-			throw new InvalidPayloadError({ reason: 'license_key is required' });
-		}
-
-		let publicUrl: string;
-
-		try {
-			publicUrl = resolvePublicUrl();
-		} catch {
-			throw new InvalidPayloadError({ reason: 'PUBLIC_URL is not configured on this server' });
-		}
-
-		const settingsService = new SettingsService({ schema: req.schema });
-		const settings = (await settingsService.readSingleton({ fields: ['project_id'] })) as { project_id?: string };
-
-		const token = await validateAndGetToken(licenseKey, {
-			...(settings?.project_id && { projectId: settings.project_id }),
-			publicUrl,
-		});
-
-		const payload = await verify(token);
-
-		res.locals['payload'] = { data: payload };
 		return next();
 	}),
 	respond,

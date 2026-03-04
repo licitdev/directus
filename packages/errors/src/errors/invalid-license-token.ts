@@ -1,7 +1,0 @@
-import { createError, ErrorCode } from '../index.js';
-
-export const InvalidLicenseTokenError = createError(
-	ErrorCode.InvalidLicenseToken,
-	'Missing or invalid license token.',
-	403,
-);

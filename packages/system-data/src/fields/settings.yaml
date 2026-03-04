@@ -50,26 +50,6 @@ fields:
   - field: project_status
     hidden: true
 
-  - field: license_token
-    special:
-      - encrypt
-    interface: input-hash
-    options:
-      iconRight: lock
-      masked: true
-      autocomplete: 'off'
-    width: half
-
-  - field: license_key
-    special:
-      - encrypt
-    interface: input-hash
-    options:
-      iconRight: lock
-      masked: true
-      autocomplete: 'off'
-    width: half
-
   - field: modules_divider
     interface: presentation-divider
     options:

@@ -3,7 +3,6 @@ import { FailedValidationErrorExtensions } from '@directus/validation';
 import { computed, ComputedRef, MaybeRef, ModelRef, Ref, unref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import z from 'zod';
-import { useServerStore } from '@/stores/server';
 import { validateItem } from '@/utils/validate-item';
 
 export const FormValidator = z.discriminatedUnion('project_usage', [
@@ -17,7 +16,6 @@ export const FormValidator = z.discriminatedUnion('project_usage', [
 		org_name: z.string().nullable().optional(),
 		license: z.literal(true),
 		product_updates: z.boolean().optional(),
-		license_key: z.string().nullable().optional(),
 	}),
 	z.object({
 		first_name: z.string(),
@@ -29,7 +27,6 @@ export const FormValidator = z.discriminatedUnion('project_usage', [
 		org_name: z.string(),
 		license: z.literal(true),
 		product_updates: z.boolean().optional(),
-		license_key: z.string().nullable().optional(),
 	}),
 ]);
 
@@ -43,7 +40,6 @@ export const defaultValues: SetupForm = {
 	org_name: null,
 	license: false,
 	product_updates: false,
-	license_key: null,
 };
 
 export type ValidationError = Omit<FailedValidationErrorExtensions, 'type'> & { type: string };
@@ -82,15 +78,11 @@ export function useFormFields(
 	register: MaybeRef<boolean>,
 	value: Ref<Partial<SetupForm>> | ModelRef<Partial<SetupForm> | undefined>,
 	initialValues?: Ref<Partial<SetupForm>> | ModelRef<Partial<SetupForm> | undefined>,
-	hideLicenseKey?: MaybeRef<boolean>,
 ): ComputedRef<Field[]> {
 	const { t } = useI18n();
-	const serverStore = useServerStore();
 
 	return computed(() => {
 		const fields: DeepPartial<Field>[] = [];
-		// Hide License Key input when DIRECTUS_LICENSE_KEY is set in .env or hideLicenseKey is true
-		const showLicenseKeyField = serverStore.info.show_license_key_field ?? true;
 
 		if (register) {
 			fields.push({
@@ -184,21 +176,6 @@ export function useFormFields(
 					width: 'full',
 				},
 			});
-
-		if (showLicenseKeyField && !unref(hideLicenseKey)) {
-			fields.push({
-				field: 'license_key',
-				name: t('license_key'),
-				meta: {
-					required: false,
-					interface: 'input',
-					options: {
-						placeholder: t('license_key_placeholder'),
-					},
-					width: 'full',
-				},
-			});
-		}
 
 		return fields as Field[];
 	});
