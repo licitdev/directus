@@ -201,6 +201,4 @@ export const DEFAULTS = {
 	MCP_ENABLED: true,
 
 	AI_ENABLED: true,
-
-	ENTITLEMENTS_COLLECTION_DEFAULT_LIMIT: 10,
 } as const;

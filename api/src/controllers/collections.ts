@@ -1,4 +1,3 @@
-import { useEnv } from '@directus/env';
 import { ErrorCode, isDirectusError, LimitExceededError } from '@directus/errors';
 import type { Item } from '@directus/types';
 import { Router } from 'express';
@@ -11,8 +10,6 @@ import { MetaService } from '../services/meta.js';
 import asyncHandler from '../utils/async-handler.js';
 
 const router = Router();
-const env = useEnv();
-const defaultCollectionsLimit = env['ENTITLEMENTS_COLLECTION_DEFAULT_LIMIT'];
 
 router.post(
 	'/',
@@ -30,7 +27,7 @@ router.post(
 		const collectionsCount = Number(collectionsCountResult?.['count'] ?? 0);
 
 		const collectionFeature = await getFeature<{ limit: number }>('collections');
-		const collectionsLimit = collectionFeature?.limit ?? Number(defaultCollectionsLimit);
+		const collectionsLimit = collectionFeature?.limit;
 
 		if (collectionsLimit && collectionsCount >= collectionsLimit) {
 			throw new LimitExceededError({ category: 'collections' });
