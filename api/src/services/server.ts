@@ -165,7 +165,7 @@ export class ServerService {
 						info['entitlements']['collections_limit'] = collectionsFeature.limit;
 					}
 				} catch (error) {
-					logger.warn(error, '[license] Failed to load feature entitlements');
+					logger.warn(error, '[license] Failed to load collections feature entitlements');
 				}
 			}
 		}

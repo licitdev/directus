@@ -32,7 +32,7 @@ router.post(
 		const collectionFeature = await getFeature<{ limit: number }>('collections');
 		const collectionsLimit = collectionFeature?.limit ?? Number(defaultCollectionsLimit);
 
-		if (collectionsCount >= collectionsLimit) {
+		if (collectionsLimit && collectionsCount >= collectionsLimit) {
 			throw new LimitExceededError({ category: 'collections' });
 		}
 
