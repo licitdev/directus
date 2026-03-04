@@ -3,7 +3,7 @@ import { SetupForm } from '@directus/types';
 import { storeToRefs } from 'pinia';
 import { computed, toRef } from 'vue';
 import { I18nT } from 'vue-i18n';
-import { defaultValues, useFormFields } from './form';
+import { defaultValues, useFormFields, ValidationError } from './form';
 import VCheckbox from '@/components/v-checkbox.vue';
 import VForm from '@/components/v-form/v-form.vue';
 import VNotice from '@/components/v-notice.vue';
@@ -15,14 +15,16 @@ const props = withDefaults(
 	defineProps<{
 		register?: boolean;
 		skipLicense?: boolean;
+		hideLicenseKey?: boolean;
 		modelValue?: Partial<SetupForm>;
-		errors?: Record<string, any>[];
+		errors?: ValidationError[];
 		initialValues?: SetupForm;
 		utmLocation?: string;
 	}>(),
 	{
 		register: true,
 		skipLicense: false,
+		hideLicenseKey: false,
 		utmLocation: '',
 		initialValues: () => defaultValues,
 		modelValue: () => ({}),
@@ -51,7 +53,7 @@ const product_updates = computed({
 	},
 });
 
-const fields = useFormFields(props.register, value, initialValues);
+const fields = useFormFields(props.register, value, initialValues, toRef(props, 'hideLicenseKey'));
 </script>
 
 <template>
@@ -63,7 +65,7 @@ const fields = useFormFields(props.register, value, initialValues);
 		<VForm
 			v-model="value"
 			:initial-values="initialValues"
-			:validation-errors="errors"
+			:validation-errors="errors as any"
 			:show-validation-errors="false"
 			:fields="fields"
 			disabled-menu
