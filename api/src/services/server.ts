@@ -152,12 +152,6 @@ export class ServerService {
 			info['entitlements'] = {};
 
 			if (isAdmin) {
-				const defaultCollectionsLimit = env['ENTITLEMENTS_COLLECTION_DEFAULT_LIMIT'];
-
-				if (defaultCollectionsLimit) {
-					info['entitlements']['collections_limit'] = Number(defaultCollectionsLimit);
-				}
-
 				try {
 					const collectionsFeature = await getFeature<{ limit: number }>('collections');
 
