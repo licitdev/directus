@@ -1,4 +1,3 @@
-import { DEFAULT_ENTITLEMENT_FEATURES } from '@directus/constants';
 import formatTitle from '@directus/format-title';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import { computed, reactive } from 'vue';
@@ -31,10 +30,13 @@ export type Info = {
 	ai_enabled: boolean;
 	setupCompleted: boolean;
 	entitlements: {
-		activity_feed: {
+		activity_feed?: {
 			limit: number;
 		};
-		revisions: {
+		revisions?: {
+			limit: number;
+		};
+		collections?: {
 			limit: number;
 		};
 	};
@@ -104,7 +106,7 @@ export const useServerStore = defineStore('serverStore', () => {
 		queryLimit: undefined,
 		websocket: undefined,
 		uploads: undefined,
-		entitlements: DEFAULT_ENTITLEMENT_FEATURES,
+		entitlements: {},
 	});
 
 	const auth = reactive<Auth>({
