@@ -2930,3 +2930,4 @@ accepted: Accepted
 text_direction_auto: Automatic (Match Language)
 text_direction_ltr: Left to Right (LTR)
 text_direction_rtl: Right to Left (RTL)
+feature_limit_notice: '{limit} days of {feature} is included in your current plan.'

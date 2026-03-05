@@ -2,11 +2,13 @@
 import { useLayout } from '@directus/composables';
 import { Filter } from '@directus/types';
 import { mergeFilters } from '@directus/utils';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { RouterView } from 'vue-router';
 import ActivityNavigation from '../components/navigation.vue';
 import VInfo from '@/components/v-info.vue';
+import VNotice from '@/components/v-notice.vue';
 import { usePreset } from '@/composables/use-preset';
+import { useServerStore } from '@/stores/server';
 import { PrivateView } from '@/views/private';
 import LayoutSidebarDetail from '@/views/private/components/layout-sidebar-detail.vue';
 import SearchInput from '@/views/private/components/search-input.vue';
@@ -18,6 +20,9 @@ defineProps<{
 const { layout, layoutOptions, layoutQuery, filter, search } = usePreset(ref('directus_activity'));
 
 const { layoutWrapper } = useLayout(layout);
+const serverStore = useServerStore();
+
+const activityFeedLimit = computed(() => serverStore.info.entitlements.activity_feed.limit);
 
 const roleFilter = ref<Filter | null>(null);
 </script>
@@ -47,6 +52,12 @@ const roleFilter = ref<Filter | null>(null);
 			<template #navigation>
 				<ActivityNavigation v-model:filter="roleFilter" />
 			</template>
+
+			<VNotice type="info" icon="diamond">
+				<template #title>
+					{{ $t('feature_limit_notice', { limit: activityFeedLimit, feature: 'Activity Feed' }) }}
+				</template>
+			</VNotice>
 
 			<component :is="`layout-${layout}`" v-bind="layoutState">
 				<template #no-results>

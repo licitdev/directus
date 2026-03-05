@@ -14,6 +14,10 @@ beforeEach(() => {
 });
 
 const mockServerInfo: Info = {
+	ai_enabled: false,
+	entitlements: { activity_feed: { limit: 30 }, revisions: { limit: 30 } },
+	mcp_enabled: false,
+	setupCompleted: false,
 	project: {
 		project_name: 'Directus',
 		project_descriptor: null,
