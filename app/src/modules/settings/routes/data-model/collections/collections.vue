@@ -226,7 +226,7 @@ function onPurchaseAddOnClick() {
 				<template #title>{{ $t('collections_limit_reached_notice') }}</template>
 			</VNotice>
 
-			<VNotice v-if="approachingCollectionsLimit" type="warning" icon="warning">
+			<VNotice v-if="approachingCollectionsLimit && !reachedCollectionsLimit" type="warning" icon="warning">
 				<template #title>{{ $t('collections_approaching_limit_notice', { count: 5 }) }}</template>
 			</VNotice>
 
