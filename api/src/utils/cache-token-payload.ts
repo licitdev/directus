@@ -16,3 +16,10 @@ export async function clearCacheTokenPayload() {
 	const { systemCache } = getCache();
 	await systemCache.delete(CACHE_KEY);
 }
+
+export async function setTTLCacheTokenPayload(ttl: number) {
+	const { systemCache } = getCache();
+	const payload = readCacheTokenPayload();
+
+	return setCacheValue(systemCache, CACHE_KEY, payload, ttl);
+}
