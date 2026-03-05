@@ -53,15 +53,18 @@ const collections = computed(() => {
 
 const collectionsLimit = computed(() => {
 	const { collections_limit } = serverStore.info.entitlements;
-	return collections_limit;
+	return collections_limit ?? 0;
 });
 
-const reachedCollectionsLimit = computed(
-	() => collectionsStore.databaseCollections.length >= (collectionsLimit.value ?? 0),
-);
+const collectionsWarningLimit = computed(() => {
+	const { collections_warning_limit } = serverStore.info.entitlements;
+	return collections_warning_limit ?? 0;
+});
+
+const reachedCollectionsLimit = computed(() => collectionsStore.databaseCollections.length >= collectionsLimit.value);
 
 const approachingCollectionsLimit = computed(
-	() => collectionsStore.databaseCollections.length >= (collectionsLimit.value ?? 0) - 5,
+	() => collectionsStore.databaseCollections.length >= collectionsLimit.value - collectionsWarningLimit.value,
 );
 
 const rootCollections = computed(() => {
@@ -227,7 +230,7 @@ function onPurchaseAddOnClick() {
 			</VNotice>
 
 			<VNotice v-if="approachingCollectionsLimit && !reachedCollectionsLimit" type="warning" icon="warning">
-				<template #title>{{ $t('collections_approaching_limit_notice', { count: 5 }) }}</template>
+				<template #title>{{ $t('collections_approaching_limit_notice', { count: collectionsWarningLimit }) }}</template>
 			</VNotice>
 
 			<VInfo v-if="collections.length === 0" icon="box" :title="$t('no_collections')">

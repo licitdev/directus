@@ -31,6 +31,7 @@ export type Info = {
 	setupCompleted: boolean;
 	entitlements: {
 		collections_limit?: number;
+		collections_warning_limit?: number;
 	};
 	rateLimit?:
 		| false
