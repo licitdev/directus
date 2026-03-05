@@ -168,12 +168,6 @@ export class ServerService {
 				}
 			}
 
-			const defaultUsersLimit = env['ENTITLEMENTS_USERS_DEFAULT_LIMIT'];
-
-			if (defaultUsersLimit) {
-				info['entitlements']['users_limit'] = Number(defaultUsersLimit);
-			}
-
 			try {
 				const usersFeature = await getFeature<{ limit?: number }>('users');
 

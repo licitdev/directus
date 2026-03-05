@@ -1,4 +1,3 @@
-import { useEnv } from '@directus/env';
 import {
 	ErrorCode,
 	ForbiddenError,
@@ -25,8 +24,6 @@ import asyncHandler from '../utils/async-handler.js';
 import { sanitizeQuery } from '../utils/sanitize-query.js';
 
 const router = express.Router();
-const env = useEnv();
-const defaultUsersLimit = env['ENTITLEMENTS_USERS_DEFAULT_LIMIT'];
 
 router.use(useCollection('directus_users'));
 
@@ -38,7 +35,7 @@ router.post(
 		const usersCount = Number(usersCountResult?.['count'] ?? 0);
 
 		const usersFeature = await getFeature<{ limit?: number }>('users');
-		const usersLimit = usersFeature?.limit ?? Number(defaultUsersLimit);
+		const usersLimit = usersFeature?.limit;
 
 		if (usersLimit && usersCount >= usersLimit) {
 			throw new LimitExceededError({ category: 'users' });
