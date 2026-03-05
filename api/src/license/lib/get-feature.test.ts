@@ -29,12 +29,6 @@ describe('getFeature', () => {
 		expect(result).toEqual({ key1: 'value1' });
 	});
 
-	test('throws when license payload is not found', async () => {
-		vi.mocked(getLicensePayload).mockResolvedValue(undefined);
-
-		await expect(getFeature('featureA')).rejects.toThrow('License payload is not found');
-	});
-
 	test('throws when feature does not exist in entitlements', async () => {
 		const cachedPayload = {
 			metadata: {

@@ -1,3 +1,4 @@
+import { DEFAULT_ENTITLEMENT_FEATURES } from '@directus/constants';
 import { get, has } from 'lodash-es';
 import { getLicensePayload } from './get-license-payload.js';
 
@@ -8,15 +9,12 @@ export async function getFeature<T = unknown>(featureName: string): Promise<T> {
 
 	const payload = await getLicensePayload();
 
-	if (!payload) {
-		throw new Error('License payload is not found');
-	}
-
 	const featurePath = `metadata.entitlements.${featureName}`;
+	const defaultFallback = get(DEFAULT_ENTITLEMENT_FEATURES, featureName) as T | undefined;
 
-	if (!has(payload, featurePath)) {
+	if (!has(payload, featurePath) && !defaultFallback) {
 		throw new Error(`Feature "${featureName}" does not exist in license entitlements`);
 	}
 
-	return get(payload, featurePath) as T;
+	return get(payload, featurePath, defaultFallback) as T;
 }
