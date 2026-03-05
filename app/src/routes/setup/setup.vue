@@ -8,11 +8,11 @@ import { defaultValues, FormValidator, useFormFields, validate, ValidationError 
 import SetupForm from './form.vue';
 import api from '@/api';
 import { login } from '@/auth';
-import LicenseKeyInput from '@/components/license-key-input.vue';
 import VButton from '@/components/v-button.vue';
 import VIcon from '@/components/v-icon/v-icon.vue';
 import VNotice from '@/components/v-notice.vue';
 import { translateAPIError } from '@/lang';
+import LicenseKeyInput from '@/modules/licensing/components/license-key-input.vue';
 import { useServerStore } from '@/stores/server';
 import PublicView from '@/views/public';
 
