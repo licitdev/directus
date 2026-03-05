@@ -19,6 +19,36 @@ describe('getFeature', () => {
 		await expect(getFeature('featureA')).rejects.toThrow('License payload is not found');
 	});
 
+	test('returns default entitlements when payload does not contain the feature but defaults do', async () => {
+		const cachedPayload = {
+			metadata: {
+				entitlements: {},
+			},
+		};
+
+		vi.mocked(getLicensePayload).mockResolvedValue(cachedPayload);
+
+		const result = await getFeature<{ limit: number }>('collections');
+
+		expect(result).toEqual({ limit: 10 });
+	});
+
+	test('merges default entitlements with payload, giving payload precedence', async () => {
+		const cachedPayload = {
+			metadata: {
+				entitlements: {
+					collections: { limit: 25 },
+				},
+			},
+		};
+
+		vi.mocked(getLicensePayload).mockResolvedValue(cachedPayload);
+
+		const result = await getFeature<{ limit: number }>('collections');
+
+		expect(result).toEqual({ limit: 25 });
+	});
+
 	describe('object format entitlements', () => {
 		test('returns feature data when payload contains the feature', async () => {
 			const cachedPayload = {

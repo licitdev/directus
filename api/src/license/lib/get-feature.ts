@@ -1,7 +1,8 @@
-import { get, has } from 'lodash-es';
+import { get, has, merge } from 'lodash-es';
+import { defaultEntitlements } from '../defaults.js';
 import { getLicensePayload } from './get-license-payload.js';
 
-export async function getFeature<T = unknown>(featureName: string): Promise<T> {
+export async function getFeature<T>(featureName: string): Promise<T> {
 	if (!featureName) {
 		throw new Error('Feature name must not be empty');
 	}
@@ -26,10 +27,14 @@ export async function getFeature<T = unknown>(featureName: string): Promise<T> {
 	}
 
 	const featurePath = `metadata.entitlements.${featureName}`;
+	const defaultPayload = defaultEntitlements[featureName];
 
-	if (!has(payload, featurePath)) {
+	if (!has(payload, featurePath) && !defaultPayload) {
 		throw new Error(`Feature "${featureName}" does not exist in license entitlements`);
 	}
 
-	return get(payload, featurePath) as T;
+	const featurePayload = get(payload, featurePath);
+	const mergedPayload = merge({}, defaultPayload, featurePayload);
+
+	return mergedPayload as T;
 }
