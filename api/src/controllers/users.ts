@@ -33,11 +33,12 @@ router.post(
 		const db = getDatabase();
 		const usersCountResult = await db('directus_users').where('status', 'active').count({ count: '*' }).first();
 		const usersCount = Number(usersCountResult?.['count'] ?? 0);
+		const newUsersCount = Array.isArray(req.body) ? req.body.length : 1;
 
 		const usersFeature = await getFeature<{ limit?: number }>('users');
 		const usersLimit = usersFeature?.limit;
 
-		if (usersLimit && usersCount >= usersLimit) {
+		if (usersLimit && usersCount + newUsersCount > usersLimit) {
 			throw new LimitExceededError({ category: 'users' });
 		}
 
