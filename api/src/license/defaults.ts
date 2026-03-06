@@ -1,4 +1,5 @@
 import type { Entitlements } from './types/index.js';
+
 export const DEFAULT_USERS_LIMIT = 10;
 export const DEFAULT_COLLECTIONS_LIMIT = 10;
 export const DEFAULT_COLLECTIONS_WARNING_LIMIT = 5;
