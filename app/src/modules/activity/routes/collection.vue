@@ -22,7 +22,10 @@ const { layout, layoutOptions, layoutQuery, filter, search } = usePreset(ref('di
 const { layoutWrapper } = useLayout(layout);
 const serverStore = useServerStore();
 
-const activityFeedLimit = computed(() => serverStore.info.entitlements.activity_feed.limit);
+const activityFeedLimit = computed(() => {
+	const activityFeed = serverStore.info.entitlements?.activity_feed as { limit?: number } | undefined;
+	return activityFeed?.limit ?? 30;
+});
 
 const roleFilter = ref<Filter | null>(null);
 </script>
@@ -35,7 +38,7 @@ const roleFilter = ref<Filter | null>(null);
 		v-model:layout-query="layoutQuery"
 		:filter="mergeFilters(filter, roleFilter)"
 		:filter-user="filter"
-		:filter-system="roleFilter"
+		:filter-system="roleFilter ?? undefined"
 		:search="search"
 		show-select="none"
 		collection="directus_activity"
@@ -50,12 +53,15 @@ const roleFilter = ref<Filter | null>(null);
 			</template>
 
 			<template #navigation>
-				<ActivityNavigation v-model:filter="roleFilter" />
+				<ActivityNavigation
+					:filter="roleFilter ?? undefined"
+					@update:filter="(v) => (roleFilter = v ?? null)"
+				/>
 			</template>
 
 			<VNotice type="info" icon="diamond">
 				<template #title>
-					{{ $t('feature_limit_notice', { limit: activityFeedLimit, feature: 'Activity Feed' }) }}
+					{{ $t('feature_limit_notice', { limit: activityFeedLimit, feature: $t('activity_feed') }) }}
 				</template>
 			</VNotice>
 
@@ -85,12 +91,3 @@ const roleFilter = ref<Filter | null>(null);
 	</component>
 </template>
 
-<style lang="scss" scoped>
-.content {
-	padding: var(--content-padding);
-}
-
-.header-icon {
-	--v-button-color-disabled: var(--theme--foreground);
-}
-</style>

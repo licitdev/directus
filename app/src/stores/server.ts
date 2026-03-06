@@ -76,6 +76,7 @@ export type Info = {
 	show_license_key_field?: boolean;
 	license_source?: 'env' | 'settings' | null;
 	license?: Record<string, any> | null;
+	license_locked?: boolean;
 	extensions?: {
 		limit: number | null;
 	};
@@ -139,6 +140,7 @@ export const useServerStore = defineStore('serverStore', () => {
 		info.show_license_key_field = serverInfoResponse.data.data?.show_license_key_field ?? true;
 		info.license_source = serverInfoResponse.data.data?.license_source ?? null;
 		info.license = serverInfoResponse.data.data?.license ?? null;
+		info.license_locked = serverInfoResponse.data.data?.license_locked ?? false;
 		info.entitlements = serverInfoResponse.data.data?.entitlements ?? {};
 		info.queryLimit = serverInfoResponse.data.data?.queryLimit;
 		info.extensions = serverInfoResponse.data.data?.extensions;

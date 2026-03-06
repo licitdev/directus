@@ -11,6 +11,7 @@ import { FILE_UPLOADS, RESUMABLE_UPLOADS } from '../constants.js';
 import getDatabase, { hasDatabaseConnection } from '../database/index.js';
 import { getFeature } from '../license/index.js';
 import { getLicensePayload } from '../license/lib/get-license-payload.js';
+import { isLicenseLocked } from '../license/lib/license-status.js';
 import { useLogger } from '../logger/index.js';
 import getMailer from '../mailer.js';
 import { rateLimiterGlobal } from '../middleware/rate-limiter-global.js';
@@ -190,9 +191,12 @@ export class ServerService {
 			}
 
 			try {
-				info['license'] = (await getLicensePayload()) ?? null;
+				const licensePayload = await getLicensePayload(true);
+				info['license'] = licensePayload ?? null;
+				info['license_locked'] = licensePayload ? isLicenseLocked(licensePayload) : false;
 			} catch {
 				info['license'] = null;
+				info['license_locked'] = false;
 			}
 		}
 

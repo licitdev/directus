@@ -2,8 +2,13 @@ import { ErrorCode, ForbiddenError, InvalidPayloadError, isDirectusError, RouteN
 import { format } from 'date-fns';
 import { Router } from 'express';
 import { checkLicense } from '../license/lib/check-license.js';
+import { deactivate } from '../license/lib/deactivate.js';
+import { getKey } from '../license/lib/get-key.js';
 import { resolvePublicUrl } from '../license/lib/license-context.js';
 import { validateAndGetToken } from '../license/lib/validate-and-get-token.js';
+import { getProjectId } from '../utils/get-project-id.js';
+import { clearCacheTokenPayload } from '../utils/cache-token-payload.js';
+import { useEnv } from '@directus/env';
 import { useLogger } from '../logger/index.js';
 import { respond } from '../middleware/respond.js';
 import { SettingsService } from '../services/index.js';
@@ -191,6 +196,44 @@ router.post(
 		const payload = await checkLicense({ licenseKey });
 
 		res.locals['payload'] = { data: payload };
+		return next();
+	}),
+	respond,
+);
+
+router.post(
+	'/deactivate-license',
+	asyncHandler(async (req, res, next) => {
+		const env = useEnv();
+		const hasEnvLicenseKey =
+			typeof env['DIRECTUS_LICENSE_KEY'] === 'string' && String(env['DIRECTUS_LICENSE_KEY']).trim() !== '';
+
+		if (hasEnvLicenseKey) {
+			throw new InvalidPayloadError({
+				reason: 'Cannot deactivate license managed via environment variable',
+			});
+		}
+
+		const licenseKey = await getKey();
+		if (!licenseKey) {
+			throw new InvalidPayloadError({ reason: 'No license key configured' });
+		}
+
+		const projectId = await getProjectId();
+		if (!projectId) {
+			throw new InvalidPayloadError({ reason: 'Project ID is not configured' });
+		}
+
+		await deactivate({ licenseKey, projectId });
+
+		const settingsService = new SettingsService({ schema: req.schema });
+		await settingsService.upsertSingleton({
+			license_key: null,
+			license_token: null,
+		});
+		await clearCacheTokenPayload();
+
+		res.locals['payload'] = { data: { success: true } };
 		return next();
 	}),
 	respond,

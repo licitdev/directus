@@ -46,17 +46,32 @@ setup_optional: optional
 setup_project: Setup Project
 license_key: License Key
 license_key_placeholder: Enter your license key
+license_key_masked_placeholder: "••••••••••••••••••••••••"
 settings_license: License
 settings_license_tier: Tier
 license_key_management: License Key Management
 license_key_management_notice: Have a license key? Enter it below to activate your plan and unlock advanced features.
 settings_license_no_key: No license key configured
+settings_license_value_stored: Value Securely Stored
 settings_license_edit: Edit License Key
 settings_license_env_managed: Managed via environment variable
 settings_license_add: Add License Key
+settings_license_danger_zone: Danger Zone
+settings_license_deactivate: Deactivate License
+settings_license_deactivate_notice: Remove the license from this project and unbind it so it can be used elsewhere.
+settings_license_deactivate_confirm_title: Deactivate License?
+settings_license_deactivate_confirm: Are you sure you want to deactivate the license? This will remove the license from this project.
+settings_license_deactivate_success: License deactivated successfully
 license_valid: License Valid
 license_invalid: Invalid License Key
 license_expires_on: 'Expires on {date}'
+license_status_active: Active
+license_status_expiring: Expiring
+license_status_expired: Expired
+license_grace_period_warning: 'Your Directus license key has expired. You have {days} days to resolve your license issue or your Directus project will be locked.'
+license_grace_period_warning_one_day: 'Your Directus license key has expired. You have 1 day to resolve your license issue or your Directus project will be locked.'
+license_project_locked: Your Directus project is locked
+license_project_locked_notice: Your license has expired and the grace period has ended. Enter a new license key to unlock your project.
 license_tier: '{tier} Tier'
 first_name: First Name
 last_name: Last Name

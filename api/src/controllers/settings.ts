@@ -2,7 +2,7 @@ import { ErrorCode, isDirectusError } from '@directus/errors';
 import express from 'express';
 import { handleLicenseApiError } from '../license/lib/handle-api-error.js';
 import { resolvePublicUrl } from '../license/lib/license-context.js';
-import { validateAndGetToken } from '../license/lib/validate-and-get-token.js';
+import { validate } from '../license/lib/validate.js';
 import { respond } from '../middleware/respond.js';
 import useCollection from '../middleware/use-collection.js';
 import { SettingsService } from '../services/index.js';
@@ -60,13 +60,17 @@ router.patch(
 					project_id?: string;
 				};
 
-				const token = await validateAndGetToken(trimmedLicenseKey, {
+				const { token, projectId: newProjectId } = await validate({
+					licenseKey: trimmedLicenseKey,
 					...(settings?.project_id && { projectId: settings.project_id }),
 					publicUrl: resolvePublicUrl(),
 				});
 
 				body.license_key = trimmedLicenseKey;
 				body.license_token = token;
+				if (newProjectId) {
+					body.project_id = newProjectId;
+				}
 				await clearCacheTokenPayload();
 			} catch (error) {
 				handleLicenseApiError(error);

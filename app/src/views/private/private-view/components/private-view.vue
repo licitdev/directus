@@ -27,6 +27,7 @@ export interface PrivateViewProps {
 import { useCookies } from '@vueuse/integrations/useCookies';
 import { computed } from 'vue';
 import LicenseBanner from '../../components/license-banner.vue';
+import LicenseLockedOverlay from '../../components/license-locked-overlay.vue';
 import NotificationDialogs from '../../components/notification-dialogs.vue';
 import NotificationsDrawer from '../../components/notifications-drawer.vue';
 import PrivateViewNoAppAccess from './private-view-no-app-access.vue';
@@ -74,4 +75,5 @@ const showLicenseBanner = computed(
 	<NotificationDialogs />
 
 	<LicenseBanner v-model="showLicenseBanner" />
+	<LicenseLockedOverlay />
 </template>

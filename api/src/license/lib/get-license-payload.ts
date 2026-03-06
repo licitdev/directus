@@ -7,10 +7,24 @@ import { decrypt } from '../../utils/encrypt.js';
 import { getSecret } from '../../utils/get-secret.js';
 import { verify } from '../../utils/verify-token.js';
 import { validate } from './validate.js';
+import { isLicenseLocked } from './license-status.js';
 
-export async function getLicensePayload(): Promise<Record<string, unknown> | undefined> {
+export async function getLicensePayload(allowLocked = false): Promise<Record<string, unknown> | undefined> {
 	let payload = await readCacheTokenPayload();
-	if (payload) return payload;
+	if (!payload) {
+		payload = await fetchLicensePayloadFromSource();
+		if (payload) {
+			await writeCacheTokenPayload(payload);
+		}
+	}
+
+	if (!payload) return undefined;
+	if (!allowLocked && isLicenseLocked(payload)) return undefined;
+
+	return payload;
+}
+
+async function fetchLicensePayloadFromSource(): Promise<Record<string, unknown> | undefined> {
 
 	const database = getDatabase();
 	const settings = await database.select('license_token', 'project_id').from('directus_settings').first();
@@ -19,13 +33,10 @@ export async function getLicensePayload(): Promise<Record<string, unknown> | und
 		try {
 			const secret = getSecret();
 			const rawToken = await decrypt(settings.license_token, secret);
-			payload = await verify(rawToken);
+			return await verify(rawToken);
 		} catch (error) {
 			throw new InvalidLicenseTokenError(undefined, { cause: error });
 		}
-
-		await writeCacheTokenPayload(payload);
-		return payload;
 	}
 
 	const env = useEnv();
@@ -50,9 +61,7 @@ export async function getLicensePayload(): Promise<Record<string, unknown> | und
 		}
 
 		try {
-			payload = await verify(token);
-			await writeCacheTokenPayload(payload);
-			return payload;
+			return await verify(token);
 		} catch (error) {
 			throw new InvalidLicenseTokenError(undefined, { cause: error });
 		}

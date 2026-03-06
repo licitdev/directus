@@ -17,12 +17,15 @@ const props = withDefaults(
 	defineProps<{
 		utmTerm?: string;
 		utmContent?: string;
+		/** When true, shows masked placeholder (••••••) - user types to replace. Used when editing existing key. */
+		hasExistingKey?: boolean;
 		/** Static payload from parent (after save). Takes priority over realtime preview. */
 		licensePayload?: Record<string, any> | null;
 	}>(),
 	{
 		utmTerm: '',
 		utmContent: '',
+		hasExistingKey: false,
 		licensePayload: null,
 	},
 );
@@ -49,6 +52,9 @@ watchDebounced(
 );
 
 const activePayload = computed(() => props.licensePayload ?? previewPayload.value);
+const inputPlaceholder = computed(() =>
+	props.hasExistingKey ? t('license_key_masked_placeholder') : t('license_key_placeholder'),
+);
 const expiryFormatted = computed(() => activePayload.value?.expiry?.slice(0, 10) ?? null);
 const tierName = computed(() => activePayload.value?.policy ?? null);
 const showStatus = computed(() => Boolean(activePayload.value?.valid));
@@ -75,7 +81,7 @@ const showStatus = computed(() => Boolean(activePayload.value?.valid));
 				<span class="optional">({{ t('setup_optional') }})</span>
 			</label>
 
-			<VInput v-model="inputValue" :placeholder="t('license_key_placeholder')" nullable>
+			<VInput v-model="inputValue" :placeholder="inputPlaceholder" nullable>
 				<template v-if="validating" #append>
 					<VProgressCircular class="spinner" small indeterminate />
 				</template>

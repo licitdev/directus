@@ -16,7 +16,10 @@ defineEmits(['click']);
 const expand = ref(true);
 const serverStore = useServerStore();
 
-const revisionsLimit = computed(() => serverStore.info.entitlements.revisions.limit);
+const revisionsLimit = computed(() => {
+	const revisions = serverStore.info.entitlements?.revisions as { limit?: number } | undefined;
+	return revisions?.limit ?? 30;
+});
 </script>
 
 <template>
@@ -31,7 +34,7 @@ const revisionsLimit = computed(() => serverStore.info.entitlements.revisions.li
 			/>
 			<VNotice type="info" icon="diamond">
 				<template #title>
-					{{ $t('feature_limit_notice', { limit: revisionsLimit, feature: 'Revisions' }) }}
+					{{ $t('feature_limit_notice', { limit: revisionsLimit, feature: $t('revisions') }) }}
 				</template>
 			</VNotice>
 		</div>
