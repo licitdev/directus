@@ -15,7 +15,7 @@ export async function getFeature<T>(featureName: string): Promise<T> {
 	}
 
 	const featurePath = `metadata.entitlements.${featureName}`;
-	const defaultPayload = defaultEntitlements[featureName as keyof Entitlements];
+	const defaultPayload = defaultEntitlements[featureName as keyof Entitlements] ?? {};
 
 	let featurePayload: unknown;
 

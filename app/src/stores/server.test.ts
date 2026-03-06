@@ -15,7 +15,7 @@ beforeEach(() => {
 
 const mockServerInfo: Info = {
 	ai_enabled: false,
-	entitlements: { activity_feed: { limit: 30 }, revisions: { limit: 30 } },
+	entitlements: {},
 	mcp_enabled: false,
 	setupCompleted: false,
 	project: {
