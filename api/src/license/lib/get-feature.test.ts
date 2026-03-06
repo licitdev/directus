@@ -30,7 +30,7 @@ describe('getFeature', () => {
 
 		const result = await getFeature<{ limit: number }>('collections');
 
-		expect(result).toEqual({ limit: 10 });
+		expect(result).toEqual({ limit: 10, warningLimit: 5 });
 	});
 
 	test('merges default entitlements with payload, giving payload precedence', async () => {
@@ -46,7 +46,7 @@ describe('getFeature', () => {
 
 		const result = await getFeature<{ limit: number }>('collections');
 
-		expect(result).toEqual({ limit: 25 });
+		expect(result).toEqual({ limit: 25, warningLimit: 5 });
 	});
 
 	describe('object format entitlements', () => {

@@ -9,6 +9,7 @@ import { merge } from 'lodash-es';
 import { getCache } from '../cache.js';
 import { FILE_UPLOADS, RESUMABLE_UPLOADS } from '../constants.js';
 import getDatabase, { hasDatabaseConnection } from '../database/index.js';
+import { defaultEntitlements } from '../license/defaults.js';
 import { getFeature } from '../license/index.js';
 import { getLicensePayload } from '../license/lib/get-license-payload.js';
 import { isLicenseLocked } from '../license/lib/license-status.js';
@@ -156,20 +157,18 @@ export class ServerService {
 				};
 			}
 
-			info['entitlements'] = {};
+			info['entitlements'] = {
+				collections_limit: defaultEntitlements.collections.limit,
+				collections_warning_limit: defaultEntitlements.collections.warningLimit,
+			};
 
 			if (isAdmin) {
-				const defaultCollectionsLimit = env['ENTITLEMENTS_COLLECTION_DEFAULT_LIMIT'];
-
-				if (defaultCollectionsLimit) {
-					info['entitlements']['collections_limit'] = Number(defaultCollectionsLimit);
-				}
-
 				try {
-					const collectionsFeature = await getFeature<{ limit: number }>('collections');
+					const collectionsFeature = await getFeature<{ limit: number; warningLimit: number }>('collections');
 
 					if (collectionsFeature.limit) {
 						info['entitlements']['collections_limit'] = collectionsFeature.limit;
+						info['entitlements']['collections_warning_limit'] = collectionsFeature.warningLimit;
 					}
 				} catch (error) {
 					logger.warn(error, '[license] Failed to load collections feature entitlements');
