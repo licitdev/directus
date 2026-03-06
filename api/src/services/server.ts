@@ -174,6 +174,16 @@ export class ServerService {
 					logger.warn(error, '[license] Failed to load collections feature entitlements');
 				}
 			}
+
+			try {
+				const usersFeature = await getFeature<{ limit?: number }>('users');
+
+				if (usersFeature?.limit) {
+					info['entitlements']['users_limit'] = usersFeature.limit;
+				}
+			} catch (error) {
+				logger.warn(error, '[license] Failed to load user feature entitlements');
+			}
 		}
 
 		if (this.accountability?.user || !setupComplete) info['version'] = version;

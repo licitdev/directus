@@ -1,5 +1,6 @@
 import type { Entitlements } from './types/index.js';
 
+export const DEFAULT_USERS_LIMIT = 10;
 export const DEFAULT_COLLECTIONS_LIMIT = 10;
 export const DEFAULT_COLLECTIONS_WARNING_LIMIT = 5;
 export const DEFAULT_ACTIVITY_FEED_DAYS = 30;
@@ -15,5 +16,8 @@ export const defaultEntitlements: Entitlements = {
 	},
 	revisions: {
 		limit: DEFAULT_REVISIONS_DAYS,
+	},
+	users: {
+		limit: DEFAULT_USERS_LIMIT,
 	},
 };

@@ -11,9 +11,13 @@ export type RevisionsEntitlements = {
 	limit: number;
 };
 
+export type UsersEntitlements = {
+	limit: number;
+};
+
 export type Entitlements = {
 	collections: CollectionsEntitlements;
 	activity_feed: ActivityFeedEntitlements;
 	revisions: RevisionsEntitlements;
+	users: UsersEntitlements;
 };
-
