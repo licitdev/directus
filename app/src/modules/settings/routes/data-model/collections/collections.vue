@@ -230,7 +230,13 @@ function onPurchaseAddOnClick() {
 			</VNotice>
 
 			<VNotice v-if="approachingCollectionsLimit && !reachedCollectionsLimit" type="warning" icon="warning">
-				<template #title>{{ $t('collections_approaching_limit_notice', { count: collectionsWarningLimit }) }}</template>
+				<template #title>
+					{{
+						$t('collections_approaching_limit_notice', {
+							count: collectionsLimit - collectionsStore.databaseCollections.length,
+						})
+					}}
+				</template>
 			</VNotice>
 
 			<VInfo v-if="collections.length === 0" icon="box" :title="$t('no_collections')">
