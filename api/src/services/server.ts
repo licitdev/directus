@@ -160,6 +160,9 @@ export class ServerService {
 			info['entitlements'] = {
 				collections_limit: defaultEntitlements.collections.limit,
 				collections_warning_limit: defaultEntitlements.collections.warningLimit,
+				users_limit: defaultEntitlements.users.limit,
+				activity_feed_limit: defaultEntitlements.activity_feed.limit,
+				revisions_limit: defaultEntitlements.revisions.limit,
 			};
 
 			if (isAdmin) {
@@ -183,6 +186,26 @@ export class ServerService {
 				}
 			} catch (error) {
 				logger.warn(error, '[license] Failed to load user feature entitlements');
+			}
+
+			try {
+				const activityFeedFeature = await getFeature<{ limit?: number }>('activity_feed');
+
+				if (activityFeedFeature?.limit) {
+					info['entitlements']['activity_feed_limit'] = activityFeedFeature.limit;
+				}
+			} catch (error) {
+				logger.warn(error, '[license] Failed to load activity feed feature entitlements');
+			}
+
+			try {
+				const revisionsFeature = await getFeature<{ limit?: number }>('revisions');
+
+				if (revisionsFeature?.limit) {
+					info['entitlements']['revisions_limit'] = revisionsFeature.limit;
+				}
+			} catch (error) {
+				logger.warn(error, '[license] Failed to load revisions feature entitlements');
 			}
 		}
 

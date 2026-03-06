@@ -10,8 +10,8 @@ export enum Entitlements {
 export const DEFAULT_USERS_LIMIT = 10;
 export const DEFAULT_COLLECTIONS_LIMIT = 10;
 export const DEFAULT_COLLECTIONS_WARNING_LIMIT = 5;
-export const DEFAULT_ACTIVITY_FEED_DAYS = 30;
-export const DEFAULT_REVISIONS_DAYS = 30;
+export const DEFAULT_ACTIVITY_FEED_DAYS = 3;
+export const DEFAULT_REVISIONS_DAYS = 3;
 
 export const defaultEntitlements: EntitlementsType = {
 	[Entitlements.COLLECTIONS]: {

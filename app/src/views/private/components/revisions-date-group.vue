@@ -17,8 +17,8 @@ const expand = ref(true);
 const serverStore = useServerStore();
 
 const revisionsLimit = computed(() => {
-	const revisions = serverStore.info.entitlements?.revisions as { limit?: number } | undefined;
-	return revisions?.limit ?? 30;
+	const limit = serverStore.info.entitlements?.revisions_limit;
+	return limit;
 });
 </script>
 

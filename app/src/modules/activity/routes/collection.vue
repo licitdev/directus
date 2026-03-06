@@ -23,8 +23,8 @@ const { layoutWrapper } = useLayout(layout);
 const serverStore = useServerStore();
 
 const activityFeedLimit = computed(() => {
-	const activityFeed = serverStore.info.entitlements?.activity_feed as { limit?: number } | undefined;
-	return activityFeed?.limit ?? 30;
+	const limit = serverStore.info.entitlements?.activity_feed_limit;
+	return limit;
 });
 
 const roleFilter = ref<Filter | null>(null);
@@ -53,10 +53,7 @@ const roleFilter = ref<Filter | null>(null);
 			</template>
 
 			<template #navigation>
-				<ActivityNavigation
-					:filter="roleFilter ?? undefined"
-					@update:filter="(v) => (roleFilter = v ?? null)"
-				/>
+				<ActivityNavigation :filter="roleFilter ?? undefined" @update:filter="(v) => (roleFilter = v ?? null)" />
 			</template>
 
 			<VNotice type="info" icon="diamond">
@@ -90,4 +87,3 @@ const roleFilter = ref<Filter | null>(null);
 		</PrivateView>
 	</component>
 </template>
-

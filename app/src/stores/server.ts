@@ -33,15 +33,8 @@ export type Info = {
 		collections_limit?: number;
 		collections_warning_limit?: number;
 		users_limit?: number;
-		activity_feed?: {
-			limit: number;
-		};
-		revisions?: {
-			limit: number;
-		};
-		collections?: {
-			limit: number;
-		};
+		activity_feed_limit?: number;
+		revisions_limit?: number;
 	};
 	rateLimit?:
 		| false

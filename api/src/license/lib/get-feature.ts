@@ -11,7 +11,7 @@ export async function getFeature<T>(featureName: string): Promise<T> {
 	const payload = await getLicensePayload();
 
 	if (!payload) {
-		throw new Error('License payload is not found');
+		// throw new Error('License payload is not found');
 	}
 
 	const featurePath = `metadata.entitlements.${featureName}`;
@@ -23,14 +23,14 @@ export async function getFeature<T>(featureName: string): Promise<T> {
 	if (Array.isArray(entitlements)) {
 		const entry = entitlements.find((e: Record<string, unknown>) => e['name'] === featureName);
 		if (!entry) {
-			throw new Error(`Feature "${featureName}" does not exist in license entitlements`);
+			// throw new Error(`Feature "${featureName}" does not exist in license entitlements`);
 		}
 
 		const { name, ...rest } = entry as Record<string, unknown>;
 		featurePayload = rest;
 	} else {
 		if (!has(payload, featurePath) && !defaultPayload) {
-			throw new Error(`Feature "${featureName}" does not exist in license entitlements`);
+			// throw new Error(`Feature "${featureName}" does not exist in license entitlements`);
 		}
 
 		featurePayload = get(payload, featurePath);
