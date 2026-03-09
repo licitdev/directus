@@ -136,6 +136,7 @@ const fields = useFormFields(props.register, value, initialValues, toRef(props, 
 <style scoped>
 .setup-form {
 	display: grid;
+	grid-template-columns: minmax(0, 1fr);
 
 	&.skipLicense {
 		.v-notice {
@@ -175,10 +176,12 @@ p {
 }
 
 .v-checkbox {
-	block-size: 32px;
+	block-size: auto;
+	align-items: flex-start;
 
 	span {
 		font-weight: 600;
+		white-space: normal;
 	}
 }
 

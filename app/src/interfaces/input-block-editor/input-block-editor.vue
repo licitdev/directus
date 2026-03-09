@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import EditorJS from '@editorjs/editorjs';
 import { isEqual } from 'lodash';
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useBus } from './bus';
 import { sanitizeValue } from './sanitize';
@@ -110,10 +110,11 @@ onUnmounted(() => {
 
 watch(
 	[editorjsIsReady, () => props.disabled],
-	([isReady, isDisabled]) => {
+	async ([isReady, isDisabled]) => {
 		if (!isReady) return;
 
 		// Note: EditorJS must be ready before readOnly is toggled; otherwise, the content won’t render, which could result in data loss!
+		await nextTick();
 		editorjsRef.value?.readOnly.toggle(isDisabled);
 	},
 	{ immediate: true },
@@ -124,6 +125,9 @@ watch(
 	async (newVal, oldVal) => {
 		// First value will be set in 'onMounted'
 		if (!editorjsRef.value || !editorjsIsReady.value) return;
+
+		// During refresh, item is temporarily null and the field is disabled — skip to avoid clearing the editor
+		if (newVal === null && props.disabled) return;
 
 		if (haveValuesChanged.value) {
 			haveValuesChanged.value = false;
