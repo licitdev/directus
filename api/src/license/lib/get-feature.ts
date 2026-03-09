@@ -9,11 +9,6 @@ export async function getFeature<T>(featureName: string): Promise<T> {
 	}
 
 	const payload = await getLicensePayload();
-
-	if (!payload) {
-		throw new Error('License payload is not found');
-	}
-
 	const featurePath = `metadata.entitlements.${featureName}`;
 	const defaultPayload = defaultEntitlements[featureName as keyof Entitlements];
 
