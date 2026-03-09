@@ -11,6 +11,7 @@ import {
 	createSAMLAuthRouter,
 } from '../auth/drivers/index.js';
 import { DEFAULT_AUTH_PROVIDER, REFRESH_COOKIE_OPTIONS, SESSION_COOKIE_OPTIONS } from '../constants.js';
+import { getFeature } from '../license/index.js';
 import { useLogger } from '../logger/index.js';
 import { respond } from '../middleware/respond.js';
 import { createDefaultAccountability } from '../permissions/utils/create-default-accountability.js';
@@ -255,8 +256,17 @@ router.get(
 		const sessionOnly =
 			'sessionOnly' in req.query && (req.query['sessionOnly'] === '' || Boolean(req.query['sessionOnly']));
 
+		let isSSOEnabled = false;
+
+		try {
+			const ssoEntitlement = await getFeature<{ enabled?: boolean }>('sso');
+			isSSOEnabled = ssoEntitlement?.enabled === true;
+		} catch {
+			logger.warn('[license] Failed to load SSO feature entitlements');
+		}
+
 		res.locals['payload'] = {
-			data: getAuthProviders({ sessionOnly }),
+			data: isSSOEnabled ? getAuthProviders({ sessionOnly }) : [],
 			disableDefault: env['AUTH_DISABLE_DEFAULT'],
 		};
 
