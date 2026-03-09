@@ -9,7 +9,7 @@ export enum Entitlement {
 export const DEFAULT_USERS_LIMIT = 10;
 export const DEFAULT_COLLECTIONS_LIMIT = 10;
 export const DEFAULT_COLLECTIONS_WARNING_LIMIT = 5;
-export const DEFAULT_SSO_ENABLED = true;
+export const DEFAULT_SSO_ENABLED = false;
 
 export const defaultEntitlements: Entitlements = {
 	[Entitlement.COLLECTIONS]: {
