@@ -1,6 +1,9 @@
-import { ErrorCode, isDirectusError } from '@directus/errors';
+import { ErrorCode, isDirectusError, LimitExceededError } from '@directus/errors';
+import { isSystemCollection } from '@directus/system-data';
 import type { Item } from '@directus/types';
 import { Router } from 'express';
+import getDatabase from '../database/index.js';
+import { getFeature } from '../license/index.js';
 import { respond } from '../middleware/respond.js';
 import { validateBatch } from '../middleware/validate-batch.js';
 import { CollectionsService } from '../services/collections.js';
@@ -19,6 +22,19 @@ router.post(
 
 		const attemptConcurrentIndex =
 			'concurrentIndexCreation' in req.query && req.query['concurrentIndexCreation'] !== 'false';
+
+		const db = getDatabase();
+		const allCollections = await db('directus_collections').select('collection');
+		const collectionsCount = allCollections.filter(({ collection }) => !isSystemCollection(collection)).length;
+
+		const collectionFeature = await getFeature<{ limit: number }>('collections');
+		const collectionsLimit = collectionFeature?.limit;
+
+		const newCollectionsCount = Array.isArray(req.body) ? req.body.length : 1;
+
+		if (collectionsLimit && collectionsCount + newCollectionsCount > collectionsLimit) {
+			throw new LimitExceededError({ category: 'collections' });
+		}
 
 		if (Array.isArray(req.body)) {
 			const collectionKey = await collectionsService.createMany(req.body, {

@@ -12,7 +12,7 @@ export async function readCacheTokenPayload(): Promise<Record<string, unknown> |
 	return await getCacheValue(systemCache, CACHE_KEY);
 }
 
-export async function deleteCacheTokenPayload() {
+export async function clearCacheTokenPayload() {
 	const { systemCache } = getCache();
 	await systemCache.delete(CACHE_KEY);
 }

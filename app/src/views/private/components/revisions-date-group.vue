@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import RevisionItem from './revision-item.vue';
 import VDetail from '@/components/v-detail.vue';
+import VNotice from '@/components/v-notice.vue';
+import { useServerStore } from '@/stores/server';
 import { Revision, RevisionsByDate } from '@/types/revisions';
 
 interface Props {
@@ -12,6 +14,12 @@ defineProps<Props>();
 defineEmits(['click']);
 
 const expand = ref(true);
+const serverStore = useServerStore();
+
+const revisionsLimit = computed(() => {
+	const limit = serverStore.info.entitlements?.revisions_limit;
+	return limit;
+});
 </script>
 
 <template>
@@ -24,6 +32,11 @@ const expand = ref(true);
 				:last="index === group.revisions.length - 1"
 				@click="$emit('click', item.id)"
 			/>
+			<VNotice type="info" icon="diamond">
+				<template #title>
+					{{ $t('feature_limit_notice', { limit: revisionsLimit, feature: $t('revisions') }) }}
+				</template>
+			</VNotice>
 		</div>
 	</VDetail>
 </template>

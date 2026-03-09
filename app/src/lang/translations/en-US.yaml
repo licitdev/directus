@@ -36,7 +36,43 @@ setup_save_accept_license: >
 setup_accept_license: I accept the terms of the {directusBsl} and {privacyPolicy}
 setup_marketing_emails: Send me product updates and release notes
 setup_launch: Launch Directus
+setup_continue: Continue
+setup_license_key_info: Have a license key? Enter it below to activate your plan and unlock advanced features.
+setup_license_key_notice:
+  'Companies with under $5M in annual revenue may qualify for our Business plan at no cost. {learnMore} about
+  eligibility and apply anytime.'
+setup_learn_more: Learn more
+setup_optional: optional
 setup_project: Setup Project
+license_key: License Key
+license_key_placeholder: Enter your license key
+license_key_masked_placeholder: "••••••••••••••••••••••••"
+settings_license: License
+settings_license_tier: Tier
+license_key_management: License Key Management
+license_key_management_notice: Have a license key? Enter it below to activate your plan and unlock advanced features.
+settings_license_no_key: No license key configured
+settings_license_value_stored: Value Securely Stored
+settings_license_edit: Edit License Key
+settings_license_env_managed: Managed via environment variable
+settings_license_add: Add License Key
+settings_license_danger_zone: Danger Zone
+settings_license_deactivate: Deactivate License
+settings_license_deactivate_notice: Remove the license from this project and unbind it so it can be used elsewhere.
+settings_license_deactivate_confirm_title: Deactivate License?
+settings_license_deactivate_confirm: Are you sure you want to deactivate the license? This will remove the license from this project.
+settings_license_deactivate_success: License deactivated successfully
+license_valid: License Valid
+license_invalid: Invalid License Key
+license_expires_on: 'Expires on {date}'
+license_status_active: Active
+license_status_expiring: Expiring
+license_status_expired: Expired
+license_grace_period_warning: 'Your Directus license key has expired. You have {days} days to resolve your license issue or your Directus project will be locked.'
+license_grace_period_warning_one_day: 'Your Directus license key has expired. You have 1 day to resolve your license issue or your Directus project will be locked.'
+license_project_locked: Your Directus project is locked
+license_project_locked_notice: Your license has expired and the grace period has ended. Enter a new license key to unlock your project.
+license_tier: '{tier} Tier'
 first_name: First Name
 last_name: Last Name
 admin_email: Admin Email
@@ -57,6 +93,7 @@ draft: Draft
 archived: Archived
 marketplace: Marketplace
 extensions: Extensions
+purchase_add_on: Purchase Add-on
 skip_link_nav: Skip to Navigation
 skip_link_module_nav: Skip to Module Navigation
 skip_link_main: Skip to Main Content
@@ -744,6 +781,10 @@ csv: CSV
 csv_utf8: CSV Excel (UTF-8)
 no_collections: No Collections
 create_collection: Create Collection
+collections_limit_reached_notice: You have reached max capacity. Upgrade plan to unlock more.
+collections_approaching_limit_notice: You have {count} collection(s) left. Upgrade plan to unlock more.
+collections_limit_modal_title: You have reached the max limit allowed for your tier
+collections_limit_modal_description: You can also purchase additional add-ons for more feature unlock.
 no_collections_copy_admin: You don’t have any Collections yet. Click the button below to get started.
 no_collections_copy: You don’t have any Collections yet. Please contact your system administrator.
 relationship_not_setup: The relationship hasn't been configured correctly
@@ -781,6 +822,9 @@ sidebar: Sidebar
 duration: Duration
 charset: Charset
 second: second
+users_limit_modal_title: You have reached the max limit allowed for your tier.
+users_limit_admin_modal_description: You can also purchase additional add-ons for more feature unlock.
+users_limit_modal_description: Contact your administrator to unlock more.
 file_moved: File Moved
 collection_created: Collection Created
 modified_on: Modified On
@@ -2957,4 +3001,5 @@ accepted: Accepted
 text_direction_auto: Automatic (Match Language)
 text_direction_ltr: Left to Right (LTR)
 text_direction_rtl: Right to Left (RTL)
+feature_limit_notice: '{limit} days of {feature} is included in your current plan.'
 set_to_now: Set to Now

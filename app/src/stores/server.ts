@@ -32,6 +32,13 @@ export type Info = {
 		mimeTypeAllowList: string[];
 	};
 	setupCompleted: boolean;
+	entitlements: {
+		collections_limit?: number;
+		collections_warning_limit?: number;
+		users_limit?: number;
+		activity_feed_limit?: number;
+		revisions_limit?: number;
+	};
 	rateLimit?:
 		| false
 		| {
@@ -72,6 +79,10 @@ export type Info = {
 				collaborativeEditing?: boolean;
 		  };
 	version?: string;
+	show_license_key_field?: boolean;
+	license_source?: 'env' | 'settings' | null;
+	license?: Record<string, any> | null;
+	license_locked?: boolean;
 	extensions?: {
 		limit: number | null;
 	};
@@ -99,6 +110,7 @@ export const useServerStore = defineStore('serverStore', () => {
 		queryLimit: undefined,
 		websocket: undefined,
 		uploads: undefined,
+		entitlements: {},
 	});
 
 	const auth = reactive<Auth>({
@@ -133,6 +145,11 @@ export const useServerStore = defineStore('serverStore', () => {
 		info.ai_enabled = serverInfoResponse.data.data?.ai_enabled;
 		info.files = serverInfoResponse.data.data?.files;
 		info.setupCompleted = serverInfoResponse.data.data?.setupCompleted;
+		info.show_license_key_field = serverInfoResponse.data.data?.show_license_key_field ?? true;
+		info.license_source = serverInfoResponse.data.data?.license_source ?? null;
+		info.license = serverInfoResponse.data.data?.license ?? null;
+		info.license_locked = serverInfoResponse.data.data?.license_locked ?? false;
+		info.entitlements = serverInfoResponse.data.data?.entitlements ?? {};
 		info.queryLimit = serverInfoResponse.data.data?.queryLimit;
 		info.extensions = serverInfoResponse.data.data?.extensions;
 		info.websocket = serverInfoResponse.data.data?.websocket;

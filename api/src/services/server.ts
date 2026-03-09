@@ -9,6 +9,10 @@ import { merge } from 'lodash-es';
 import { getCache } from '../cache.js';
 import { FILE_UPLOADS, RESUMABLE_UPLOADS } from '../constants.js';
 import getDatabase, { hasDatabaseConnection } from '../database/index.js';
+import { defaultEntitlements } from '../license/defaults.js';
+import { getFeature } from '../license/index.js';
+import { getLicensePayload } from '../license/lib/get-license-payload.js';
+import { isLicenseLocked } from '../license/lib/license-status.js';
 import { useLogger } from '../logger/index.js';
 import getMailer from '../mailer.js';
 import { rateLimiterGlobal } from '../middleware/rate-limiter-global.js';
@@ -40,6 +44,7 @@ export class ServerService {
 
 	async serverInfo(): Promise<Record<string, any>> {
 		const info: Record<string, any> = {};
+		const isAdmin = this.accountability?.admin === true;
 		const setupComplete = await this.isSetupCompleted();
 
 		const projectInfo = await this.settingsService.readSingleton({
@@ -68,6 +73,11 @@ export class ServerService {
 		info['project'] = projectInfo;
 
 		info['setupCompleted'] = setupComplete;
+
+		const hasEnvLicenseKey =
+			typeof env['DIRECTUS_LICENSE_KEY'] === 'string' && String(env['DIRECTUS_LICENSE_KEY']).trim() !== '';
+
+		info['show_license_key_field'] = !hasEnvLicenseKey;
 
 		if (this.accountability?.user) {
 			info['mcp_enabled'] = toBoolean(env['MCP_ENABLED'] ?? true);
@@ -150,9 +160,81 @@ export class ServerService {
 					chunkSize: RESUMABLE_UPLOADS.CHUNK_SIZE,
 				};
 			}
+
+			info['entitlements'] = {
+				collections_limit: defaultEntitlements.collections.limit,
+				collections_warning_limit: defaultEntitlements.collections.warningLimit,
+				users_limit: defaultEntitlements.users.limit,
+				activity_feed_limit: defaultEntitlements.activity_feed.limit,
+				revisions_limit: defaultEntitlements.revisions.limit,
+			};
+
+			if (isAdmin) {
+				try {
+					const collectionsFeature = await getFeature<{ limit: number; warningLimit: number }>('collections');
+
+					if (collectionsFeature.limit) {
+						info['entitlements']['collections_limit'] = collectionsFeature.limit;
+						info['entitlements']['collections_warning_limit'] = collectionsFeature.warningLimit;
+					}
+				} catch (error) {
+					logger.warn(error, '[license] Failed to load collections feature entitlements');
+				}
+			}
+
+			try {
+				const usersFeature = await getFeature<{ limit?: number }>('users');
+
+				if (usersFeature?.limit) {
+					info['entitlements']['users_limit'] = usersFeature.limit;
+				}
+			} catch (error) {
+				logger.warn(error, '[license] Failed to load user feature entitlements');
+			}
+
+			try {
+				const activityFeedFeature = await getFeature<{ limit?: number }>('activity_feed');
+
+				if (activityFeedFeature?.limit) {
+					info['entitlements']['activity_feed_limit'] = activityFeedFeature.limit;
+				}
+			} catch (error) {
+				logger.warn(error, '[license] Failed to load activity feed feature entitlements');
+			}
+
+			try {
+				const revisionsFeature = await getFeature<{ limit?: number }>('revisions');
+
+				if (revisionsFeature?.limit) {
+					info['entitlements']['revisions_limit'] = revisionsFeature.limit;
+				}
+			} catch (error) {
+				logger.warn(error, '[license] Failed to load revisions feature entitlements');
+			}
 		}
 
 		if (this.accountability?.user || !setupComplete) info['version'] = version;
+
+		if (this.accountability?.user) {
+			if (hasEnvLicenseKey) {
+				info['license_source'] = 'env';
+			} else {
+				const licenseSettings = (await this.settingsService.readSingleton({
+					fields: ['license_key'],
+				})) as { license_key?: string | null };
+
+				info['license_source'] = licenseSettings.license_key ? 'settings' : null;
+			}
+
+			try {
+				const licensePayload = await getLicensePayload(true);
+				info['license'] = licensePayload ?? null;
+				info['license_locked'] = licensePayload ? isLicenseLocked(licensePayload) : false;
+			} catch {
+				info['license'] = null;
+				info['license_locked'] = false;
+			}
+		}
 
 		return info;
 	}

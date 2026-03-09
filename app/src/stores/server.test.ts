@@ -14,6 +14,10 @@ beforeEach(() => {
 });
 
 const mockServerInfo: Info = {
+	ai_enabled: false,
+	entitlements: {},
+	mcp_enabled: false,
+	setupCompleted: false,
 	project: {
 		project_name: 'Directus',
 		project_descriptor: null,
@@ -33,6 +37,18 @@ const mockServerInfo: Info = {
 		public_registration: null,
 		public_registration_verify_email: null,
 	},
+	mcp_enabled: true,
+	ai_enabled: true,
+	setupCompleted: false,
+	show_license_key_field: true,
+	license_source: null,
+	license: null,
+	entitlements: {},
+	queryLimit: undefined,
+	extensions: undefined,
+	websocket: undefined,
+	version: undefined,
+	uploads: undefined,
 };
 
 const mockAuthProviders: Auth['providers'] = [
