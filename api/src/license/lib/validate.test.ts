@@ -73,7 +73,7 @@ test('validate returns token and projectId', async () => {
 	vi.mocked(useEnv).mockReturnValue({ LICENSE_SERVER_URL: 'https://license.example.com' });
 
 	vi.mocked(axios.post).mockResolvedValue({
-		data: { token: 'jwt-token-from-service', projectId: 'returned-project-id' },
+		data: { token: 'jwt-token-from-service', project_id: 'returned-project-id' },
 	});
 
 	const result = await validate({
@@ -82,7 +82,7 @@ test('validate returns token and projectId', async () => {
 		publicUrl: 'https://project.example.com',
 	});
 
-	expect(result).toEqual({ token: 'jwt-token-from-service', projectId: 'returned-project-id' });
+	expect(result).toEqual({ token: 'jwt-token-from-service', project_id: 'returned-project-id' });
 });
 
 test('validate rethrows non-Axios errors', async () => {

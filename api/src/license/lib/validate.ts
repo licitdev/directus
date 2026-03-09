@@ -22,13 +22,13 @@ export async function validate({
 			public_url: resolvedPublicUrl,
 		});
 
-		const { token, projectId: newProjectId } = res.data;
+		const { token, project_id: newProjectId } = res.data;
 
 		if (typeof token !== 'string' || !token) {
 			throw new InvalidLicenseTokenError();
 		}
 
-		return { token, projectId: newProjectId };
+		return { token, project_id: newProjectId };
 	} catch (error) {
 		handleLicenseApiError(error);
 	}

@@ -1,7 +1,4 @@
 import { useEnv } from '@directus/env';
-import {
-	InvalidLicenseKeyError,
-} from '@directus/errors';
 import { CronJob } from 'cron';
 import { get } from 'lodash-es';
 import { getKey, getLicensePayload, validateAndSave } from '../license/index.js';
@@ -13,15 +10,11 @@ export async function handleLicenseCheckJob() {
 
 	try {
 		await validateAndSave(licenseKey);
-	} catch (e) {
+	} catch {
 		const licensePayload = await getLicensePayload();
 		const gracePeriod = get(licensePayload, 'license.grace_period') as Date | undefined;
 
-		if (e instanceof InvalidLicenseKeyError) {
-			await setGracePeriod(gracePeriod);
-		}
-
-		throw e;
+		await setGracePeriod(gracePeriod);
 	}
 }
 
