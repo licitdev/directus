@@ -329,7 +329,7 @@ function onPurchaseAddOnClick() {
 						<VButton secondary @click="userLimitModalActive = false">
 							{{ $t('cancel') }}
 						</VButton>
-						<VButton v-if="!userStore.isAdmin" @click="onPurchaseAddOnClick">
+						<VButton v-if="userStore.isAdmin" @click="onPurchaseAddOnClick">
 							{{ $t('purchase_add_on') }}
 						</VButton>
 					</VCardActions>
