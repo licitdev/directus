@@ -1,7 +1,9 @@
-import { get, has } from 'lodash-es';
+import { get, has, merge } from 'lodash-es';
+import { defaultEntitlements } from '../defaults.js';
+import type { Entitlements } from '../types/entitlements.js';
 import { getLicensePayload } from './get-license-payload.js';
 
-export async function getFeature<T = unknown>(featureName: string): Promise<T> {
+export async function getFeature<T>(featureName: string): Promise<T> {
 	if (!featureName) {
 		throw new Error('Feature name must not be empty');
 	}
@@ -13,10 +15,30 @@ export async function getFeature<T = unknown>(featureName: string): Promise<T> {
 	}
 
 	const featurePath = `metadata.entitlements.${featureName}`;
+	const defaultPayload = defaultEntitlements[featureName as keyof Entitlements] ?? {};
 
-	if (!has(payload, featurePath)) {
-		throw new Error(`Feature "${featureName}" does not exist in license entitlements`);
+	let featurePayload: unknown;
+
+	const entitlements = get(payload, 'metadata.entitlements');
+
+	if (Array.isArray(entitlements)) {
+		const entry = entitlements.find((e: Record<string, unknown>) => e['name'] === featureName);
+
+		if (!entry) {
+			throw new Error(`Feature "${featureName}" does not exist in license entitlements`);
+		}
+
+		const { name: _name, ...rest } = entry as Record<string, unknown>;
+		featurePayload = rest;
+	} else {
+		if (!has(payload, featurePath) && !defaultPayload) {
+			throw new Error(`Feature "${featureName}" does not exist in license entitlements`);
+		}
+
+		featurePayload = get(payload, featurePath);
 	}
 
-	return get(payload, featurePath) as T;
+	const mergedPayload = merge({}, defaultPayload, featurePayload);
+
+	return mergedPayload as T;
 }
