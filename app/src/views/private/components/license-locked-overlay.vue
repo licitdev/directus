@@ -23,6 +23,7 @@ async function saveLicenseKey() {
 	if (!editingKey.value?.trim()) return;
 
 	saving.value = true;
+
 	try {
 		await settingsStore.updateSettings({ license_key: editingKey.value.trim() });
 		await serverStore.hydrate();

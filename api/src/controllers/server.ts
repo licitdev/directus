@@ -1,3 +1,4 @@
+import { useEnv } from '@directus/env';
 import { ErrorCode, ForbiddenError, InvalidPayloadError, isDirectusError, RouteNotFoundError } from '@directus/errors';
 import { format } from 'date-fns';
 import { Router } from 'express';
@@ -6,16 +7,15 @@ import { deactivate } from '../license/lib/deactivate.js';
 import { getKey } from '../license/lib/get-key.js';
 import { resolvePublicUrl } from '../license/lib/license-context.js';
 import { validateAndGetToken } from '../license/lib/validate-and-get-token.js';
-import { getProjectId } from '../utils/get-project-id.js';
-import { clearCacheTokenPayload } from '../utils/cache-token-payload.js';
-import { useEnv } from '@directus/env';
 import { useLogger } from '../logger/index.js';
 import { respond } from '../middleware/respond.js';
 import { SettingsService } from '../services/index.js';
 import { ServerService } from '../services/server.js';
 import { SpecificationService } from '../services/specifications.js';
 import asyncHandler from '../utils/async-handler.js';
+import { clearCacheTokenPayload } from '../utils/cache-token-payload.js';
 import { createAdmin } from '../utils/create-admin.js';
+import { getProjectId } from '../utils/get-project-id.js';
 import { verify } from '../utils/verify-token.js';
 
 const router = Router();
@@ -205,6 +205,7 @@ router.post(
 	'/deactivate-license',
 	asyncHandler(async (req, res, next) => {
 		const env = useEnv();
+
 		const hasEnvLicenseKey =
 			typeof env['DIRECTUS_LICENSE_KEY'] === 'string' && String(env['DIRECTUS_LICENSE_KEY']).trim() !== '';
 
@@ -215,11 +216,13 @@ router.post(
 		}
 
 		const licenseKey = await getKey();
+
 		if (!licenseKey) {
 			throw new InvalidPayloadError({ reason: 'No license key configured' });
 		}
 
 		const projectId = await getProjectId();
+
 		if (!projectId) {
 			throw new InvalidPayloadError({ reason: 'Project ID is not configured' });
 		}
@@ -227,10 +230,12 @@ router.post(
 		await deactivate({ licenseKey, projectId });
 
 		const settingsService = new SettingsService({ schema: req.schema });
+
 		await settingsService.upsertSingleton({
 			license_key: null,
 			license_token: null,
 		});
+
 		await clearCacheTokenPayload();
 
 		res.locals['payload'] = { data: { success: true } };

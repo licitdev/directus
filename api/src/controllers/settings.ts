@@ -68,9 +68,11 @@ router.patch(
 
 				body.license_key = trimmedLicenseKey;
 				body.license_token = token;
+
 				if (newProjectId) {
 					body.project_id = newProjectId;
 				}
+
 				await clearCacheTokenPayload();
 			} catch (error) {
 				handleLicenseApiError(error);

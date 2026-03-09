@@ -14,9 +14,9 @@ beforeEach(() => {
 });
 
 const mockServerInfo: Info = {
-	ai_enabled: false,
+	ai_enabled: true,
 	entitlements: {},
-	mcp_enabled: false,
+	mcp_enabled: true,
 	setupCompleted: false,
 	project: {
 		project_name: 'Directus',
@@ -37,13 +37,12 @@ const mockServerInfo: Info = {
 		public_registration: null,
 		public_registration_verify_email: null,
 	},
-	mcp_enabled: true,
-	ai_enabled: true,
-	setupCompleted: false,
 	show_license_key_field: true,
 	license_source: null,
 	license: null,
-	entitlements: {},
+	license_locked: false,
+	files: undefined,
+	rateLimit: undefined,
 	queryLimit: undefined,
 	extensions: undefined,
 	websocket: undefined,

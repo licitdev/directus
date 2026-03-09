@@ -11,32 +11,34 @@ export async function getFeature<T>(featureName: string): Promise<T> {
 	const payload = await getLicensePayload();
 
 	if (!payload) {
-		// throw new Error('License payload is not found');
+		throw new Error('License payload is not found');
 	}
 
 	const featurePath = `metadata.entitlements.${featureName}`;
-	const defaultPayload = defaultEntitlements[featureName as keyof Entitlements] ?? {};
+	const defaultPayload = defaultEntitlements[featureName as keyof Entitlements];
 
 	let featurePayload: unknown;
 
 	const entitlements = get(payload, 'metadata.entitlements');
+
 	if (Array.isArray(entitlements)) {
 		const entry = entitlements.find((e: Record<string, unknown>) => e['name'] === featureName);
+
 		if (!entry) {
-			// throw new Error(`Feature "${featureName}" does not exist in license entitlements`);
+			throw new Error(`Feature "${featureName}" does not exist in license entitlements`);
 		}
 
-		const { name, ...rest } = entry as Record<string, unknown>;
+		const { name: _name, ...rest } = entry as Record<string, unknown>;
 		featurePayload = rest;
 	} else {
-		if (!has(payload, featurePath) && !defaultPayload) {
-			// throw new Error(`Feature "${featureName}" does not exist in license entitlements`);
+		if (!has(payload, featurePath) && defaultPayload === undefined) {
+			throw new Error(`Feature "${featureName}" does not exist in license entitlements`);
 		}
 
 		featurePayload = get(payload, featurePath);
 	}
 
-	const mergedPayload = merge({}, defaultPayload, featurePayload);
+	const mergedPayload = merge({}, defaultPayload ?? {}, featurePayload);
 
 	return mergedPayload as T;
 }

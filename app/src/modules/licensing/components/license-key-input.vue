@@ -52,9 +52,11 @@ watchDebounced(
 );
 
 const activePayload = computed(() => props.licensePayload ?? previewPayload.value);
+
 const inputPlaceholder = computed(() =>
 	props.hasExistingKey ? t('license_key_masked_placeholder') : t('license_key_placeholder'),
 );
+
 const expiryFormatted = computed(() => activePayload.value?.expiry?.slice(0, 10) ?? null);
 const tierName = computed(() => activePayload.value?.policy ?? null);
 const showStatus = computed(() => Boolean(activePayload.value?.valid));

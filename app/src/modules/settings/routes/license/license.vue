@@ -3,6 +3,7 @@ import { storeToRefs } from 'pinia';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import SettingsNavigation from '../../components/navigation.vue';
+import api from '@/api';
 import VBreadcrumb from '@/components/v-breadcrumb.vue';
 import VButton from '@/components/v-button.vue';
 import VCardActions from '@/components/v-card-actions.vue';
@@ -14,7 +15,6 @@ import VIcon from '@/components/v-icon/v-icon.vue';
 import VInput from '@/components/v-input.vue';
 import VNotice from '@/components/v-notice.vue';
 import LicenseKeyInput from '@/modules/licensing/components/license-key-input.vue';
-import api from '@/api';
 import { useServerStore } from '@/stores/server';
 import { useSettingsStore } from '@/stores/settings';
 import { notify } from '@/utils/notify';
@@ -72,17 +72,12 @@ const remainingGraceDays = computed(() => {
 });
 
 const showGracePeriodWarning = computed(
-	() =>
-		licenseStatus.value === 'expired' &&
-		remainingGraceDays.value > 0 &&
-		!info.value.license_locked,
+	() => licenseStatus.value === 'expired' && remainingGraceDays.value > 0 && !info.value.license_locked,
 );
 
 const drawerPayload = computed(() => (savedSuccessfully.value ? info.value.license : null));
 
-const showDeactivateSection = computed(
-	() => licenseSource.value === 'settings' && info.value.license != null,
-);
+const showDeactivateSection = computed(() => licenseSource.value === 'settings' && info.value.license != null);
 
 function openDrawer() {
 	editingKey.value = null;
@@ -149,10 +144,7 @@ function closeDrawer() {
 				<div class="tier-info">
 					<VIcon name="star" class="tier-icon" />
 					<h2>{{ tierName }}</h2>
-					<span
-						v-if="licenseStatus"
-						:class="['status-badge', `status-${licenseStatus}`]"
-					>
+					<span v-if="licenseStatus" :class="['status-badge', `status-${licenseStatus}`]">
 						{{ t(`license_status_${licenseStatus}`) }}
 					</span>
 				</div>
@@ -162,11 +154,7 @@ function closeDrawer() {
 				{{ t('license_expires_on', { date: licenseExpiry.toLocaleDateString() }) }}
 			</div>
 
-			<VNotice
-				v-if="showGracePeriodWarning"
-				type="danger"
-				class="grace-period-warning"
-			>
+			<VNotice v-if="showGracePeriodWarning" type="danger" class="grace-period-warning">
 				{{
 					remainingGraceDays === 1
 						? t('license_grace_period_warning_one_day')
@@ -216,12 +204,7 @@ function closeDrawer() {
 				</h3>
 				<div class="danger-zone-content">
 					<p class="danger-zone-notice">{{ t('settings_license_deactivate_notice') }}</p>
-					<VButton
-						kind="danger"
-						:loading="deactivating"
-						:disabled="deactivating"
-						@click="confirmDeactivate = true"
-					>
+					<VButton kind="danger" :loading="deactivating" :disabled="deactivating" @click="confirmDeactivate = true">
 						{{ t('settings_license_deactivate') }}
 					</VButton>
 				</div>

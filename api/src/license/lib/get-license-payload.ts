@@ -6,13 +6,15 @@ import { readCacheTokenPayload, writeCacheTokenPayload } from '../../utils/cache
 import { decrypt } from '../../utils/encrypt.js';
 import { getSecret } from '../../utils/get-secret.js';
 import { verify } from '../../utils/verify-token.js';
-import { validate } from './validate.js';
 import { isLicenseLocked } from './license-status.js';
+import { validate } from './validate.js';
 
 export async function getLicensePayload(allowLocked = false): Promise<Record<string, unknown> | undefined> {
 	let payload = await readCacheTokenPayload();
+
 	if (!payload) {
 		payload = await fetchLicensePayloadFromSource();
+
 		if (payload) {
 			await writeCacheTokenPayload(payload);
 		}
@@ -25,7 +27,6 @@ export async function getLicensePayload(allowLocked = false): Promise<Record<str
 }
 
 async function fetchLicensePayloadFromSource(): Promise<Record<string, unknown> | undefined> {
-
 	const database = getDatabase();
 	const settings = await database.select('license_token', 'project_id').from('directus_settings').first();
 
