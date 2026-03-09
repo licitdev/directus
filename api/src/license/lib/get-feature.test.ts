@@ -109,7 +109,9 @@ describe('getFeature', () => {
 
 			const result = await getFeature('sso');
 
-			expect(result).toEqual({});
+			expect(result).toEqual({
+				enabled: false,
+			});
 		});
 
 		test('throws when feature does not exist in array', async () => {

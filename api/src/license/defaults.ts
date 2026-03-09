@@ -13,7 +13,7 @@ export const DEFAULT_COLLECTIONS_LIMIT = 10;
 export const DEFAULT_COLLECTIONS_WARNING_LIMIT = 5;
 export const DEFAULT_ACTIVITY_FEED_DAYS = 3;
 export const DEFAULT_REVISIONS_DAYS = 3;
-export const DEFAULT_SSO_ENABLED = true;
+export const DEFAULT_SSO_ENABLED = false;
 
 export const defaultEntitlements: EntitlementsType = {
 	[Entitlements.COLLECTIONS]: {
