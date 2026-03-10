@@ -100,6 +100,7 @@ archived: Archived
 marketplace: Marketplace
 extensions: Extensions
 purchase_add_on: Purchase Add-on
+upgrade_plan: Upgrade Plan
 skip_link_nav: Skip to Navigation
 skip_link_module_nav: Skip to Module Navigation
 skip_link_main: Skip to Main Content
@@ -791,6 +792,8 @@ collections_limit_reached_notice: You have reached max capacity. Upgrade plan to
 collections_approaching_limit_notice: You have {count} collection(s) left. Upgrade plan to unlock more.
 collections_limit_modal_title: You have reached the max limit allowed for your tier
 collections_limit_modal_description: You can also purchase additional add-ons for more feature unlock.
+upgrade_plan_modal_title: Upgrade your Plan
+upgrade_plan_modal_description: Upgrade your plan to unlock this feature.
 no_collections_copy_admin: You don’t have any Collections yet. Click the button below to get started.
 no_collections_copy: You don’t have any Collections yet. Please contact your system administrator.
 relationship_not_setup: The relationship hasn't been configured correctly

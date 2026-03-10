@@ -167,6 +167,7 @@ export class ServerService {
 				users_limit: defaultEntitlements.users.limit,
 				activity_feed_limit: defaultEntitlements.activity_feed.limit,
 				revisions_limit: defaultEntitlements.revisions.limit,
+				custom_permissions: defaultEntitlements.custom_permissions.enabled,
 			};
 
 			if (isAdmin) {

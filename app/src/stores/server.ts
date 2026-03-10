@@ -38,6 +38,7 @@ export type Info = {
 		users_limit?: number;
 		activity_feed_limit?: number;
 		revisions_limit?: number;
+		custom_permissions?: boolean;
 	};
 	rateLimit?:
 		| false
