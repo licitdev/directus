@@ -46,5 +46,9 @@ const revisionsLimit = computed(() => {
 <style lang="scss" scoped>
 .v-notice-wrapper {
 	padding: var(--content-padding);
+
+	.v-notice {
+		background-color: var(--theme--background-accent);
+	}
 }
 </style>
