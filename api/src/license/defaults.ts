@@ -1,12 +1,4 @@
-import type { Entitlements as EntitlementsType } from './types/index.js';
-
-export enum Entitlements {
-	ACTIVITY_FEED = 'activity_feed',
-	REVISIONS = 'revisions',
-	COLLECTIONS = 'collections',
-	USERS = 'users',
-	SSO = 'sso',
-}
+import { Entitlements, type EntitlementsType } from './types/index.js';
 
 export const DEFAULT_USERS_LIMIT = 10;
 export const DEFAULT_COLLECTIONS_LIMIT = 10;
@@ -30,6 +22,9 @@ export const defaultEntitlements: EntitlementsType = {
 		limit: DEFAULT_USERS_LIMIT,
 	},
 	[Entitlements.SSO]: {
+		enabled: DEFAULT_SSO_ENABLED,
+	},
+	[Entitlements.CUSTOM_PERMISSIONS]: {
 		enabled: DEFAULT_SSO_ENABLED,
 	},
 };

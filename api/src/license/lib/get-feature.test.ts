@@ -13,6 +13,14 @@ describe('getFeature', () => {
 		await expect(getFeature('')).rejects.toThrow('Feature name must not be empty');
 	});
 
+	test('returns default entitlements when payload is not found', async () => {
+		vi.mocked(getLicensePayload).mockResolvedValue(undefined);
+
+		const result = await getFeature<{ limit: number }>('collections');
+
+		expect(result).toEqual({ limit: 10, warningLimit: 5 });
+	});
+
 	test('returns default entitlements when payload does not contain the feature but defaults do', async () => {
 		const cachedPayload = {
 			metadata: {
