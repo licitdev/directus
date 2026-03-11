@@ -48,7 +48,7 @@ license_key: License Key
 license_key_placeholder: Enter your license key
 license_key_masked_placeholder: '••••••••••••••••••••••••'
 settings_license: License
-settings_license_tier: Tier
+settings_license_tier: Starter Plan
 license_key_management: License Key Management
 license_key_management_notice: Have a license key? Enter it below to activate your plan and unlock advanced features.
 settings_license_no_key: No license key configured
@@ -56,6 +56,30 @@ settings_license_value_stored: Value Securely Stored
 settings_license_edit: Edit License Key
 settings_license_env_managed: Managed via environment variable
 settings_license_add: Add License Key
+settings_license_manage: Manage License
+settings_license_upgrade_plan: Upgrade Plan
+settings_license_manage_plan: Manage Plan
+settings_license_current_plan: Current Plan
+settings_license_never_expires: Never Expires
+settings_license_your_plan_usage: Your Plan Usage
+settings_license_add_on_packages: Add-on Packages
+settings_license_add_on_info: Learn more about this add-on
+settings_license_purchase: Purchase
+settings_license_usage_available: Available
+settings_license_usage_unavailable: Unavailable
+settings_license_usage_disabled: Disabled
+settings_license_usage_opt_in: Opt-in
+settings_license_usage_collections: Collections
+settings_license_usage_seats: Seats
+settings_license_usage_sso: SSO
+settings_license_usage_custom_rules: Custom Rules (Access Policies)
+settings_license_usage_custom_llm: Custom LLM
+settings_license_usage_analytics: Analytics
+settings_license_business_plan_notice:
+  'Companies with under $5M in annual revenue may qualify for our Business plan at no cost. {learnMore} about
+  eligibility and apply anytime.'
+settings_license_learn_more: Learn more
+settings_license_customer: Customer
 settings_license_danger_zone: Danger Zone
 settings_license_deactivate: Deactivate License
 settings_license_deactivate_notice: Remove the license from this project and unbind it so it can be used elsewhere.

@@ -2,6 +2,7 @@ import { useEnv } from '@directus/env';
 import { ErrorCode, ForbiddenError, InvalidPayloadError, isDirectusError, RouteNotFoundError } from '@directus/errors';
 import { format } from 'date-fns';
 import { Router } from 'express';
+import { getLicenseAddons } from '../license/addons.js';
 import { checkLicense } from '../license/lib/check-license.js';
 import { deactivate } from '../license/lib/deactivate.js';
 import { getKey } from '../license/lib/get-key.js';
@@ -183,6 +184,16 @@ router.post(
 		const payload = await verify(token);
 
 		res.locals['payload'] = { data: payload };
+		return next();
+	}),
+	respond,
+);
+
+router.get(
+	'/license/addons',
+	asyncHandler(async (_req, res, next) => {
+		const data = await getLicenseAddons();
+		res.locals['payload'] = data;
 		return next();
 	}),
 	respond,
