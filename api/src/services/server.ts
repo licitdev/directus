@@ -1,6 +1,7 @@
 import { Readable } from 'node:stream';
 import { performance } from 'perf_hooks';
 import { useEnv } from '@directus/env';
+import { isSystemCollection } from '@directus/system-data';
 import type { AbstractServiceOptions, Accountability, SchemaOverview } from '@directus/types';
 import { toArray, toBoolean } from '@directus/utils';
 import { version } from 'directus/version';
@@ -27,10 +28,11 @@ const logger = useLogger();
 
 type LicenseData = {
 	entitlements: {
-		collections: { limit: number; warning_limit: number };
+		collections: { limit: number; warning_limit: number; usage?: number };
 		users: { remaining_seats?: number; warning_limit: number };
 		activity_feed: { limit: number };
 		revisions: { limit: number };
+		sso: { enabled: boolean };
 	};
 };
 
@@ -69,6 +71,9 @@ export class ServerService {
 				revisions: {
 					limit: defaultEntitlements.revisions.limit,
 				},
+				sso: {
+					enabled: defaultEntitlements.sso.enabled,
+				},
 			};
 
 			let usersLimit = defaultEntitlements.users.limit;
@@ -87,6 +92,10 @@ export class ServerService {
 				} catch (error) {
 					logger.warn(error, '[license] Failed to load collections feature entitlements');
 				}
+
+				const allCollections = await this.knex('directus_collections').select('collection');
+				const collectionsCount = allCollections.filter(({ collection }) => !isSystemCollection(collection)).length;
+				entitlements.collections.usage = collectionsCount;
 			}
 
 			try {
@@ -131,6 +140,16 @@ export class ServerService {
 				}
 			} catch (error) {
 				logger.warn(error, '[license] Failed to load revisions feature entitlements');
+			}
+
+			try {
+				const ssoFeature = await getFeature<{ enabled?: boolean }>('sso');
+
+				if (ssoFeature?.enabled != null) {
+					entitlements.sso.enabled = ssoFeature.enabled;
+				}
+			} catch (error) {
+				logger.warn(error, '[license] Failed to load sso feature entitlements');
 			}
 
 			return {
