@@ -2,7 +2,7 @@ import { useEnv } from '@directus/env';
 import { CronJob } from 'cron';
 import { get } from 'lodash-es';
 import { getKey, getLicensePayload, validateAndSave } from '../license/index.js';
-import { setGracePeriod } from '../license/lib/set-grace-period.js';
+import { setTTLCacheTokenPayload } from '../utils/cache-token-payload.js';
 
 export async function handleLicenseCheckJob() {
 	const licenseKey = await getKey();
@@ -12,9 +12,15 @@ export async function handleLicenseCheckJob() {
 		await validateAndSave(licenseKey);
 	} catch {
 		const licensePayload = await getLicensePayload();
-		const gracePeriod = get(licensePayload, 'license.grace_period') as Date | undefined;
+		const expiry = get(licensePayload, 'license.expiry') as Date | undefined;
+		const gracePeriod = get(licensePayload, 'license.metadata.license.grace_period') as number;
+		let ttl = 7 * 24 * 60 * 60 * 1000;
 
-		await setGracePeriod(gracePeriod);
+		if (gracePeriod && expiry) {
+			ttl = expiry.getTime() - Date.now() - gracePeriod * 1000;
+		}
+
+		await setTTLCacheTokenPayload(ttl);
 	}
 }
 
