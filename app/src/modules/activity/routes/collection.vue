@@ -23,8 +23,7 @@ const { layoutWrapper } = useLayout(layout);
 const serverStore = useServerStore();
 
 const activityFeedLimit = computed(() => {
-	const limit = serverStore.info.entitlements?.activity_feed_limit;
-	return limit;
+	return serverStore.license.entitlements.activity_feed?.limit;
 });
 
 const roleFilter = ref<Filter | null>(null);

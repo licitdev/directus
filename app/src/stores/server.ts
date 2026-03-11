@@ -32,14 +32,6 @@ export type Info = {
 		mimeTypeAllowList: string[];
 	};
 	setupCompleted: boolean;
-	entitlements: {
-		collections_limit?: number;
-		collections_warning_limit?: number;
-		users_limit?: number;
-		users_warning_limit?: number;
-		activity_feed_limit?: number;
-		revisions_limit?: number;
-	};
 	rateLimit?:
 		| false
 		| {
@@ -94,6 +86,15 @@ export type Info = {
 	};
 };
 
+export type License = {
+	entitlements: {
+		collections?: { limit?: number; warning_limit?: number };
+		users?: { remaining_seats?: number; warning_limit?: number };
+		activity_feed?: { limit?: number };
+		revisions?: { limit?: number };
+	};
+};
+
 export type Auth = {
 	providers: AuthProvider[];
 	disableDefault: boolean;
@@ -111,12 +112,15 @@ export const useServerStore = defineStore('serverStore', () => {
 		queryLimit: undefined,
 		websocket: undefined,
 		uploads: undefined,
-		entitlements: {},
 	});
 
 	const auth = reactive<Auth>({
 		providers: [],
 		disableDefault: false,
+	});
+
+	const license = reactive<License>({
+		entitlements: {},
 	});
 
 	const providerOptions = computed(() => {
@@ -136,9 +140,10 @@ export const useServerStore = defineStore('serverStore', () => {
 	});
 
 	const hydrate = async () => {
-		const [serverInfoResponse, authResponse] = await Promise.all([
+		const [serverInfoResponse, authResponse, licenseResponse] = await Promise.all([
 			api.get(`/server/info`),
 			api.get('/auth?sessionOnly'),
+			api.get('/server/license'),
 		]);
 
 		info.project = serverInfoResponse.data.data?.project;
@@ -150,7 +155,6 @@ export const useServerStore = defineStore('serverStore', () => {
 		info.license_source = serverInfoResponse.data.data?.license_source ?? null;
 		info.license = serverInfoResponse.data.data?.license ?? null;
 		info.license_locked = serverInfoResponse.data.data?.license_locked ?? false;
-		info.entitlements = serverInfoResponse.data.data?.entitlements ?? {};
 		info.queryLimit = serverInfoResponse.data.data?.queryLimit;
 		info.extensions = serverInfoResponse.data.data?.extensions;
 		info.websocket = serverInfoResponse.data.data?.websocket;
@@ -159,6 +163,8 @@ export const useServerStore = defineStore('serverStore', () => {
 
 		auth.providers = authResponse.data.data;
 		auth.disableDefault = authResponse.data.disableDefault;
+
+		license.entitlements = licenseResponse.data.data?.entitlements ?? {};
 
 		if (serverInfoResponse.data.data?.rateLimit !== undefined) {
 			if (serverInfoResponse.data.data?.rateLimit === false) {
@@ -173,6 +179,14 @@ export const useServerStore = defineStore('serverStore', () => {
 		}
 	};
 
+	const hydrateLicense = async () => {
+		const response = await api.get('/server/license');
+
+		if (response.data?.data) {
+			license.entitlements = response.data.data.entitlements;
+		}
+	};
+
 	const dehydrate = () => {
 		info.project = null;
 
@@ -180,7 +194,15 @@ export const useServerStore = defineStore('serverStore', () => {
 		auth.disableDefault = false;
 	};
 
-	return { info, auth, providerOptions, hydrate, dehydrate };
+	return {
+		info,
+		auth,
+		license,
+		providerOptions,
+		hydrate,
+		hydrateLicense,
+		dehydrate,
+	};
 });
 
 if (import.meta.hot) {

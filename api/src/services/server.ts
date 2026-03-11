@@ -25,6 +25,15 @@ import { SettingsService } from './settings.js';
 const env = useEnv();
 const logger = useLogger();
 
+type LicenseData = {
+	entitlements: {
+		collections: { limit: number; warning_limit: number };
+		users: { remaining_seats?: number; warning_limit: number };
+		activity_feed: { limit: number };
+		revisions: { limit: number };
+	};
+};
+
 export class ServerService {
 	knex: Knex;
 	accountability: Accountability | null;
@@ -42,9 +51,98 @@ export class ServerService {
 		return Boolean(await this.knex('directus_users').first());
 	}
 
+	async licenseData(): Promise<LicenseData | null> {
+		if (this.accountability?.user) {
+			const isAdmin = this.accountability?.admin === true;
+
+			const entitlements: LicenseData['entitlements'] = {
+				collections: {
+					limit: defaultEntitlements.collections.limit,
+					warning_limit: defaultEntitlements.collections.warningLimit,
+				},
+				users: {
+					warning_limit: defaultEntitlements.users.warningLimit,
+				},
+				activity_feed: {
+					limit: defaultEntitlements.activity_feed.limit,
+				},
+				revisions: {
+					limit: defaultEntitlements.revisions.limit,
+				},
+			};
+
+			let usersLimit = defaultEntitlements.users.limit;
+
+			if (isAdmin) {
+				try {
+					const collectionsFeature = await getFeature<{ limit?: number; warningLimit?: number }>('collections');
+
+					if (collectionsFeature?.limit != null) {
+						entitlements.collections.limit = collectionsFeature.limit;
+					}
+
+					if (collectionsFeature?.warningLimit != null) {
+						entitlements.collections.warning_limit = collectionsFeature.warningLimit;
+					}
+				} catch (error) {
+					logger.warn(error, '[license] Failed to load collections feature entitlements');
+				}
+			}
+
+			try {
+				const usersFeature = await getFeature<{ limit?: number; warningLimit?: number }>('users');
+
+				if (usersFeature?.limit != null) {
+					usersLimit = usersFeature.limit;
+				}
+
+				if (usersFeature?.warningLimit != null) {
+					entitlements.users.warning_limit = usersFeature.warningLimit;
+				}
+			} catch (error) {
+				logger.warn(error, '[license] Failed to load user feature entitlements');
+			}
+
+			const activeUsersCountResult = await this.knex('directus_users')
+				.whereIn('status', ['active', 'invited'])
+				.count<{ count: number }[]>({ count: '*' })
+				.first();
+
+			const activeUsersCount = Number(activeUsersCountResult?.count ?? 0);
+			const remainingSeats = Math.max(usersLimit - activeUsersCount, 0);
+
+			entitlements.users.remaining_seats = remainingSeats;
+
+			try {
+				const activityFeedFeature = await getFeature<{ limit?: number }>('activity_feed');
+
+				if (activityFeedFeature?.limit != null) {
+					entitlements.activity_feed.limit = activityFeedFeature.limit;
+				}
+			} catch (error) {
+				logger.warn(error, '[license] Failed to load activity feed feature entitlements');
+			}
+
+			try {
+				const revisionsFeature = await getFeature<{ limit?: number }>('revisions');
+
+				if (revisionsFeature?.limit != null) {
+					entitlements.revisions.limit = revisionsFeature.limit;
+				}
+			} catch (error) {
+				logger.warn(error, '[license] Failed to load revisions feature entitlements');
+			}
+
+			return {
+				entitlements,
+			};
+		} else {
+			return null;
+		}
+	}
+
 	async serverInfo(): Promise<Record<string, any>> {
 		const info: Record<string, any> = {};
-		const isAdmin = this.accountability?.admin === true;
 		const setupComplete = await this.isSetupCompleted();
 
 		const projectInfo = await this.settingsService.readSingleton({
@@ -159,62 +257,6 @@ export class ServerService {
 					tus: true,
 					chunkSize: RESUMABLE_UPLOADS.CHUNK_SIZE,
 				};
-			}
-
-			info['entitlements'] = {
-				collections_limit: defaultEntitlements.collections.limit,
-				collections_warning_limit: defaultEntitlements.collections.warningLimit,
-				users_limit: defaultEntitlements.users.limit,
-				users_warning_limit: defaultEntitlements.users.warningLimit,
-				activity_feed_limit: defaultEntitlements.activity_feed.limit,
-				revisions_limit: defaultEntitlements.revisions.limit,
-			};
-
-			if (isAdmin) {
-				try {
-					const collectionsFeature = await getFeature<{ limit: number; warningLimit: number }>('collections');
-
-					if (collectionsFeature.limit) {
-						info['entitlements']['collections_limit'] = collectionsFeature.limit;
-						info['entitlements']['collections_warning_limit'] = collectionsFeature.warningLimit;
-					}
-				} catch (error) {
-					logger.warn(error, '[license] Failed to load collections feature entitlements');
-				}
-			}
-
-			try {
-				const usersFeature = await getFeature<{ limit?: number; warningLimit?: number }>('users');
-
-				if (usersFeature?.limit) {
-					info['entitlements']['users_limit'] = usersFeature.limit;
-				}
-
-				if (usersFeature?.warningLimit) {
-					info['entitlements']['users_warning_limit'] = usersFeature.warningLimit;
-				}
-			} catch (error) {
-				logger.warn(error, '[license] Failed to load user feature entitlements');
-			}
-
-			try {
-				const activityFeedFeature = await getFeature<{ limit?: number }>('activity_feed');
-
-				if (activityFeedFeature?.limit) {
-					info['entitlements']['activity_feed_limit'] = activityFeedFeature.limit;
-				}
-			} catch (error) {
-				logger.warn(error, '[license] Failed to load activity feed feature entitlements');
-			}
-
-			try {
-				const revisionsFeature = await getFeature<{ limit?: number }>('revisions');
-
-				if (revisionsFeature?.limit) {
-					info['entitlements']['revisions_limit'] = revisionsFeature.limit;
-				}
-			} catch (error) {
-				logger.warn(error, '[license] Failed to load revisions feature entitlements');
 			}
 		}
 

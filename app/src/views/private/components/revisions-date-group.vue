@@ -17,8 +17,7 @@ const expand = ref(true);
 const serverStore = useServerStore();
 
 const revisionsLimit = computed(() => {
-	const limit = serverStore.info.entitlements?.revisions_limit;
-	return limit;
+	return serverStore.license.entitlements.revisions?.limit;
 });
 </script>
 

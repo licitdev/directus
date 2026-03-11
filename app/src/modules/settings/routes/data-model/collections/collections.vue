@@ -52,13 +52,11 @@ const collections = computed(() => {
 });
 
 const collectionsLimit = computed(() => {
-	const { collections_limit } = serverStore.info.entitlements;
-	return collections_limit ?? 0;
+	return serverStore.license.entitlements.collections?.limit ?? 0;
 });
 
 const collectionsWarningLimit = computed(() => {
-	const { collections_warning_limit } = serverStore.info.entitlements;
-	return collections_warning_limit ?? 0;
+	return serverStore.license.entitlements.collections?.warning_limit ?? 0;
 });
 
 const reachedCollectionsLimit = computed(() => collectionsStore.databaseCollections.length >= collectionsLimit.value);

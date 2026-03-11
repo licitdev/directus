@@ -76,6 +76,21 @@ router.get(
 );
 
 router.get(
+	'/license',
+	asyncHandler(async (req, res, next) => {
+		const service = new ServerService({
+			accountability: req.accountability,
+			schema: req.schema,
+		});
+
+		const data = await service.licenseData();
+		res.locals['payload'] = { data };
+		return next();
+	}),
+	respond,
+);
+
+router.get(
 	'/health',
 	asyncHandler(async (req, res, next) => {
 		const service = new ServerService({

@@ -15,7 +15,6 @@ beforeEach(() => {
 
 const mockServerInfo: Info = {
 	ai_enabled: true,
-	entitlements: {},
 	mcp_enabled: true,
 	setupCompleted: false,
 	project: {

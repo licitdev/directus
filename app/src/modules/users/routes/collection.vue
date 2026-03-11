@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useLayout } from '@directus/composables';
 import { mergeFilters } from '@directus/utils';
-import { computed, onMounted, ref, toRefs } from 'vue';
+import { computed, ref, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { onBeforeRouteLeave, onBeforeRouteUpdate } from 'vue-router';
 import UsersNavigation from '../components/navigation.vue';
@@ -21,7 +21,6 @@ import { useCollectionPermissions } from '@/composables/use-permissions';
 import { usePreset } from '@/composables/use-preset';
 import { useServerStore } from '@/stores/server';
 import { useUserStore } from '@/stores/user';
-import { useUsersStore } from '@/stores/users';
 import { unexpectedError } from '@/utils/unexpected-error';
 import { PrivateViewHeaderBarActionButton } from '@/views/private';
 import { PrivateView } from '@/views/private';
@@ -41,7 +40,6 @@ const userInviteModalActive = ref(false);
 const userLimitModalActive = ref(false);
 const serverStore = useServerStore();
 const userStore = useUserStore();
-const usersStore = useUsersStore();
 
 const layoutRef = ref();
 const selection = ref<string[]>([]);
@@ -53,28 +51,15 @@ const { confirmDelete, deleting, batchDelete, batchEditActive } = useBatch();
 
 const { breadcrumb, title } = useBreadcrumb();
 
-const usersLimit = computed(() => serverStore.info.entitlements.users_limit ?? 0);
+const remainingSeats = computed(() => serverStore.license.entitlements.users?.remaining_seats ?? 0);
 
-const usersWarningLimit = computed(() => serverStore.info.entitlements.users_warning_limit ?? 0);
+const usersWarningLimit = computed(() => serverStore.license.entitlements.users?.warning_limit ?? 0);
 
-const activeUsersCount = computed(() => usersStore.activeUsersCount ?? 0);
-
-const reachedUsersLimit = computed(() => {
-	const count = activeUsersCount.value;
-	return usersLimit.value > 0 && count >= usersLimit.value;
-});
+const reachedUsersLimit = computed(() => remainingSeats.value === 0);
 
 const approachingUsersLimit = computed(
-	() => usersWarningLimit.value > 0 && activeUsersCount.value >= usersLimit.value - usersWarningLimit.value,
+	() => usersWarningLimit.value > 0 && remainingSeats.value > 0 && remainingSeats.value <= usersWarningLimit.value,
 );
-
-const usersLayoutProps = computed(() => {
-	if (usersLimit.value > 0) {
-		return { showingUsage: `(${activeUsersCount.value}/${usersLimit.value}) ${t('users')}` };
-	}
-
-	return undefined;
-});
 
 const roleFilter = computed(() => {
 	if (props.role) {
@@ -108,10 +93,6 @@ const canInviteUsers = computed(() => {
 
 const { layoutWrapper } = useLayout(layout);
 
-onMounted(async () => {
-	await usersStore.fetchActiveUsersCount();
-});
-
 onBeforeRouteLeave(() => {
 	selection.value = [];
 });
@@ -122,6 +103,7 @@ onBeforeRouteUpdate(() => {
 
 async function refresh() {
 	await layoutRef.value?.state?.refresh?.();
+	await serverStore.hydrateLicense();
 }
 
 function useBatch() {
@@ -160,7 +142,6 @@ function useBatch() {
 			}
 
 			await refresh();
-			await usersStore.fetchActiveUsersCount();
 
 			selection.value = [];
 			confirmDelete.value = false;
@@ -232,7 +213,6 @@ function onPurchaseAddOnClick() {
 		:search="search"
 		collection="directus_users"
 		:reset-preset="resetPreset"
-		:layout-props="usersLayoutProps"
 	>
 		<PrivateView :title="title" icon="people_alt">
 			<template v-if="breadcrumb" #headline>
@@ -314,7 +294,7 @@ function onPurchaseAddOnClick() {
 						<template #title>
 							{{
 								$t('users_approaching_limit_notice', {
-									count: usersLimit - activeUsersCount,
+									count: remainingSeats,
 								})
 							}}
 						</template>
