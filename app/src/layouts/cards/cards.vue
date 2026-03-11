@@ -99,6 +99,10 @@ watch(innerWidth, (value) => {
 				@select-all="selectAll"
 			/>
 
+			<div v-if="$slots.message" class="message-box">
+				<slot name="message" />
+			</div>
+
 			<VProgressCircular v-if="loading" indeterminate rounded />
 
 			<div v-else class="grid" :class="{ 'single-row': isSingleRow }">
@@ -154,6 +158,10 @@ watch(innerWidth, (value) => {
 .layout-cards {
 	padding: var(--content-padding);
 	padding-block-start: 0;
+}
+
+.message-box {
+	padding-bottom: var(--content-padding);
 }
 
 .grid {

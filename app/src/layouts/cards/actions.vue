@@ -3,13 +3,14 @@ defineOptions({ inheritAttrs: false });
 
 defineProps<{
 	showingCount?: string;
+	layoutProps?: { showingUsage?: string };
 }>();
 </script>
 
 <template>
 	<Transition name="fade">
-		<span v-if="showingCount" class="item-count">
-			{{ showingCount }}
+		<span v-if="layoutProps?.showingUsage ?? showingCount" class="item-count">
+			{{ layoutProps?.showingUsage ?? showingCount }}
 		</span>
 	</Transition>
 </template>

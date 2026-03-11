@@ -36,6 +36,7 @@ export type Info = {
 		collections_limit?: number;
 		collections_warning_limit?: number;
 		users_limit?: number;
+		users_warning_limit?: number;
 		activity_feed_limit?: number;
 		revisions_limit?: number;
 	};

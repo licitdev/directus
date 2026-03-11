@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useLayout } from '@directus/composables';
 import { mergeFilters } from '@directus/utils';
-import { computed, ref, toRefs } from 'vue';
+import { computed, onMounted, ref, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { onBeforeRouteLeave, onBeforeRouteUpdate } from 'vue-router';
 import UsersNavigation from '../components/navigation.vue';
@@ -16,10 +16,12 @@ import VCardTitle from '@/components/v-card-title.vue';
 import VCard from '@/components/v-card.vue';
 import VDialog from '@/components/v-dialog.vue';
 import VInfo from '@/components/v-info.vue';
+import VNotice from '@/components/v-notice.vue';
 import { useCollectionPermissions } from '@/composables/use-permissions';
 import { usePreset } from '@/composables/use-preset';
 import { useServerStore } from '@/stores/server';
 import { useUserStore } from '@/stores/user';
+import { useUsersStore } from '@/stores/users';
 import { unexpectedError } from '@/utils/unexpected-error';
 import { PrivateViewHeaderBarActionButton } from '@/views/private';
 import { PrivateView } from '@/views/private';
@@ -39,6 +41,7 @@ const userInviteModalActive = ref(false);
 const userLimitModalActive = ref(false);
 const serverStore = useServerStore();
 const userStore = useUserStore();
+const usersStore = useUsersStore();
 
 const layoutRef = ref();
 const selection = ref<string[]>([]);
@@ -52,9 +55,25 @@ const { breadcrumb, title } = useBreadcrumb();
 
 const usersLimit = computed(() => serverStore.info.entitlements.users_limit ?? 0);
 
+const usersWarningLimit = computed(() => serverStore.info.entitlements.users_warning_limit ?? 0);
+
+const activeUsersCount = computed(() => usersStore.activeUsersCount ?? 0);
+
 const reachedUsersLimit = computed(() => {
-	const count = layoutRef.value?.state?.itemCount ?? 0;
+	const count = activeUsersCount.value;
 	return usersLimit.value > 0 && count >= usersLimit.value;
+});
+
+const approachingUsersLimit = computed(
+	() => usersWarningLimit.value > 0 && activeUsersCount.value >= usersLimit.value - usersWarningLimit.value,
+);
+
+const usersLayoutProps = computed(() => {
+	if (usersLimit.value > 0) {
+		return { showingUsage: `(${activeUsersCount.value}/${usersLimit.value}) ${t('users')}` };
+	}
+
+	return undefined;
 });
 
 const roleFilter = computed(() => {
@@ -88,6 +107,10 @@ const canInviteUsers = computed(() => {
 });
 
 const { layoutWrapper } = useLayout(layout);
+
+onMounted(async () => {
+	await usersStore.fetchActiveUsersCount();
+});
 
 onBeforeRouteLeave(() => {
 	selection.value = [];
@@ -137,6 +160,7 @@ function useBatch() {
 			}
 
 			await refresh();
+			await usersStore.fetchActiveUsersCount();
 
 			selection.value = [];
 			confirmDelete.value = false;
@@ -208,6 +232,7 @@ function onPurchaseAddOnClick() {
 		:search="search"
 		collection="directus_users"
 		:reset-preset="resetPreset"
+		:layout-props="usersLayoutProps"
 	>
 		<PrivateView :title="title" icon="people_alt">
 			<template v-if="breadcrumb" #headline>
@@ -280,6 +305,22 @@ function onPurchaseAddOnClick() {
 			<UsersInvite v-if="canInviteUsers" v-model="userInviteModalActive" @update:model-value="refresh" />
 
 			<component :is="`layout-${layout}`" v-bind="layoutState">
+				<template #message>
+					<VNotice v-if="reachedUsersLimit" type="danger" icon="cancel">
+						<template #title>{{ $t('users_limit_reached_notice') }}</template>
+					</VNotice>
+
+					<VNotice v-if="approachingUsersLimit && !reachedUsersLimit" type="warning" icon="warning">
+						<template #title>
+							{{
+								$t('users_approaching_limit_notice', {
+									count: usersLimit - activeUsersCount,
+								})
+							}}
+						</template>
+					</VNotice>
+				</template>
+
 				<template #no-results>
 					<VInfo v-if="!filter && !search" :title="$t('user_count', 0)" icon="people_alt" center>
 						{{ $t('no_users_copy') }}

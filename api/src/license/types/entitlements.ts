@@ -13,6 +13,7 @@ export type RevisionsEntitlements = {
 
 export type UsersEntitlements = {
 	limit: number;
+	warningLimit: number;
 };
 
 export type SSOEntitlements = {

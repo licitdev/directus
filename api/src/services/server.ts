@@ -165,6 +165,7 @@ export class ServerService {
 				collections_limit: defaultEntitlements.collections.limit,
 				collections_warning_limit: defaultEntitlements.collections.warningLimit,
 				users_limit: defaultEntitlements.users.limit,
+				users_warning_limit: defaultEntitlements.users.warningLimit,
 				activity_feed_limit: defaultEntitlements.activity_feed.limit,
 				revisions_limit: defaultEntitlements.revisions.limit,
 			};
@@ -183,10 +184,14 @@ export class ServerService {
 			}
 
 			try {
-				const usersFeature = await getFeature<{ limit?: number }>('users');
+				const usersFeature = await getFeature<{ limit?: number; warningLimit?: number }>('users');
 
 				if (usersFeature?.limit) {
 					info['entitlements']['users_limit'] = usersFeature.limit;
+				}
+
+				if (usersFeature?.warningLimit) {
+					info['entitlements']['users_warning_limit'] = usersFeature.warningLimit;
 				}
 			} catch (error) {
 				logger.warn(error, '[license] Failed to load user feature entitlements');

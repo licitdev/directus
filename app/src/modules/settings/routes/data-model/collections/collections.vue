@@ -192,6 +192,12 @@ function onPurchaseAddOnClick() {
 			<VBreadcrumb :items="[{ name: $t('settings'), to: '/settings' }]" />
 		</template>
 
+		<template #actions:prepend>
+			<span v-if="collectionsLimit > 0" class="collections-usage-header">
+				({{ collectionsStore.databaseCollections.length }}/{{ collectionsLimit }}) {{ $t('collections') }}
+			</span>
+		</template>
+
 		<template #actions>
 			<SearchInput
 				v-model="search"
@@ -361,6 +367,17 @@ function onPurchaseAddOnClick() {
 </template>
 
 <style scoped lang="scss">
+.collections-usage-header {
+	position: relative;
+	display: none;
+	color: var(--theme--foreground-subdued);
+	white-space: nowrap;
+
+	@media (width > 640px) {
+		display: inline;
+	}
+}
+
 .padding-box {
 	padding: var(--content-padding);
 }

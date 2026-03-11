@@ -789,6 +789,8 @@ no_collections: No Collections
 create_collection: Create Collection
 collections_limit_reached_notice: You have reached max capacity. Upgrade plan to unlock more.
 collections_approaching_limit_notice: You have {count} collection(s) left. Upgrade plan to unlock more.
+users_limit_reached_notice: You have reached max capacity. Upgrade plan to unlock more.
+users_approaching_limit_notice: You have {count} seat(s) left. Upgrade plan to unlock more.
 collections_limit_modal_title: You have reached the max limit allowed for your tier
 collections_limit_modal_description: You can also purchase additional add-ons for more feature unlock.
 no_collections_copy_admin: You don’t have any Collections yet. Click the button below to get started.
