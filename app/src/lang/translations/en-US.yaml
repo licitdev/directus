@@ -78,6 +78,7 @@ license_grace_period_warning_one_day:
 license_project_locked: Your Directus project is locked
 license_project_locked_notice:
   Your license has expired and the grace period has ended. Enter a new license key to unlock your project.
+powered_by_directus: 'Powered by Directus'
 license_tier: '{tier} Tier'
 first_name: First Name
 last_name: Last Name

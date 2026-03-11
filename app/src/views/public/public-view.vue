@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
 import { computed } from 'vue';
+import PoweredByDirectus from '@/components/powered-by-directus.vue';
 import VImage from '@/components/v-image.vue';
 import VTextOverflow from '@/components/v-text-overflow.vue';
 import { useServerStore } from '@/stores/server';
@@ -17,6 +18,8 @@ withDefaults(defineProps<Props>(), {
 const serverStore = useServerStore();
 
 const { info } = storeToRefs(serverStore);
+
+const showPoweredBy = computed(() => info.value?.license?.whitelabel_enabled !== false);
 
 const hasCustomBackground = computed(() => {
 	return !!info.value?.project?.public_background;
@@ -95,6 +98,9 @@ const logoURL = computed<string | null>(() => {
 			</Transition>
 			<div class="note-container">
 				<div v-if="info?.project?.public_note" v-md="info?.project.public_note" class="note" />
+			</div>
+			<div v-if="showPoweredBy" class="powered-by-container">
+				<PoweredByDirectus light />
 			</div>
 		</div>
 	</div>
@@ -374,6 +380,12 @@ const logoURL = computed<string | null>(() => {
 				backdrop-filter: blur(2px);
 				overflow-wrap: break-word;
 			}
+		}
+
+		.powered-by-container {
+			position: absolute;
+			inset-block-end: 24px;
+			inset-inline-end: 24px;
 		}
 
 		@media (min-width: 500px) {
