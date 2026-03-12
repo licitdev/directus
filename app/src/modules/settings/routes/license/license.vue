@@ -56,6 +56,8 @@ const addons = ref<
 	}>
 >([]);
 
+const hasLicense = computed(() => info.value.license != null);
+
 const licenseFormFields = computed<Field[]>(() => [
 	{
 		field: 'license_key',
@@ -66,7 +68,7 @@ const licenseFormFields = computed<Field[]>(() => [
 			interface: 'input',
 			required: false,
 			options: {
-				placeholder: t('license_key_placeholder'),
+				placeholder: hasLicense.value ? t('license_key_masked_placeholder') : t('license_key_placeholder'),
 			},
 			width: 'full',
 		},
@@ -130,8 +132,6 @@ const drawerPayload = computed(() => (savedSuccessfully.value ? info.value.licen
 const showDeactivateSection = computed(() => licenseSource.value === 'settings' && info.value.license != null);
 
 const canManageLicense = computed(() => licenseSource.value !== 'env');
-
-const hasLicense = computed(() => info.value.license != null);
 
 const addLicenseKeyLabel = computed(() =>
 	hasLicense.value ? t('settings_license_manage') : t('settings_license_add'),
@@ -352,7 +352,6 @@ async function fetchAddons() {
 
 				<div class="plan-usage-section">
 					<h3 class="section-title">
-						<VIcon name="auto_awesome" class="section-icon" />
 						{{ t('settings_license_your_plan_usage') }}
 					</h3>
 					<div class="usage-grid">
@@ -445,12 +444,12 @@ async function fetchAddons() {
 				</div>
 
 				<div v-if="showDeactivateSection" class="danger-zone-section">
-					<h3 class="danger-zone-title">
-						<VIcon name="diamond" class="danger-icon" />
-						{{ t('settings_license_danger_zone') }}
-					</h3>
+					<div class="danger-zone-header">
+						<VIcon name="emergency_home" class="danger-zone-icon" />
+						<h3 class="danger-zone-title">{{ t('settings_license_danger_zone') }}</h3>
+					</div>
+					<div class="danger-zone-separator" />
 					<div class="danger-zone-content">
-						<p class="danger-zone-notice">{{ t('settings_license_deactivate_notice') }}</p>
 						<VButton kind="danger" :loading="deactivating" :disabled="deactivating" @click="confirmDeactivate = true">
 							{{ t('settings_license_deactivate') }}
 						</VButton>
@@ -598,8 +597,8 @@ async function fetchAddons() {
 }
 
 .current-plan-chip {
-	--v-chip-color: var(--theme--primary);
-	--v-chip-background-color: var(--theme--primary-subdued);
+	--v-chip-color: #6633ff;
+	--v-chip-background-color: #e8e2ff;
 }
 
 .plan-subtitle-sep {
@@ -652,7 +651,7 @@ async function fetchAddons() {
 }
 
 .usage-icon {
-	--v-icon-color: var(--theme--primary);
+	--v-icon-color: var(--theme--foreground-subdued);
 	--v-icon-size: 20px;
 	flex-shrink: 0;
 }
@@ -771,24 +770,36 @@ async function fetchAddons() {
 .danger-zone-section {
 	margin-block-start: 48px;
 	padding-block-start: 24px;
-	border-block-start: 1px solid var(--theme--border-color);
 }
 
-.danger-zone-title {
+.danger-zone-header {
 	display: flex;
 	align-items: center;
 	gap: 8px;
-	font-size: 14px;
-	font-weight: 600;
-	color: var(--theme--danger);
-	margin: 0 0 12px;
+	margin-block-end: 0;
 }
 
-.danger-icon {
+.danger-zone-icon {
 	--v-icon-color: var(--theme--danger);
+	--v-icon-size: 20px;
+	flex-shrink: 0;
+}
+
+.danger-zone-title {
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--theme--foreground);
+	margin: 0;
+}
+
+.danger-zone-separator {
+	block-size: 1px;
+	background: var(--theme--border-color);
+	margin-block: 12px 16px;
 }
 
 .danger-zone-content {
+	padding-top: 16px;
 	display: grid;
 	gap: 12px;
 }

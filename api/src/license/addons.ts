@@ -36,13 +36,13 @@ export async function getLicenseAddons(): Promise<LicenseAddonsResponse> {
 				status: 'available',
 				action: 'purchase',
 			},
-			{
-				id: 'collections',
-				name: 'Data Model Collections',
-				description: 'Additional +25 collections',
-				status: 'purchased',
-				action: 'info',
-			},
+			// {
+			// 	id: 'collections',
+			// 	name: 'Data Model Collections',
+			// 	description: 'Additional +25 collections',
+			// 	status: 'purchased',
+			// 	action: 'info',
+			// },
 		],
 	};
 }
