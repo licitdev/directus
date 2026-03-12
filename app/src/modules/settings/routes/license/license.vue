@@ -74,7 +74,10 @@ const licenseExpiry = computed(() => {
 
 const planExpiryText = computed(() => {
 	if (!licenseExpiry.value) return t('settings_license_never_expires');
-	return t('license_expires_on', { date: licenseExpiry.value.toLocaleDateString() });
+	const isExpired = licenseExpiry.value.getTime() < Date.now();
+	return isExpired
+		? t('license_expired_on', { date: licenseExpiry.value.toLocaleDateString() })
+		: t('license_expires_on', { date: licenseExpiry.value.toLocaleDateString() });
 });
 
 const licenseStatus = computed(() => {
@@ -103,8 +106,29 @@ const remainingGraceDays = computed(() => {
 	return Math.ceil((graceEnd - now) / (24 * 60 * 60 * 1000));
 });
 
+const daysUntilExpiry = computed(() => {
+	if (!licenseExpiry.value) return 0;
+	const expiryTime = licenseExpiry.value.getTime();
+	const now = Date.now();
+	if (now >= expiryTime) return 0;
+	return Math.ceil((expiryTime - now) / (24 * 60 * 60 * 1000));
+});
+
+const showExpiringSoonWarning = computed(
+	() =>
+		hasLicense.value &&
+		licenseStatus.value !== 'expired' &&
+		daysUntilExpiry.value > 0 &&
+		daysUntilExpiry.value <= 7 &&
+		!info.value.license_locked,
+);
+
 const showGracePeriodWarning = computed(
 	() => licenseStatus.value === 'expired' && remainingGraceDays.value > 0 && !info.value.license_locked,
+);
+
+const showExpiredBeyondGraceNotice = computed(
+	() => licenseStatus.value === 'expired' && remainingGraceDays.value === 0 && !info.value.license_locked,
 );
 
 const drawerPayload = computed(() => (savedSuccessfully.value ? info.value.license : null));
@@ -160,6 +184,14 @@ const showValidationStatus = computed(() => Boolean(activePayload.value?.valid))
 const currentLicenseKey = computed(() => {
 	const edits = formEdits.value;
 	return (edits?.license_key ?? initialFormValues.value.license_key)?.trim() || null;
+});
+
+const canSaveLicenseKey = computed(() => {
+	const hasKey = Boolean(currentLicenseKey.value);
+	const isValid = Boolean(activePayload.value?.valid);
+	const notValidating = !validating.value;
+	const noError = !validationError.value;
+	return hasKey && isValid && notValidating && noError;
 });
 
 watch(currentLicenseKey, (val) => {
@@ -304,6 +336,9 @@ async function fetchAddons() {
 					<h2 class="plan-name">{{ planName }}</h2>
 					<div class="plan-subtitle">
 						<VChip class="current-plan-chip" small>{{ t('settings_license_current_plan') }}</VChip>
+						<VChip v-if="licenseStatus === 'expired'" class="expired-plan-chip" small>
+							{{ t('license_status_expired') }}
+						</VChip>
 						<span class="plan-subtitle-sep">•</span>
 						<span class="plan-subtitle-expiry">{{ planExpiryText }}</span>
 					</div>
@@ -324,13 +359,47 @@ async function fetchAddons() {
 			</div>
 
 			<div class="license-page">
-				<VNotice v-if="showGracePeriodWarning" type="danger" class="grace-period-warning">
-					{{
-						remainingGraceDays === 1
-							? t('license_grace_period_warning_one_day')
-							: t('license_grace_period_warning', { days: String(remainingGraceDays) })
-					}}
-				</VNotice>
+				<div v-if="showExpiringSoonWarning" class="license-grace-period-banner license-expiring-soon-banner">
+					<div class="banner-accent" />
+					<div class="banner-content">
+						<div class="banner-icon-wrapper">
+							<VIcon name="warning" class="banner-icon" />
+						</div>
+						<span class="banner-text">
+							<I18nT keypath="license_expiring_soon_warning" tag="span">
+								<template #days>
+									<strong>{{ daysUntilExpiry }} {{ daysUntilExpiry === 1 ? 'day' : 'days' }}</strong>
+								</template>
+							</I18nT>
+						</span>
+					</div>
+				</div>
+
+				<div v-else-if="showGracePeriodWarning" class="license-grace-period-banner">
+					<div class="banner-accent" />
+					<div class="banner-content">
+						<div class="banner-icon-wrapper">
+							<VIcon name="dangerous" class="banner-icon" />
+						</div>
+						<span class="banner-text">
+							<I18nT keypath="license_grace_period_warning" tag="span">
+								<template #days>
+									<strong>{{ remainingGraceDays }} {{ remainingGraceDays === 1 ? 'day' : 'days' }}</strong>
+								</template>
+							</I18nT>
+						</span>
+					</div>
+				</div>
+
+				<div v-else-if="showExpiredBeyondGraceNotice" class="license-grace-period-banner">
+					<div class="banner-accent" />
+					<div class="banner-content">
+						<div class="banner-icon-wrapper">
+							<VIcon name="dangerous" class="banner-icon" />
+						</div>
+						<span class="banner-text">{{ t('license_project_locked_notice') }}</span>
+					</div>
+				</div>
 
 				<div v-if="licenseSource === 'env'" class="env-managed-banner">
 					<VNotice type="info">{{ t('settings_license_env_managed') }}</VNotice>
@@ -467,15 +536,18 @@ async function fetchAddons() {
 			@cancel="closeDrawer"
 		>
 			<template #actions>
-				<VButton
-					v-tooltip.bottom="t('save')"
-					secondary
-					small
-					:loading="saving"
-					@click="saveLicenseKey"
-				>
-					{{ t('save') }}
-				</VButton>
+				<div class="license-save-button" :class="{ 'is-enabled': canSaveLicenseKey }">
+					<VButton
+						v-tooltip.bottom="t('save')"
+						secondary
+						small
+						:disabled="!canSaveLicenseKey"
+						:loading="saving"
+						@click="saveLicenseKey"
+					>
+						{{ t('save') }}
+					</VButton>
+				</div>
 			</template>
 
 			<div class="drawer-content">
@@ -611,6 +683,13 @@ async function fetchAddons() {
 	border-radius: 9999px !important;
 }
 
+.plan-subtitle :deep(.expired-plan-chip) {
+	--v-chip-color: var(--theme--danger);
+	--v-chip-background-color: var(--theme--background-danger);
+	--v-chip-border-color: var(--theme--background-danger);
+	border-radius: 9999px !important;
+}
+
 .plan-subtitle-sep {
 	color: var(--theme--foreground-subdued);
 }
@@ -633,8 +712,60 @@ async function fetchAddons() {
 	--v-icon-color: var(--theme--primary);
 }
 
-.grace-period-warning {
+.license-grace-period-banner {
+	display: flex;
+	align-items: stretch;
+	background: var(--theme--background-subdued);
+	border-radius: var(--theme--border-radius);
+	overflow: hidden;
 	margin-block-end: 24px;
+}
+
+.license-grace-period-banner .banner-accent {
+	inline-size: 6px;
+	flex-shrink: 0;
+	background: var(--theme--danger);
+	border-radius: var(--theme--border-radius) 0 0 var(--theme--border-radius);
+}
+
+.license-expiring-soon-banner .banner-accent {
+	background: var(--theme--warning);
+}
+
+.license-expiring-soon-banner .banner-icon {
+	--v-icon-color: var(--theme--warning);
+}
+
+.license-grace-period-banner .banner-content {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	padding: 16px 20px;
+	flex: 1;
+}
+
+.license-grace-period-banner .banner-icon-wrapper {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	inline-size: 24px;
+	block-size: 24px;
+	flex-shrink: 0;
+}
+
+.license-grace-period-banner .banner-icon {
+	--v-icon-color: var(--theme--danger);
+	--v-icon-size: 24px;
+}
+
+.license-grace-period-banner .banner-text {
+	font-size: 14px;
+	line-height: 22px;
+	color: var(--theme--foreground);
+}
+
+.license-grace-period-banner .banner-text strong {
+	font-weight: 600;
 }
 
 .env-managed-banner {
@@ -826,6 +957,15 @@ async function fetchAddons() {
 	gap: 24px;
 }
 
+.license-save-button.is-enabled :deep(.v-button .button:not(:disabled)) {
+	--v-button-color: var(--white);
+	--v-button-color-hover: var(--white);
+	--v-button-color-active: var(--white);
+	--v-button-background-color: var(--theme--primary);
+	--v-button-background-color-hover: var(--theme--primary-accent);
+	--v-button-background-color-active: var(--theme--primary);
+}
+
 .save-error {
 	margin-block-end: 0;
 }
@@ -865,7 +1005,6 @@ async function fetchAddons() {
 	font-weight: 600;
 	color: var(--theme--foreground);
 }
-
 
 .spinner-inline {
 	--v-progress-circular-color: var(--theme--foreground-subdued);

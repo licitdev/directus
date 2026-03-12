@@ -90,14 +90,13 @@ settings_license_deactivate_success: License deactivated successfully
 license_valid: License Valid
 license_invalid: Invalid License Key
 license_expires_on: 'Expires on {date}'
+license_expired_on: 'Expired on {date}'
 license_status_active: Active
 license_status_expiring: Expiring
 license_status_expired: Expired
+license_expiring_soon_warning: 'You have {days} remaining before your Directus license key expires.'
 license_grace_period_warning:
-  'Your Directus license key has expired. You have {days} days to resolve your license issue or your Directus project
-  will be locked.'
-license_grace_period_warning_one_day:
-  'Your Directus license key has expired. You have 1 day to resolve your license issue or your Directus project will be
+  'Your Directus license key has expired. You have {days} to resolve your license issue or your Directus project will be
   locked.'
 license_project_locked: Your Directus project is locked
 license_project_locked_notice:
