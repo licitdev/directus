@@ -596,9 +596,11 @@ async function fetchAddons() {
 	margin: 0;
 }
 
-.current-plan-chip {
-	--v-chip-color: #6633ff;
-	--v-chip-background-color: #e8e2ff;
+.plan-subtitle :deep(.current-plan-chip) {
+	--v-chip-color: var(--theme--primary);
+	--v-chip-background-color: var(--theme--primary-background);
+	--v-chip-border-color: var(--theme--primary-background);
+	border-radius: 9999px !important;
 }
 
 .plan-subtitle-sep {
@@ -647,7 +649,7 @@ async function fetchAddons() {
 	gap: 10px;
 	padding: 10px 12px;
 	background: var(--theme--background-subdued);
-	border-radius: 6px;
+	border-radius: 10px;
 }
 
 .usage-icon {
@@ -674,7 +676,7 @@ async function fetchAddons() {
 	font-size: 12px;
 	font-weight: 500;
 	padding: 2px 8px;
-	border-radius: 4px;
+	border-radius: 8px;
 	flex-shrink: 0;
 }
 
@@ -799,7 +801,7 @@ async function fetchAddons() {
 }
 
 .danger-zone-content {
-	padding-top: 16px;
+	padding-block-start: 16px;
 	display: grid;
 	gap: 12px;
 }
