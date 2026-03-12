@@ -118,15 +118,13 @@ async function deactivateLicense() {
 		<div class="deactivation-popup">
 			<div class="deactivation-popup-header">
 				<h2>{{ t('settings_license_deactivation_popup_title') }}</h2>
-				<p>
-					If you need to update your license key, you an update it via the “Manage License” in the License setting page.
-				</p>
+				<p>{{ t('settings_license_deactivation_popup_subtitle') }}</p>
 			</div>
 			<VDivider />
 
 			<div class="notice-wrapper">
 				<VNotice type="warning">
-					In order to proceed to deactivate your license, you will need to delete 2 collections and 5 user seats.
+					{{ t('settings_license_deactivation_popup_notice') }}
 				</VNotice>
 			</div>
 
