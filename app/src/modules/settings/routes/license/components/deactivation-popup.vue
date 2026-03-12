@@ -146,7 +146,7 @@ async function deactivateLicense() {
 						<div class="item-content">
 							<p class="name">{{ item.name }}</p>
 						</div>
-						<VIcon name="launch" class="launch-btn" clickable/>
+						<VIcon name="launch" class="launch-btn" clickable />
 					</div>
 				</template>
 			</DeactivationSelectList>
@@ -178,7 +178,7 @@ async function deactivateLicense() {
 	h2 {
 		font-size: 1.5rem;
 		font-weight: bold;
-		padding-bottom: 0.5rem;
+		padding-block-end: 0.5rem;
 	}
 	p {
 		font-size: 0.875rem;
@@ -201,10 +201,10 @@ async function deactivateLicense() {
 	align-items: center;
 	gap: 0.5rem;
 	overflow: hidden;
-	width: 100%;
+	inline-size: 100%;
 
 	.launch-btn {
-		margin-left: auto;
+		margin-inline-start: auto;
 	}
 
 	.avatar {

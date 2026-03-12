@@ -81,7 +81,7 @@ function toggleSelection(value: string) {
 .title {
 	font-size: 1rem;
 	font-weight: bold;
-	padding-bottom: 0.5rem;
+	padding-block-end: 0.5rem;
 }
 
 .deactivation-select-list {
