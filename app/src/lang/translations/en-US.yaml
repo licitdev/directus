@@ -76,7 +76,7 @@ settings_license_usage_custom_rules: Custom Rules (Access Policies)
 settings_license_usage_custom_llm: Custom LLM
 settings_license_usage_analytics: Analytics
 settings_license_business_plan_notice:
-  'Companies with under $5M in annual revenue may qualify for our Business plan at no cost. {learnMore} about
+  '💡 Companies with under $5M in annual revenue may qualify for our Business plan at no cost. {learnMore} about
   eligibility and apply anytime.'
 settings_license_learn_more: Learn more
 settings_license_customer: Customer

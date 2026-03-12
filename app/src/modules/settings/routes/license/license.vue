@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { Field } from '@directus/types';
 import { watchDebounced } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { computed, onMounted, ref, watch } from 'vue';
@@ -14,17 +13,16 @@ import VCard from '@/components/v-card.vue';
 import VChip from '@/components/v-chip.vue';
 import VDialog from '@/components/v-dialog.vue';
 import VDrawer from '@/components/v-drawer.vue';
-import VForm from '@/components/v-form/v-form.vue';
 import VIcon from '@/components/v-icon/v-icon.vue';
 import VNotice from '@/components/v-notice.vue';
 import VProgressCircular from '@/components/v-progress-circular.vue';
 import { useLicensePreview } from '@/composables/use-license-preview';
+import InterfaceInputHash from '@/interfaces/input-hash/input-hash.vue';
 import { useCollectionsStore } from '@/stores/collections';
 import { useServerStore } from '@/stores/server';
 import { useSettingsStore } from '@/stores/settings';
 import { notify } from '@/utils/notify';
 import { unexpectedError } from '@/utils/unexpected-error';
-import { PrivateViewHeaderBarActionButton } from '@/views/private';
 import { PrivateView } from '@/views/private';
 
 const { t } = useI18n();
@@ -57,24 +55,6 @@ const addons = ref<
 >([]);
 
 const hasLicense = computed(() => info.value.license != null);
-
-const licenseFormFields = computed<Field[]>(() => [
-	{
-		field: 'license_key',
-		name: t('license_key'),
-		type: 'string',
-		collection: 'directus_settings',
-		meta: {
-			interface: 'input',
-			required: false,
-			options: {
-				placeholder: hasLicense.value ? t('license_key_masked_placeholder') : t('license_key_placeholder'),
-			},
-			width: 'full',
-		},
-		schema: null,
-	} as unknown as Field,
-]);
 
 const initialFormValues = ref<{ license_key: string | null }>({ license_key: null });
 const formEdits = ref<{ license_key?: string | null } | null>(null);
@@ -264,6 +244,12 @@ function closeDrawer() {
 	savedSuccessfully.value = false;
 	saveError.value = null;
 	clearPreview();
+}
+
+function onLicenseKeyInput(v: string) {
+	formEdits.value = {
+		license_key: v === '' ? null : v,
+	};
 }
 
 const ADDON_ICON_MAP: Record<string, string> = {
@@ -473,14 +459,23 @@ async function fetchAddons() {
 			</VCard>
 		</VDialog>
 
-		<VDrawer v-if="canManageLicense" v-model="drawerOpen" :title="t('license_key_management')" @cancel="closeDrawer">
+		<VDrawer
+			v-if="canManageLicense"
+			v-model="drawerOpen"
+			:title="t('license_key_management')"
+			icon="vpn_key"
+			@cancel="closeDrawer"
+		>
 			<template #actions>
-				<PrivateViewHeaderBarActionButton
+				<VButton
 					v-tooltip.bottom="t('save')"
+					secondary
+					small
 					:loading="saving"
-					icon="check"
 					@click="saveLicenseKey"
-				/>
+				>
+					{{ t('save') }}
+				</VButton>
 			</template>
 
 			<div class="drawer-content">
@@ -503,7 +498,20 @@ async function fetchAddons() {
 					</I18nT>
 				</VNotice>
 
-				<VForm v-model="formEdits" :initial-values="initialFormValues" :fields="licenseFormFields" disabled-menu />
+				<div class="license-key-field">
+					<label class="license-key-label">{{ t('license_key') }}</label>
+					<InterfaceInputHash
+						:value="
+							hasLicense && !formEdits?.license_key
+								? ' '
+								: (formEdits?.license_key ?? initialFormValues.license_key ?? null)
+						"
+						:placeholder="t('license_key_placeholder')"
+						masked
+						autocomplete="off"
+						@input="onLicenseKeyInput"
+					/>
+				</div>
 
 				<div v-if="validating" class="validation-status">
 					<span class="status-item">
@@ -826,10 +834,38 @@ async function fetchAddons() {
 	margin-block-end: 0;
 }
 
-.drawer-info-banner :deep(a) {
+.drawer-info-row {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	font-size: 14px;
+	line-height: 22px;
+	color: var(--theme--foreground);
+}
+
+.drawer-info-icon {
+	--v-icon-color: var(--theme--primary);
+	--v-icon-size: 20px;
+	flex-shrink: 0;
+	margin-block-start: 1px;
+}
+
+.drawer-info-banner a {
 	color: var(--theme--primary);
 	text-decoration: underline;
 }
+
+.license-key-field {
+	display: grid;
+	gap: 8px;
+}
+
+.license-key-label {
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--theme--foreground);
+}
+
 
 .spinner-inline {
 	--v-progress-circular-color: var(--theme--foreground-subdued);
