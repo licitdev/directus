@@ -60,6 +60,8 @@ settings_license_danger_zone: Danger Zone
 settings_license_deactivate: Deactivate License
 settings_license_deactivate_notice: Remove the license from this project and unbind it so it can be used elsewhere.
 settings_license_deactivate_confirm_title: Deactivate License?
+settings_license_deactivation_popup_title: Deactivation License Requirement
+settings_license_deactivation_popup_confirm: Deactive license
 settings_license_deactivate_confirm:
   Are you sure you want to deactivate the license? This will remove the license from this project.
 settings_license_deactivate_success: License deactivated successfully

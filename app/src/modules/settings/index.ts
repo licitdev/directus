@@ -56,6 +56,10 @@ export default defineModule({
 		{
 			name: 'settings-license',
 			path: 'license',
+			beforeEnter() {
+				const collectionsStore = useCollectionsStore();
+				collectionsStore.hydrate();
+			},
 			component: License,
 		},
 		{
