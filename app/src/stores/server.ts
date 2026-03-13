@@ -183,7 +183,7 @@ export const useServerStore = defineStore('serverStore', () => {
 
 		license.entitlements = licenseResponse.data.data?.entitlements ?? {};
 
-		addons.data = addonsResponse.data.data?.data ?? [];
+		addons.data = addonsResponse.data.data?.addons ?? [];
 
 		if (serverInfoResponse.data.data?.rateLimit !== undefined) {
 			if (serverInfoResponse.data.data?.rateLimit === false) {

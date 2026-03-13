@@ -75,11 +75,31 @@ describe('hydrate action', async () => {
 			collections: { limit: 10 },
 		};
 
+		const mockAddons = [
+			{
+				id: 'sso',
+				name: 'SSO Feature',
+				description: 'Allows SSO configuration',
+				status: 'available',
+				action: 'purchase',
+			},
+		];
+
 		apiGetSpy.mockImplementation((path: string) => {
 			if (path === '/server/info') {
 				return Promise.resolve({
 					data: {
 						data: mockServerInfo,
+					},
+				});
+			}
+
+			if (path === '/server/license/addons') {
+				return Promise.resolve({
+					data: {
+						data: {
+							addons: mockAddons,
+						},
 					},
 				});
 			}
@@ -111,6 +131,7 @@ describe('hydrate action', async () => {
 		await serverStore.hydrate();
 
 		expect(serverStore.info).toEqual(mockServerInfo);
+		expect(serverStore.addons.data).toEqual(mockAddons);
 		expect(serverStore.license.entitlements).toEqual(mockEntitlements);
 	});
 
@@ -121,6 +142,16 @@ describe('hydrate action', async () => {
 				return Promise.resolve({
 					data: {
 						data: {},
+					},
+				});
+			}
+
+			if (path === '/server/license/addons') {
+				return Promise.resolve({
+					data: {
+						data: {
+							addons: [],
+						},
 					},
 				});
 			}
@@ -169,6 +200,16 @@ describe('hydrate action', async () => {
 				});
 			}
 
+			if (path === '/server/license/addons') {
+				return Promise.resolve({
+					data: {
+						data: {
+							addons: [],
+						},
+					},
+				});
+			}
+
 			if (path.startsWith('/auth')) {
 				// stub as auth is not tested here
 				return Promise.resolve({
@@ -204,6 +245,16 @@ describe('hydrate action', async () => {
 				return Promise.resolve({
 					data: {
 						data: { rateLimit: false },
+					},
+				});
+			}
+
+			if (path === '/server/license/addons') {
+				return Promise.resolve({
+					data: {
+						data: {
+							addons: [],
+						},
 					},
 				});
 			}
@@ -254,6 +305,16 @@ describe('hydrate action', async () => {
 				});
 			}
 
+			if (path === '/server/license/addons') {
+				return Promise.resolve({
+					data: {
+						data: {
+							addons: [],
+						},
+					},
+				});
+			}
+
 			if (path.startsWith('/auth')) {
 				// stub as auth is not tested here
 				return Promise.resolve({
@@ -295,6 +356,16 @@ describe('dehydrate action', () => {
 				return Promise.resolve({
 					data: {
 						data: mockServerInfo,
+					},
+				});
+			}
+
+			if (path === '/server/license/addons') {
+				return Promise.resolve({
+					data: {
+						data: {
+							addons: [],
+						},
 					},
 				});
 			}
