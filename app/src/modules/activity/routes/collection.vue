@@ -55,11 +55,13 @@ const roleFilter = ref<Filter | null>(null);
 				<ActivityNavigation :filter="roleFilter ?? undefined" @update:filter="(v) => (roleFilter = v ?? null)" />
 			</template>
 
-			<VNotice type="info" icon="diamond">
-				<template #title>
-					{{ $t('feature_limit_notice', { limit: activityFeedLimit, feature: $t('activity_feed') }) }}
-				</template>
-			</VNotice>
+			<div class="v-notice-wrapper">
+				<VNotice type="info" icon="diamond">
+					<template #title>
+						{{ $t('feature_limit_notice', { limit: activityFeedLimit, feature: $t('activity_feed') }) }}
+					</template>
+				</VNotice>
+			</div>
 
 			<component :is="`layout-${layout}`" v-bind="layoutState">
 				<template #no-results>
@@ -86,3 +88,9 @@ const roleFilter = ref<Filter | null>(null);
 		</PrivateView>
 	</component>
 </template>
+
+<style lang="scss" scoped>
+.v-notice-wrapper {
+	padding: var(--content-padding);
+}
+</style>

@@ -31,11 +31,23 @@ const revisionsLimit = computed(() => {
 				:last="index === group.revisions.length - 1"
 				@click="$emit('click', item.id)"
 			/>
-			<VNotice type="info" icon="diamond">
-				<template #title>
-					{{ $t('feature_limit_notice', { limit: revisionsLimit, feature: $t('revisions') }) }}
-				</template>
-			</VNotice>
+			<div class="v-notice-wrapper">
+				<VNotice type="info" icon="diamond">
+					<template #title>
+						{{ $t('feature_limit_notice', { limit: revisionsLimit, feature: $t('revisions') }) }}
+					</template>
+				</VNotice>
+			</div>
 		</div>
 	</VDetail>
 </template>
+
+<style lang="scss" scoped>
+.v-notice-wrapper {
+	padding: var(--content-padding);
+
+	.v-notice {
+		background-color: var(--theme--background-accent);
+	}
+}
+</style>
