@@ -67,8 +67,7 @@ const { t } = useI18n();
 
 .plan-separator {
 	position: absolute;
-	inset-inline-start: 0;
-	inset-inline-end: calc(-1 * var(--plan-actions-extend, 150px));
+	inset-inline: 0 calc(-1 * var(--plan-actions-extend, 150px));
 	inset-block-end: 0;
 	block-size: 1px;
 	background: var(--theme--border-color);
@@ -83,8 +82,7 @@ const { t } = useI18n();
 	display: flex;
 	gap: 12px;
 	flex-shrink: 0;
-	margin-inline-start: auto;
-	margin-inline-end: calc(-1 * var(--plan-actions-extend, 150px));
+	margin-inline: auto calc(-1 * var(--plan-actions-extend, 150px));
 }
 
 .plan-action-btn {

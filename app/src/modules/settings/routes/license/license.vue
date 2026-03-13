@@ -9,10 +9,6 @@ import SettingsNavigation from '../../components/navigation.vue';
 import api from '@/api';
 import VBreadcrumb from '@/components/v-breadcrumb.vue';
 import VButton from '@/components/v-button.vue';
-import VCardActions from '@/components/v-card-actions.vue';
-import VCardTitle from '@/components/v-card-title.vue';
-import VCard from '@/components/v-card.vue';
-import VDialog from '@/components/v-dialog.vue';
 import VDrawer from '@/components/v-drawer.vue';
 import VForm from '@/components/v-form/v-form.vue';
 import VIcon from '@/components/v-icon/v-icon.vue';
@@ -20,11 +16,10 @@ import VNotice from '@/components/v-notice.vue';
 import VProgressCircular from '@/components/v-progress-circular.vue';
 import { useLicensePreview } from '@/composables/use-license-preview';
 import InterfaceInputHash from '@/interfaces/input-hash/input-hash.vue';
+import DeactivationPopup from '@/modules/settings/routes/license/components/deactivation-popup.vue';
 import { useCollectionsStore } from '@/stores/collections';
 import { useServerStore } from '@/stores/server';
 import { useSettingsStore } from '@/stores/settings';
-import { notify } from '@/utils/notify';
-import { unexpectedError } from '@/utils/unexpected-error';
 import { PrivateView } from '@/views/private';
 
 const { t } = useI18n();
@@ -147,9 +142,7 @@ const upgradePlanLabel = computed(() =>
 	hasLicense.value ? t('settings_license_manage_plan') : t('settings_license_upgrade_plan'),
 );
 
-const collectionsLimit = computed(
-	() => serverStore.license.entitlements.collections?.limit ?? 0,
-);
+const collectionsLimit = computed(() => serverStore.license.entitlements.collections?.limit ?? 0);
 
 const usersLimit = computed(() => {
 	const u = serverStore.license.entitlements.users;
@@ -256,21 +249,6 @@ async function saveLicenseKey() {
 		saveError.value = err?.response?.data?.errors?.[0]?.message ?? err?.message ?? t('unexpected_error');
 	} finally {
 		saving.value = false;
-	}
-}
-
-async function deactivateLicense() {
-	deactivating.value = true;
-	confirmDeactivate.value = false;
-
-	try {
-		await api.post('/server/deactivate-license');
-		await Promise.all([serverStore.hydrate(), settingsStore.hydrate()]);
-		notify({ title: t('settings_license_deactivate_success') });
-	} catch (err: any) {
-		unexpectedError(err);
-	} finally {
-		deactivating.value = false;
 	}
 }
 
@@ -460,20 +438,7 @@ const licenseFormEdits = ref<Record<string, any> | null>(null);
 			</div>
 		</div>
 
-		<VDialog v-model="confirmDeactivate" @esc="confirmDeactivate = false">
-			<VCard>
-				<VCardTitle>{{ t('settings_license_deactivate_confirm_title') }}</VCardTitle>
-				<p class="confirm-message">{{ t('settings_license_deactivate_confirm') }}</p>
-				<VCardActions>
-					<VButton secondary @click="confirmDeactivate = false">
-						{{ t('cancel') }}
-					</VButton>
-					<VButton kind="danger" :loading="deactivating" @click="deactivateLicense">
-						{{ t('settings_license_deactivate') }}
-					</VButton>
-				</VCardActions>
-			</VCard>
-		</VDialog>
+		<DeactivationPopup v-model:open="confirmDeactivate" />
 
 		<VDrawer
 			v-if="canManageLicense"
@@ -680,12 +645,5 @@ const licenseFormEdits = ref<Record<string, any> | null>(null);
 
 .status-icon--error {
 	--v-icon-color: var(--theme--danger);
-}
-
-.confirm-message {
-	font-size: 14px;
-	color: var(--theme--foreground);
-	margin: 0 0 16px;
-	padding-inline: 20px;
 }
 </style>
