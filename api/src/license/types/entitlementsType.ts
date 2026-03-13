@@ -29,11 +29,15 @@ export type SSOEntitlements = {
 	enabled: boolean;
 };
 
+export type CustomPermissionsEntitlements = {
+	enabled: boolean;
+};
+
 export type EntitlementsType = {
 	[Entitlements.COLLECTIONS]: CollectionsEntitlements;
 	[Entitlements.ACTIVITY_FEED]: ActivityFeedEntitlements;
 	[Entitlements.REVISIONS]: RevisionsEntitlements;
 	[Entitlements.USERS]: UsersEntitlements;
 	[Entitlements.SSO]: SSOEntitlements;
-	[Entitlements.CUSTOM_PERMISSIONS]: SSOEntitlements;
+	[Entitlements.CUSTOM_PERMISSIONS]: CustomPermissionsEntitlements;
 };
