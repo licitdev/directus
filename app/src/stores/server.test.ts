@@ -70,7 +70,11 @@ afterEach(() => {
 });
 
 describe('hydrate action', async () => {
-	test('should hydrate info', async () => {
+	test('should hydrate info and license', async () => {
+		const mockEntitlements = {
+			collections: { limit: 10 },
+		};
+
 		apiGetSpy.mockImplementation((path: string) => {
 			if (path === '/server/info') {
 				return Promise.resolve({
@@ -82,7 +86,22 @@ describe('hydrate action', async () => {
 
 			if (path.startsWith('/auth')) {
 				// stub as auth is not tested here
-				return Promise.resolve({ data: {} });
+				return Promise.resolve({
+					data: {
+						data: [],
+						disableDefault: false,
+					},
+				});
+			}
+
+			if (path === '/server/license') {
+				return Promise.resolve({
+					data: {
+						data: {
+							entitlements: mockEntitlements,
+						},
+					},
+				});
 			}
 
 			return;
@@ -92,13 +111,18 @@ describe('hydrate action', async () => {
 		await serverStore.hydrate();
 
 		expect(serverStore.info).toEqual(mockServerInfo);
+		expect(serverStore.license.entitlements).toEqual(mockEntitlements);
 	});
 
 	test('should hydrate auth', async () => {
 		apiGetSpy.mockImplementation((path: string) => {
 			if (path === '/server/info') {
 				// stub as server info is not tested here
-				return Promise.resolve({ data: {} });
+				return Promise.resolve({
+					data: {
+						data: {},
+					},
+				});
 			}
 
 			if (path.startsWith('/auth')) {
@@ -106,6 +130,16 @@ describe('hydrate action', async () => {
 					data: {
 						data: mockAuthProviders,
 						disableDefault: true,
+					},
+				});
+			}
+
+			if (path === '/server/license') {
+				return Promise.resolve({
+					data: {
+						data: {
+							entitlements: {},
+						},
 					},
 				});
 			}
@@ -137,7 +171,22 @@ describe('hydrate action', async () => {
 
 			if (path.startsWith('/auth')) {
 				// stub as auth is not tested here
-				return Promise.resolve({ data: {} });
+				return Promise.resolve({
+					data: {
+						data: [],
+						disableDefault: false,
+					},
+				});
+			}
+
+			if (path === '/server/license') {
+				return Promise.resolve({
+					data: {
+						data: {
+							entitlements: {},
+						},
+					},
+				});
 			}
 
 			return;
@@ -161,7 +210,22 @@ describe('hydrate action', async () => {
 
 			if (path.startsWith('/auth')) {
 				// stub as auth is not tested here
-				return Promise.resolve({ data: {} });
+				return Promise.resolve({
+					data: {
+						data: [],
+						disableDefault: false,
+					},
+				});
+			}
+
+			if (path === '/server/license') {
+				return Promise.resolve({
+					data: {
+						data: {
+							entitlements: {},
+						},
+					},
+				});
 			}
 
 			return;
@@ -192,7 +256,22 @@ describe('hydrate action', async () => {
 
 			if (path.startsWith('/auth')) {
 				// stub as auth is not tested here
-				return Promise.resolve({ data: {} });
+				return Promise.resolve({
+					data: {
+						data: [],
+						disableDefault: false,
+					},
+				});
+			}
+
+			if (path === '/server/license') {
+				return Promise.resolve({
+					data: {
+						data: {
+							entitlements: {},
+						},
+					},
+				});
 			}
 
 			return;
@@ -229,6 +308,16 @@ describe('dehydrate action', () => {
 				});
 			}
 
+			if (path === '/server/license') {
+				return Promise.resolve({
+					data: {
+						data: {
+							entitlements: {},
+						},
+					},
+				});
+			}
+
 			return;
 		});
 
@@ -239,5 +328,35 @@ describe('dehydrate action', () => {
 		expect(serverStore.info.project).toEqual(null);
 		expect(serverStore.auth.providers).toEqual([]);
 		expect(serverStore.auth.disableDefault).toEqual(false);
+	});
+});
+
+describe('hydrateLicense action', () => {
+	test('should hydrate license entitlements', async () => {
+		const mockEntitlements = {
+			users: { remaining_seats: 5 },
+		};
+
+		apiGetSpy.mockImplementation((path: string) => {
+			if (path === '/server/license') {
+				return Promise.resolve({
+					data: {
+						data: {
+							entitlements: mockEntitlements,
+						},
+					},
+				});
+			}
+
+			return;
+		});
+
+		const serverStore = useServerStore();
+
+		expect(serverStore.license.entitlements).toEqual({});
+
+		await serverStore.hydrateLicense();
+
+		expect(serverStore.license.entitlements).toEqual(mockEntitlements);
 	});
 });
