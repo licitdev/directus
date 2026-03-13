@@ -60,7 +60,7 @@ router.patch(
 					project_id?: string;
 				};
 
-				const { token, projectId: newProjectId } = await validate({
+				const { token, project_id: newProjectId } = await validate({
 					licenseKey: trimmedLicenseKey,
 					...(settings?.project_id && { projectId: settings.project_id }),
 					publicUrl: resolvePublicUrl(),
