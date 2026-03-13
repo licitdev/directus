@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Collection, Permission, PermissionsAction } from '@directus/types';
 import { computed, ref, toRefs } from 'vue';
+import { useRouter } from 'vue-router';
 import VButton from '@/components/v-button.vue';
 import VCardActions from '@/components/v-card-actions.vue';
 import VCardText from '@/components/v-card-text.vue';
@@ -51,6 +52,7 @@ const permissionLevel = computed<'all' | 'none' | 'custom'>(() => {
 const saving = ref(false);
 const customPermissionFeatureGateModelActive = ref(false);
 const serverStore = useServerStore();
+const router = useRouter();
 
 const isAllowCustomPermissions = computed(() => {
 	return serverStore.license?.entitlements?.custom_permissions?.enabled;
@@ -80,8 +82,8 @@ const handleClickCustomEdit = () => {
 };
 
 const onUpgradePlanClick = () => {
-	window.open('https://directus.io/pricing', '_blank');
 	customPermissionFeatureGateModelActive.value = false;
+	router.push('/settings/license');
 };
 </script>
 

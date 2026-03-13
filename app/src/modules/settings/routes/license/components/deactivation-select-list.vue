@@ -105,6 +105,7 @@ function toggleSelection(value: string) {
 				display: flex;
 				flex-direction: column;
 				overflow: hidden;
+				cursor: pointer;
 
 				.name {
 					white-space: nowrap;

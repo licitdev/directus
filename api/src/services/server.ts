@@ -28,8 +28,8 @@ const logger = useLogger();
 
 type LicenseData = {
 	entitlements: {
-		collections: { limit: number; warning_limit: number; usage?: number };
-		users: { remaining_seats?: number; warning_limit: number; usage?: number };
+		collections: { limit: number; warning_limit: number; usage?: number; defaultExceededCount?: number };
+		users: { remaining_seats?: number; warning_limit: number; usage?: number; defaultExceededCount?: number };
 		activity_feed: { limit: number };
 		revisions: { limit: number };
 		sso: { enabled: boolean };
@@ -100,6 +100,11 @@ export class ServerService {
 				const allCollections = await this.knex('directus_collections').select('collection');
 				const collectionsCount = allCollections.filter(({ collection }) => !isSystemCollection(collection)).length;
 				entitlements.collections.usage = collectionsCount;
+
+				entitlements.collections.defaultExceededCount =
+					collectionsCount - defaultEntitlements.collections.limit > 0
+						? collectionsCount - defaultEntitlements.collections.limit
+						: 0;
 			}
 
 			try {
@@ -128,6 +133,11 @@ export class ServerService {
 
 			if (isAdmin) {
 				entitlements.users.usage = activeUsersCount;
+
+				entitlements.users.defaultExceededCount =
+					activeUsersCount - defaultEntitlements.users.limit > 0
+						? activeUsersCount - defaultEntitlements.users.limit
+						: 0;
 			}
 
 			try {

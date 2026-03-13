@@ -31,6 +31,7 @@ import api from '@/api';
 import { useCollectionsStore } from '@/stores/collections';
 import { useFieldsStore } from '@/stores/fields';
 import { useFlowsStore } from '@/stores/flows';
+import { useServerStore } from '@/stores/server';
 import RouterPass from '@/utils/router-passthrough';
 
 export default defineModule({
@@ -59,6 +60,8 @@ export default defineModule({
 			beforeEnter() {
 				const collectionsStore = useCollectionsStore();
 				collectionsStore.hydrate();
+				const serverStore = useServerStore();
+				serverStore.hydrateLicense();
 			},
 			component: License,
 		},

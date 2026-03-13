@@ -3,7 +3,7 @@ import { useLayout } from '@directus/composables';
 import { mergeFilters } from '@directus/utils';
 import { computed, ref, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { onBeforeRouteLeave, onBeforeRouteUpdate } from 'vue-router';
+import { onBeforeRouteLeave, onBeforeRouteUpdate, useRouter } from 'vue-router';
 import UsersNavigation from '../components/navigation.vue';
 import useNavigation from '../composables/use-navigation';
 import api from '@/api';
@@ -43,6 +43,8 @@ const userStore = useUserStore();
 
 const layoutRef = ref();
 const selection = ref<string[]>([]);
+
+const router = useRouter();
 
 const { layout, layoutOptions, layoutQuery, filter, search, resetPreset } = usePreset(ref('directus_users'));
 const { addNewLink } = useLinks();
@@ -194,8 +196,8 @@ function onCreateUserClick() {
 }
 
 function onPurchaseAddOnClick() {
-	window.open('https://directus.io/pricing/', '_blank');
 	userLimitModalActive.value = false;
+	router.push('/settings/license');
 }
 </script>
 

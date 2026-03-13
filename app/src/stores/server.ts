@@ -88,8 +88,8 @@ export type Info = {
 
 export type License = {
 	entitlements: {
-		collections?: { limit?: number; warning_limit?: number; usage?: number };
-		users?: { remaining_seats?: number; warning_limit?: number; usage?: number };
+		collections?: { limit?: number; warning_limit?: number; usage?: number; defaultExceededCount?: number };
+		users?: { remaining_seats?: number; warning_limit?: number; usage?: number; defaultExceededCount?: number };
 		activity_feed?: { limit?: number };
 		revisions?: { limit?: number };
 		sso?: { enabled?: boolean };

@@ -362,14 +362,7 @@ function mapAddonToDisplay(item: { id: string; name: string; description: string
 								<span class="add-on-title">{{ pkg.name }}</span>
 								<span class="add-on-description">{{ pkg.description }}</span>
 							</div>
-							<VButton
-								v-if="pkg.showPurchase"
-								secondary
-								small
-								class="add-on-purchase-btn"
-								:href="`https://directus.io/license-request?utm_source=self_hosted&utm_medium=product&utm_campaign=2025_10_kyc&utm_term=${info.version}&utm_content=settings_addon_${pkg.id}`"
-								target="_blank"
-							>
+							<VButton v-if="pkg.showPurchase" secondary small class="add-on-purchase-btn">
 								{{ t('settings_license_purchase') }}
 							</VButton>
 							<VIcon
@@ -508,6 +501,7 @@ function mapAddonToDisplay(item: { id: string; name: string; description: string
 	margin-block-end: 32px;
 	inline-size: 100%;
 	box-sizing: border-box;
+	max-inline-size: 1000px;
 }
 
 .license-page {
@@ -696,8 +690,8 @@ function mapAddonToDisplay(item: { id: string; name: string; description: string
 }
 
 .badge-unavailable {
-	background: var(--theme--background-subdued);
-	color: var(--theme--foreground-subdued);
+	background: var(--theme--background-normal);
+	color: var(--theme--foreground-accent);
 }
 
 .add-on-section {

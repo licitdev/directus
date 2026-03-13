@@ -65,8 +65,8 @@ settings_license_your_plan_usage: Your Plan Usage
 settings_license_add_on_packages: Add-on Packages
 settings_license_add_on_info: Learn more about this add-on
 settings_license_purchase: Purchase
-settings_license_usage_available: Available
-settings_license_usage_unavailable: Unavailable
+settings_license_usage_available: Enabled
+settings_license_usage_unavailable: Disabled
 settings_license_usage_disabled: Disabled
 settings_license_usage_opt_in: Opt-in
 settings_license_usage_collections: Collections
@@ -87,9 +87,15 @@ settings_license_deactivate_confirm_title: Deactivate License?
 settings_license_deactivation_popup_title: Deactivation License Requirement
 settings_license_deactivation_popup_subtitle:
   If you need to update your license key, you an update it via the “Manage License” in the License setting page.
-settings_license_deactivation_popup_confirm: Deactivate License
+settings_license_deactivation_popup_confirm: Deactivate
 settings_license_deactivation_popup_notice:
   In order to proceed to deactivate your license, you will need to deactivate 2 collections and 5 user seats.
+settings_license_deactivation_popup_notice_requirements:
+  'In order to proceed to deactivate your license, you will need to deactivate {requirements}.'
+settings_license_deactivation_popup_notice_no_requirements: You can proceed to deactivate your license.
+settings_license_deactivation_popup_notice_collections: '{count} collection(s)'
+settings_license_deactivation_popup_notice_users: '{count} user seat(s)'
+settings_license_deactivation_popup_notice_and: ' and '
 settings_license_deactivate_confirm:
   Are you sure you want to deactivate the license? This will remove the license from this project.
 settings_license_deactivate_success: License deactivated successfully

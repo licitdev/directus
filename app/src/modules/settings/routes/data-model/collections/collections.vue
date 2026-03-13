@@ -2,7 +2,7 @@
 import { saveAs } from 'file-saver';
 import { merge } from 'lodash';
 import { computed, ref } from 'vue';
-import { RouterLink, RouterView } from 'vue-router';
+import { RouterLink, RouterView, useRouter } from 'vue-router';
 import Draggable from 'vuedraggable';
 import SettingsNavigation from '../../../components/navigation.vue';
 import CollectionDialog from './components/collection-dialog.vue';
@@ -39,6 +39,8 @@ const search = ref<string | null>(null);
 const collectionDialogActive = ref(false);
 const collectionLimitModalActive = ref(false);
 const editCollection = ref<Collection | null>();
+
+const router = useRouter();
 
 const collectionsStore = useCollectionsStore();
 const serverStore = useServerStore();
@@ -179,8 +181,8 @@ function onCreateCollectionClick() {
 }
 
 function onPurchaseAddOnClick() {
-	window.open('https://directus.io/pricing', '_blank');
 	collectionLimitModalActive.value = false;
+	router.push('/settings/license');
 }
 </script>
 

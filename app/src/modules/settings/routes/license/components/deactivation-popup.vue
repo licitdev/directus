@@ -40,6 +40,37 @@ const collections = computed(() => {
 	return tableCollections.map((collection) => ({ name: collection.collection, value: collection.collection }));
 });
 
+const collectionsDefaultExceededCount = computed(() => {
+	return serverStore.license.entitlements.collections?.defaultExceededCount ?? 0;
+});
+
+const usersDefaultExceededCount = computed(() => {
+	return serverStore.license.entitlements.users?.defaultExceededCount ?? 0;
+});
+
+const deactivationNoticeMessage = computed(() => {
+	const collectionsCount = collectionsDefaultExceededCount.value;
+	const usersCount = usersDefaultExceededCount.value;
+
+	const parts: string[] = [];
+
+	if (collectionsCount > 0) {
+		parts.push(t('settings_license_deactivation_popup_notice_collections', { count: collectionsCount }));
+	}
+
+	if (usersCount > 0) {
+		parts.push(t('settings_license_deactivation_popup_notice_users', { count: usersCount }));
+	}
+
+	if (parts.length === 0) {
+		return t('settings_license_deactivation_popup_notice_no_requirements');
+	}
+
+	return t('settings_license_deactivation_popup_notice_requirements', {
+		requirements: parts.join(t('settings_license_deactivation_popup_notice_and')),
+	});
+});
+
 const deactivating = ref(false);
 
 const selectedCollections = ref<string[]>([]);
@@ -124,17 +155,23 @@ async function deactivateLicense() {
 
 			<div class="notice-wrapper">
 				<VNotice type="warning">
-					{{ t('settings_license_deactivation_popup_notice') }}
+					{{ deactivationNoticeMessage }}
 				</VNotice>
 			</div>
 
 			<DeactivationSelectList
+				v-if="collectionsDefaultExceededCount > 0"
 				v-model="selectedCollections"
-				title="Select collection(s) to deactivate"
+				title="Data Collections"
 				:items="collections"
 			/>
 
-			<DeactivationSelectList v-model="selectedUsers" title="Select user(s) to deactivate" :items="users">
+			<DeactivationSelectList
+				v-if="usersDefaultExceededCount > 0"
+				v-model="selectedUsers"
+				title="User Seats"
+				:items="users"
+			>
 				<template #item="{ item }">
 					<div class="user-item">
 						<VAvatar x-small round class="avatar">
@@ -213,6 +250,7 @@ async function deactivateLicense() {
 		display: flex;
 		flex-direction: column;
 		overflow: hidden;
+		cursor: pointer;
 
 		.name {
 			white-space: nowrap;
