@@ -29,7 +29,7 @@ const logger = useLogger();
 type LicenseData = {
 	entitlements: {
 		collections: { limit: number; warning_limit: number; usage?: number };
-		users: { remaining_seats?: number; warning_limit: number };
+		users: { remaining_seats?: number; warning_limit: number; usage?: number };
 		activity_feed: { limit: number };
 		revisions: { limit: number };
 		sso: { enabled: boolean };
@@ -113,7 +113,7 @@ export class ServerService {
 			}
 
 			const activeUsersCountResult = await this.knex('directus_users')
-				.whereIn('status', ['active', 'invited'])
+				.whereIn('status', ['active'])
 				.count<{ count: number }[]>({ count: '*' })
 				.first();
 
@@ -121,6 +121,10 @@ export class ServerService {
 			const remainingSeats = Math.max(usersLimit - activeUsersCount, 0);
 
 			entitlements.users.remaining_seats = remainingSeats;
+
+			if (isAdmin) {
+				entitlements.users.usage = activeUsersCount;
+			}
 
 			try {
 				const activityFeedFeature = await getFeature<{ limit?: number }>('activity_feed');

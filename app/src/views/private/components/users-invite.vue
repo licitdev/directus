@@ -11,7 +11,6 @@ import VDialog from '@/components/v-dialog.vue';
 import VNotice from '@/components/v-notice.vue';
 import VSelect from '@/components/v-select/v-select.vue';
 import VTextarea from '@/components/v-textarea.vue';
-import { useServerStore } from '@/stores/server';
 import { APIError } from '@/types/error';
 import { unexpectedError } from '@/utils/unexpected-error';
 
@@ -30,8 +29,6 @@ const roleSelected = ref<string | undefined>(props.role);
 const loading = ref(false);
 
 const uniqueValidationErrors = ref([]);
-
-const serverStore = useServerStore();
 
 watch(
 	() => props.modelValue,
@@ -55,8 +52,6 @@ async function inviteUsers() {
 			email: emailsParsed,
 			role: roleSelected.value,
 		});
-
-		await serverStore.hydrateLicense();
 
 		emails.value = '';
 		emit('update:modelValue', false);
