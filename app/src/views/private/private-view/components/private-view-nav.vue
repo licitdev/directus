@@ -12,6 +12,10 @@ defineProps<{ id?: string }>();
 		<div :id class="module-nav-content">
 			<slot name="navigation" />
 		</div>
+
+		<div v-if="$slots.footer" class="module-nav-footer">
+			<slot name="footer" />
+		</div>
 	</aside>
 </template>
 
@@ -20,7 +24,8 @@ defineProps<{ id?: string }>();
 	block-size: 100%;
 	inline-size: 100%;
 	position: relative;
-	display: block;
+	display: flex;
+	flex-direction: column;
 	font-size: 1rem;
 	background: var(--theme--navigation--background);
 }
@@ -39,8 +44,17 @@ defineProps<{ id?: string }>();
 	--v-divider-thickness: var(--theme--navigation--list--divider--border-width);
 	--project-header-height: 60px;
 
-	block-size: calc(100% - var(--project-header-height));
+	flex: 1;
+	min-block-size: 0;
 	overflow: hidden auto;
 	border-inline-end: var(--theme--navigation--border-width) solid var(--theme--navigation--border-color);
+}
+
+.module-nav-footer {
+	display: flex;
+	justify-content: center;
+	flex-shrink: 0;
+	padding: 12px 16px;
+	border-block-start: var(--theme--navigation--border-width) solid var(--theme--navigation--border-color);
 }
 </style>

@@ -72,6 +72,7 @@ const splitterCollapsed = computed({
 					<SkipMenu section="module-navigation" />
 					<PrivateViewNav id="module-navigation">
 						<template #navigation><slot name="navigation" /></template>
+						<template #footer><slot name="navigation-footer" /></template>
 					</PrivateViewNav>
 				</template>
 
@@ -82,6 +83,7 @@ const splitterCollapsed = computed({
 					<SkipMenu section="module-navigation" class="mobile-skip-menu" />
 					<PrivateViewNav id="module-navigation" class="mobile-nav">
 						<template #navigation><slot name="navigation" /></template>
+						<template #footer><slot name="navigation-footer" /></template>
 					</PrivateViewNav>
 				</PrivateViewDrawer>
 			</template>
