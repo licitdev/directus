@@ -160,6 +160,16 @@ export class ServerService {
 				logger.warn(error, '[license] Failed to load sso feature entitlements');
 			}
 
+			try {
+				const customPermissionsFeature = await getFeature<{ enabled?: boolean }>('custom_permissions');
+
+				if (customPermissionsFeature?.enabled != null) {
+					entitlements.custom_permissions.enabled = customPermissionsFeature.enabled;
+				}
+			} catch (error) {
+				logger.warn(error, '[license] Failed to load custom permissions feature entitlements');
+			}
+
 			return {
 				entitlements,
 			};
