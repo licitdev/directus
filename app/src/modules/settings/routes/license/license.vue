@@ -345,13 +345,6 @@ function mapAddonToDisplay(item: { id: string; name: string; description: string
 								{{ ssoEnabled ? t('settings_license_usage_available') : t('settings_license_usage_unavailable') }}
 							</span>
 						</div>
-						<div class="usage-item">
-							<VIcon name="bar_chart" class="usage-icon" />
-							<span class="usage-label">{{ t('settings_license_usage_analytics') }}</span>
-							<span class="usage-badge badge-unavailable">
-								{{ t('settings_license_usage_opt_in') }}
-							</span>
-						</div>
 					</div>
 				</div>
 
@@ -698,8 +691,8 @@ function mapAddonToDisplay(item: { id: string; name: string; description: string
 }
 
 .badge-available {
-	background: var(--theme--background-success);
-	color: var(--theme--foreground-success);
+	background: var(--theme--success-background);
+	color: var(--theme--success);
 }
 
 .badge-unavailable {
