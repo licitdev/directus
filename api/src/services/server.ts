@@ -33,6 +33,7 @@ type LicenseData = {
 		activity_feed: { limit: number };
 		revisions: { limit: number };
 		sso: { enabled: boolean };
+		custom_permissions: { enabled: boolean };
 	};
 };
 
@@ -73,6 +74,9 @@ export class ServerService {
 				},
 				sso: {
 					enabled: defaultEntitlements.sso.enabled,
+				},
+				custom_permissions: {
+					enabled: defaultEntitlements.custom_permissions.enabled,
 				},
 			};
 

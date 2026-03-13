@@ -93,6 +93,7 @@ export type License = {
 		activity_feed?: { limit?: number };
 		revisions?: { limit?: number };
 		sso?: { enabled?: boolean };
+		custom_permissions?: { enabled?: boolean };
 	};
 };
 

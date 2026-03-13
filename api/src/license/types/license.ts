@@ -1,4 +1,4 @@
-import type { Entitlements } from './entitlements.js';
+import type { EntitlementsType } from './entitlementsType.js';
 
 export type License = {
 	project_id: string;
@@ -12,6 +12,6 @@ export type License = {
 		policy: {
 			name: string;
 		};
-		entitlements: Entitlements;
+		entitlements: EntitlementsType;
 	};
 };

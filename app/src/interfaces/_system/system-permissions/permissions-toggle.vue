@@ -10,6 +10,13 @@ import VListItem from '@/components/v-list-item.vue';
 import VList from '@/components/v-list.vue';
 import VMenu from '@/components/v-menu.vue';
 import VProgressCircular from '@/components/v-progress-circular.vue';
+import VCardTitle from '@/components/v-card-title.vue';
+import VCardText from '@/components/v-card-text.vue';
+import VButton from '@/components/v-button.vue';
+import VDialog from '@/components/v-dialog.vue';
+import VCard from '@/components/v-card.vue';
+import VCardActions from '@/components/v-card-actions.vue';
+import { useServerStore } from '@/stores/server';
 
 const props = defineProps<{
 	collection: Collection;
@@ -42,6 +49,12 @@ const permissionLevel = computed<'all' | 'none' | 'custom'>(() => {
 });
 
 const saving = ref(false);
+const customPermissionFeatureGateModelActive = ref(false);
+const serverStore = useServerStore();
+
+const isAllowCustomPermissions = computed(() => {
+	return serverStore.license?.entitlements?.custom_permissions?.enabled;
+});
 
 const appMinimalLevel = computed(() => {
 	if (!props.appMinimal) return null;
@@ -55,6 +68,21 @@ const appMinimalLevel = computed(() => {
 
 	return 'partial';
 });
+
+const handleClickCustomEdit = () => {
+	if (isAllowCustomPermissions.value) {
+		emit('edit');
+		return;
+	}
+
+	customPermissionFeatureGateModelActive.value = true;
+	return;
+};
+
+const onUpgradePlanClick = () => {
+	window.open('https://directus.io/pricing', '_blank');
+	customPermissionFeatureGateModelActive.value = false;
+};
 </script>
 
 <template>
@@ -100,7 +128,7 @@ const appMinimalLevel = computed(() => {
 
 				<VDivider />
 
-				<VListItem clickable @click="emit('edit')">
+				<VListItem clickable @click="handleClickCustomEdit">
 					<VListItemIcon>
 						<VIcon name="rule" />
 					</VListItemIcon>
@@ -108,11 +136,27 @@ const appMinimalLevel = computed(() => {
 						{{ $t('use_custom') }}
 					</VListItemContent>
 					<VListItemIcon>
-						<VIcon name="launch" />
+						<VIcon v-if="!!isAllowCustomPermissions" name="launch" />
+						<VIcon v-if="!isAllowCustomPermissions" name="diamond" />
 					</VListItemIcon>
 				</VListItem>
 			</VList>
 		</VMenu>
+
+		<VDialog v-model="customPermissionFeatureGateModelActive" persistent>
+			<VCard>
+				<VCardTitle>{{ $t('upgrade_plan_modal_title') }}</VCardTitle>
+				<VCardText>{{ $t('upgrade_plan_modal_description') }}</VCardText>
+				<VCardActions>
+					<VButton secondary @click="customPermissionFeatureGateModelActive = false">
+						{{ $t('cancel') }}
+					</VButton>
+					<VButton @click="onUpgradePlanClick">
+						{{ $t('upgrade_plan') }}
+					</VButton>
+				</VCardActions>
+			</VCard>
+		</VDialog>
 	</div>
 </template>
 

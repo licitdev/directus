@@ -1,8 +1,8 @@
 import { ForbiddenError, InvalidPayloadError } from '@directus/errors';
 import type { AbstractServiceOptions, Item, MutationOptions, PrimaryKey, Query } from '@directus/types';
 import { merge } from 'lodash-es';
-import { Entitlements } from '../license/defaults.js';
-import { getFeature } from '../license/lib/get-feature.js';
+import { getFeature } from '../license/index.js';
+import { Entitlements } from '../license/types/index.js';
 import { ItemsService } from './items.js';
 
 export class RevisionsService extends ItemsService {
