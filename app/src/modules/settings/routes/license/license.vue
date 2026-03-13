@@ -3,22 +3,16 @@ import { storeToRefs } from 'pinia';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import SettingsNavigation from '../../components/navigation.vue';
-import api from '@/api';
 import VBreadcrumb from '@/components/v-breadcrumb.vue';
 import VButton from '@/components/v-button.vue';
-import VCardActions from '@/components/v-card-actions.vue';
-import VCardTitle from '@/components/v-card-title.vue';
-import VCard from '@/components/v-card.vue';
-import VDialog from '@/components/v-dialog.vue';
 import VDrawer from '@/components/v-drawer.vue';
 import VIcon from '@/components/v-icon/v-icon.vue';
 import VInput from '@/components/v-input.vue';
 import VNotice from '@/components/v-notice.vue';
 import LicenseKeyInput from '@/modules/licensing/components/license-key-input.vue';
+import DeactivationPopup from '@/modules/settings/routes/license/components/deactivation-popup.vue';
 import { useServerStore } from '@/stores/server';
 import { useSettingsStore } from '@/stores/settings';
-import { notify } from '@/utils/notify';
-import { unexpectedError } from '@/utils/unexpected-error';
 import { PrivateView } from '@/views/private';
 
 const { t } = useI18n();
@@ -98,21 +92,6 @@ async function saveLicenseKey() {
 		saveError.value = err?.response?.data?.errors?.[0]?.message ?? err?.message ?? t('unexpected_error');
 	} finally {
 		saving.value = false;
-	}
-}
-
-async function deactivateLicense() {
-	deactivating.value = true;
-	confirmDeactivate.value = false;
-
-	try {
-		await api.post('/server/deactivate-license');
-		await Promise.all([serverStore.hydrate(), settingsStore.hydrate()]);
-		notify({ title: t('settings_license_deactivate_success') });
-	} catch (err: any) {
-		unexpectedError(err);
-	} finally {
-		deactivating.value = false;
 	}
 }
 
@@ -211,20 +190,7 @@ function closeDrawer() {
 			</div>
 		</div>
 
-		<VDialog v-model="confirmDeactivate" @esc="confirmDeactivate = false">
-			<VCard>
-				<VCardTitle>{{ t('settings_license_deactivate_confirm_title') }}</VCardTitle>
-				<p class="confirm-message">{{ t('settings_license_deactivate_confirm') }}</p>
-				<VCardActions>
-					<VButton secondary @click="confirmDeactivate = false">
-						{{ t('cancel') }}
-					</VButton>
-					<VButton kind="danger" :loading="deactivating" @click="deactivateLicense">
-						{{ t('settings_license_deactivate') }}
-					</VButton>
-				</VCardActions>
-			</VCard>
-		</VDialog>
+		<DeactivationPopup v-model:open="confirmDeactivate" />
 
 		<VDrawer
 			v-if="licenseSource !== 'env'"

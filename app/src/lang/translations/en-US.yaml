@@ -60,6 +60,12 @@ settings_license_danger_zone: Danger Zone
 settings_license_deactivate: Deactivate License
 settings_license_deactivate_notice: Remove the license from this project and unbind it so it can be used elsewhere.
 settings_license_deactivate_confirm_title: Deactivate License?
+settings_license_deactivation_popup_title: Deactivation License Requirement
+settings_license_deactivation_popup_subtitle:
+  If you need to update your license key, you an update it via the “Manage License” in the License setting page.
+settings_license_deactivation_popup_confirm: Deactivate License
+settings_license_deactivation_popup_notice:
+  In order to proceed to deactivate your license, you will need to deactivate 2 collections and 5 user seats.
 settings_license_deactivate_confirm:
   Are you sure you want to deactivate the license? This will remove the license from this project.
 settings_license_deactivate_success: License deactivated successfully
