@@ -124,24 +124,20 @@ const upgradePlanLabel = computed(() =>
 );
 
 const collectionsLimit = computed(() => license.value?.entitlements?.collections?.limit ?? 0);
-const collectionsCount = computed(() => license.value?.entitlements?.collections?.usage ?? 0);
+const collectionsUsage = computed(() => license.value?.entitlements?.collections?.usage ?? 0);
 
-const usersUsage = computed(() => license.value?.entitlements?.users?.usage ?? 0);
 const usersRemainingSeats = computed(() => license.value?.entitlements?.users?.remaining_seats ?? 0);
-const usersLimit = computed(() => usersUsage.value + usersRemainingSeats.value || 0);
+const usersUsage = computed(() => license.value?.entitlements?.users?.usage ?? 0);
 
-const ssoAvailable = computed(() => license.value?.entitlements?.sso?.enabled ?? false);
+const ssoEnabled = computed(() => license.value?.entitlements?.sso?.enabled ?? false);
 
-const entitlements = computed(() => license.value?.entitlements as Record<string, { enabled?: boolean }> | undefined);
-
-const customRulesAvailable = computed(
-	() =>
-		entitlements.value?.access_policies?.enabled ??
-		entitlements.value?.custom_permissions?.enabled ??
-		false,
+const customPermissionsEnabled = computed(
+	() => license.value?.entitlements?.custom_permissions?.enabled ?? false,
 );
 
-const customLlmAvailable = computed(() => entitlements.value?.custom_llm?.enabled ?? false);
+const customLlmEnabled = computed(
+	() => (license.value?.entitlements as Record<string, { enabled?: boolean }> | undefined)?.custom_llm?.enabled ?? false,
+);
 
 const activePayload = computed(() => drawerPayload.value ?? previewPayload.value);
 const expiryFormatted = computed(() => activePayload.value?.expiry?.slice?.(0, 10) ?? null);
@@ -324,13 +320,13 @@ const licenseFormValues = computed(() => ({
 		remainingGraceDays: remainingGraceDays.value,
 	},
 	license_usage_section: {
-		collectionsCount: collectionsCount.value,
+		collectionsCount: collectionsUsage.value,
 		collectionsLimit: collectionsLimit.value,
 		usersCount: usersUsage.value,
-		usersLimit: usersLimit.value,
-		customRulesAvailable: customRulesAvailable.value,
-		customLlmAvailable: customLlmAvailable.value,
-		ssoAvailable: ssoAvailable.value,
+		usersLimit: usersUsage.value + usersRemainingSeats.value || 0,
+		customRulesAvailable: customPermissionsEnabled.value,
+		customLlmAvailable: customLlmEnabled.value,
+		ssoAvailable: ssoEnabled.value,
 	},
 	license_addons_section: {
 		addons: addonsData.value,
