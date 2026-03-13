@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { Collection, Permission, PermissionsAction } from '@directus/types';
 import { computed, ref, toRefs } from 'vue';
+import VButton from '@/components/v-button.vue';
+import VCardActions from '@/components/v-card-actions.vue';
+import VCardText from '@/components/v-card-text.vue';
+import VCardTitle from '@/components/v-card-title.vue';
+import VCard from '@/components/v-card.vue';
 import VChip from '@/components/v-chip.vue';
+import VDialog from '@/components/v-dialog.vue';
 import VDivider from '@/components/v-divider.vue';
 import VIcon from '@/components/v-icon/v-icon.vue';
 import VListItemContent from '@/components/v-list-item-content.vue';
@@ -10,12 +16,6 @@ import VListItem from '@/components/v-list-item.vue';
 import VList from '@/components/v-list.vue';
 import VMenu from '@/components/v-menu.vue';
 import VProgressCircular from '@/components/v-progress-circular.vue';
-import VCardTitle from '@/components/v-card-title.vue';
-import VCardText from '@/components/v-card-text.vue';
-import VButton from '@/components/v-button.vue';
-import VDialog from '@/components/v-dialog.vue';
-import VCard from '@/components/v-card.vue';
-import VCardActions from '@/components/v-card-actions.vue';
 import { useServerStore } from '@/stores/server';
 
 const props = defineProps<{
