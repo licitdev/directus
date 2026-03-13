@@ -3,10 +3,9 @@ import type { DeepPartial } from '@directus/types';
 import type { Field } from '@directus/types';
 import { watchDebounced } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { computed, onMounted, provide, ref, watch } from 'vue';
+import { computed, provide, ref, watch } from 'vue';
 import { I18nT, useI18n } from 'vue-i18n';
 import SettingsNavigation from '../../components/navigation.vue';
-import api from '@/api';
 import VBreadcrumb from '@/components/v-breadcrumb.vue';
 import VButton from '@/components/v-button.vue';
 import VDrawer from '@/components/v-drawer.vue';
@@ -17,7 +16,6 @@ import VProgressCircular from '@/components/v-progress-circular.vue';
 import { useLicensePreview } from '@/composables/use-license-preview';
 import InterfaceInputHash from '@/interfaces/input-hash/input-hash.vue';
 import DeactivationPopup from '@/modules/settings/routes/license/components/deactivation-popup.vue';
-import { useCollectionsStore } from '@/stores/collections';
 import { useServerStore } from '@/stores/server';
 import { useSettingsStore } from '@/stores/settings';
 import { PrivateView } from '@/views/private';
@@ -25,8 +23,7 @@ import { PrivateView } from '@/views/private';
 const { t } = useI18n();
 const serverStore = useServerStore();
 const settingsStore = useSettingsStore();
-const collectionsStore = useCollectionsStore();
-const { info } = storeToRefs(serverStore);
+const { info, license, addons } = storeToRefs(serverStore);
 
 const drawerOpen = ref(false);
 const saving = ref(false);
@@ -34,22 +31,6 @@ const savedSuccessfully = ref(false);
 const saveError = ref<string | null>(null);
 const deactivating = ref(false);
 const confirmDeactivate = ref(false);
-const usersCount = ref(0);
-const addonsLoading = ref(true);
-const addonsError = ref<string | null>(null);
-
-const addons = ref<
-	Array<{
-		id: string;
-		name: string;
-		description: string;
-		status: string;
-		action: string;
-		icon: string;
-		showPurchase: boolean;
-		showInfo: boolean;
-	}>
->([]);
 
 const hasLicense = computed(() => info.value.license != null);
 
@@ -142,43 +123,25 @@ const upgradePlanLabel = computed(() =>
 	hasLicense.value ? t('settings_license_manage_plan') : t('settings_license_upgrade_plan'),
 );
 
-const collectionsLimit = computed(() => serverStore.license.entitlements.collections?.limit ?? 0);
+const collectionsLimit = computed(() => license.value?.entitlements?.collections?.limit ?? 0);
+const collectionsCount = computed(() => license.value?.entitlements?.collections?.usage ?? 0);
 
-const usersLimit = computed(() => {
-	const u = serverStore.license.entitlements.users;
-	const usage = u?.usage ?? 0;
-	const remaining = u?.remaining_seats ?? 0;
+const usersUsage = computed(() => license.value?.entitlements?.users?.usage ?? 0);
+const usersRemainingSeats = computed(() => license.value?.entitlements?.users?.remaining_seats ?? 0);
+const usersLimit = computed(() => usersUsage.value + usersRemainingSeats.value || 0);
 
-	return usage + remaining || 0;
-});
+const ssoAvailable = computed(() => license.value?.entitlements?.sso?.enabled ?? false);
 
-const collectionsCount = computed(() => collectionsStore.databaseCollections.length);
+const entitlements = computed(() => license.value?.entitlements as Record<string, { enabled?: boolean }> | undefined);
 
-const licenseMetadata = computed(() => info.value.license?.metadata as Record<string, any> | undefined);
-const entitlements = computed(() => licenseMetadata.value?.entitlements ?? {});
+const customRulesAvailable = computed(
+	() =>
+		entitlements.value?.access_policies?.enabled ??
+		entitlements.value?.custom_permissions?.enabled ??
+		false,
+);
 
-const ssoAvailable = computed(() => {
-	const sso = entitlements.value?.sso ?? entitlements.value?.find?.((e: any) => e?.name === 'sso');
-	if (Array.isArray(entitlements.value) && sso) return true;
-	if (sso?.enabled === true) return true;
-	return false;
-});
-
-const customRulesAvailable = computed(() => {
-	const policies =
-		entitlements.value?.access_policies ?? entitlements.value?.find?.((e: any) => e?.name === 'access_policies');
-
-	if (Array.isArray(entitlements.value) && policies) return true;
-	if (policies) return true;
-	return false;
-});
-
-const customLlmAvailable = computed(() => {
-	const llm = entitlements.value?.custom_llm ?? entitlements.value?.find?.((e: any) => e?.name === 'custom_llm');
-	if (Array.isArray(entitlements.value) && llm) return true;
-	if (llm) return true;
-	return false;
-});
+const customLlmAvailable = computed(() => entitlements.value?.custom_llm?.enabled ?? false);
 
 const activePayload = computed(() => drawerPayload.value ?? previewPayload.value);
 const expiryFormatted = computed(() => activePayload.value?.expiry?.slice?.(0, 10) ?? null);
@@ -211,21 +174,6 @@ watchDebounced(
 	},
 	{ debounce: 400 },
 );
-
-onMounted(async () => {
-	await collectionsStore.hydrate();
-	await fetchAddons();
-
-	try {
-		const res = await api.get('/users', {
-			params: { limit: 1, aggregate: { count: 'id' } },
-		});
-
-		usersCount.value = res.data?.data?.[0]?.count?.id ?? 0;
-	} catch {
-		usersCount.value = 0;
-	}
-});
 
 function openDrawer() {
 	initialFormValues.value = { license_key: null };
@@ -289,25 +237,7 @@ function mapAddonToDisplay(item: { id: string; name: string; description: string
 	};
 }
 
-async function fetchAddons() {
-	addonsLoading.value = true;
-
-	addonsError.value = null;
-
-	try {
-		const res = await api.get<{
-			addons: Array<{ id: string; name: string; description: string; status: string; action: string }>;
-		}>('/server/license/addons');
-
-		const rawAddons = res.data?.addons ?? [];
-		addons.value = rawAddons.map(mapAddonToDisplay);
-	} catch (err: any) {
-		addonsError.value = err?.response?.data?.errors?.[0]?.message ?? err?.message ?? t('unexpected_error');
-		addons.value = [];
-	} finally {
-		addonsLoading.value = false;
-	}
-}
+const addonsData = computed(() => addons.value?.data?.map(mapAddonToDisplay) ?? []);
 
 provide('license:openDrawer', openDrawer);
 
@@ -396,16 +326,16 @@ const licenseFormValues = computed(() => ({
 	license_usage_section: {
 		collectionsCount: collectionsCount.value,
 		collectionsLimit: collectionsLimit.value,
-		usersCount: usersCount.value,
+		usersCount: usersUsage.value,
 		usersLimit: usersLimit.value,
 		customRulesAvailable: customRulesAvailable.value,
 		customLlmAvailable: customLlmAvailable.value,
 		ssoAvailable: ssoAvailable.value,
 	},
 	license_addons_section: {
-		addons: addons.value,
-		addonsLoading: addonsLoading.value,
-		addonsError: addonsError.value,
+		addons: addonsData.value,
+		addonsLoading: false,
+		addonsError: null,
 		version: info.value.version ?? '',
 	},
 	license_danger_section: {
