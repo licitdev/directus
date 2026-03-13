@@ -29,8 +29,6 @@ const savedSuccessfully = ref(false);
 const saveError = ref<string | null>(null);
 const deactivating = ref(false);
 const confirmDeactivate = ref(false);
-const addonsLoading = ref(true);
-const addonsError = ref<string | null>(null);
 
 const hasLicense = computed(() => info.value.license != null);
 
@@ -150,6 +148,8 @@ const canSaveLicenseKey = computed(() => {
 	const noError = !validationError.value;
 	return hasKey && isValid && notValidating && noError;
 });
+
+const addonsData = computed(() => addons.value?.data?.map(mapAddonToDisplay) ?? []);
 
 watch(currentLicenseKey, (val) => {
 	if (!val) clearPreview();
@@ -361,40 +361,31 @@ function mapAddonToDisplay(item: { id: string; name: string; description: string
 						{{ t('settings_license_add_on_packages') }}
 					</h3>
 					<div class="add-on-grid">
-						<div v-if="addonsLoading" class="add-on-loading">
-							<VProgressCircular indeterminate small />
-							<span>{{ t('loading') }}</span>
-						</div>
-						<VNotice v-else-if="addonsError" type="danger" class="add-on-error">
-							{{ addonsError }}
-						</VNotice>
-						<template v-else>
-							<div v-for="pkg in addons.data.map(mapAddonToDisplay)" :key="pkg.id" class="add-on-card">
-								<div class="add-on-icon-wrapper">
-									<VIcon :name="pkg.icon" class="add-on-icon" />
-								</div>
-								<div class="add-on-content">
-									<span class="add-on-title">{{ pkg.name }}</span>
-									<span class="add-on-description">{{ pkg.description }}</span>
-								</div>
-								<VButton
-									v-if="pkg.showPurchase"
-									secondary
-									small
-									class="add-on-purchase-btn"
-									:href="`https://directus.io/license-request?utm_source=self_hosted&utm_medium=product&utm_campaign=2025_10_kyc&utm_term=${info.version}&utm_content=settings_addon_${pkg.id}`"
-									target="_blank"
-								>
-									{{ t('settings_license_purchase') }}
-								</VButton>
-								<VIcon
-									v-else-if="pkg.showInfo"
-									v-tooltip.bottom="t('settings_license_add_on_info')"
-									name="info"
-									class="add-on-info-icon"
-								/>
+						<div v-for="pkg in addonsData" :key="pkg.id" class="add-on-card">
+							<div class="add-on-icon-wrapper">
+								<VIcon :name="pkg.icon" class="add-on-icon" />
 							</div>
-						</template>
+							<div class="add-on-content">
+								<span class="add-on-title">{{ pkg.name }}</span>
+								<span class="add-on-description">{{ pkg.description }}</span>
+							</div>
+							<VButton
+								v-if="pkg.showPurchase"
+								secondary
+								small
+								class="add-on-purchase-btn"
+								:href="`https://directus.io/license-request?utm_source=self_hosted&utm_medium=product&utm_campaign=2025_10_kyc&utm_term=${info.version}&utm_content=settings_addon_${pkg.id}`"
+								target="_blank"
+							>
+								{{ t('settings_license_purchase') }}
+							</VButton>
+							<VIcon
+								v-else-if="pkg.showInfo"
+								v-tooltip.bottom="t('settings_license_add_on_info')"
+								name="info"
+								class="add-on-info-icon"
+							/>
+						</div>
 					</div>
 				</div>
 

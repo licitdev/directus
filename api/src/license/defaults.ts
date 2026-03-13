@@ -7,6 +7,7 @@ export const DEFAULT_COLLECTIONS_WARNING_LIMIT = 5;
 export const DEFAULT_ACTIVITY_FEED_DAYS = 3;
 export const DEFAULT_REVISIONS_DAYS = 3;
 export const DEFAULT_SSO_ENABLED = false;
+export const DEFAULT_CUSTOM_PERMISSIONS_ENABLED = false;
 
 export const defaultEntitlements: EntitlementsType = {
 	[Entitlements.COLLECTIONS]: {
@@ -27,6 +28,6 @@ export const defaultEntitlements: EntitlementsType = {
 		enabled: DEFAULT_SSO_ENABLED,
 	},
 	[Entitlements.CUSTOM_PERMISSIONS]: {
-		enabled: DEFAULT_SSO_ENABLED,
+		enabled: DEFAULT_CUSTOM_PERMISSIONS_ENABLED,
 	},
 };
