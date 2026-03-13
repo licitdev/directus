@@ -48,7 +48,7 @@ async function saveLicenseKey() {
 					<p class="lock-notice">{{ t('license_project_locked_notice') }}</p>
 				</div>
 				<div class="lock-form">
-					<LicenseKeyInput v-model="editingKey" :has-existing-key="false" utm-content="locked-overlay" />
+					<LicenseKeyInput v-model="editingKey" has-existing-key utm-content="locked-overlay" />
 					<VButton
 						:loading="saving"
 						:disabled="!editingKey?.trim() || saving"

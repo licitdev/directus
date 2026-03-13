@@ -89,7 +89,7 @@ export type Info = {
 export type License = {
 	entitlements: {
 		collections?: { limit?: number; warning_limit?: number; usage?: number };
-		users?: { remaining_seats?: number; warning_limit?: number };
+		users?: { remaining_seats?: number; warning_limit?: number; usage?: number };
 		activity_feed?: { limit?: number };
 		revisions?: { limit?: number };
 		sso?: { enabled?: boolean };
@@ -100,6 +100,16 @@ export type License = {
 export type Auth = {
 	providers: AuthProvider[];
 	disableDefault: boolean;
+};
+
+export type Addon = {
+	data: {
+		id: string;
+		name: string;
+		description: string;
+		status: 'available' | 'purchased';
+		action: 'purchase' | 'info';
+	}[];
 };
 
 export const useServerStore = defineStore('serverStore', () => {
@@ -125,6 +135,10 @@ export const useServerStore = defineStore('serverStore', () => {
 		entitlements: {},
 	});
 
+	const addons = reactive<Addon>({
+		data: [],
+	});
+
 	const providerOptions = computed(() => {
 		const options = auth.providers
 			.filter((provider) => !AUTH_SSO_DRIVERS.includes(provider.driver))
@@ -142,10 +156,11 @@ export const useServerStore = defineStore('serverStore', () => {
 	});
 
 	const hydrate = async () => {
-		const [serverInfoResponse, authResponse, licenseResponse] = await Promise.all([
+		const [serverInfoResponse, authResponse, licenseResponse, addonsResponse] = await Promise.all([
 			api.get(`/server/info`),
 			api.get('/auth?sessionOnly'),
 			api.get('/server/license'),
+			api.get('/server/license/addons'),
 		]);
 
 		info.project = serverInfoResponse.data.data?.project;
@@ -167,6 +182,8 @@ export const useServerStore = defineStore('serverStore', () => {
 		auth.disableDefault = authResponse.data.disableDefault;
 
 		license.entitlements = licenseResponse.data.data?.entitlements ?? {};
+
+		addons.data = addonsResponse.data.data?.data ?? [];
 
 		if (serverInfoResponse.data.data?.rateLimit !== undefined) {
 			if (serverInfoResponse.data.data?.rateLimit === false) {
@@ -200,6 +217,7 @@ export const useServerStore = defineStore('serverStore', () => {
 		info,
 		auth,
 		license,
+		addons,
 		providerOptions,
 		hydrate,
 		hydrateLicense,

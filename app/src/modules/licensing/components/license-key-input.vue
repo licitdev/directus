@@ -17,9 +17,7 @@ const props = withDefaults(
 	defineProps<{
 		utmTerm?: string;
 		utmContent?: string;
-		/** When true, shows masked placeholder (••••••) - user types to replace. Used when editing existing key. */
 		hasExistingKey?: boolean;
-		/** Static payload from parent (after save). Takes priority over realtime preview. */
 		licensePayload?: Record<string, any> | null;
 	}>(),
 	{
