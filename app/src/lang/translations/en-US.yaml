@@ -2270,6 +2270,15 @@ interfaces:
     inline_title_label: Show title inside line
     margin_top: Margin Top
     margin_top_label: Increase Top Margin
+  presentation-license-section:
+    name: License Section
+    description: Display a section of the Settings License page
+    section: Section
+    section_plan: Plan
+    section_banners: Banners
+    section_usage: Usage
+    section_addons: Add-ons
+    section_danger: Danger Zone
   select-dropdown:
     description: Select a value from a dropdown
     choices_placeholder: Add a new choice
