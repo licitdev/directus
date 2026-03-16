@@ -131,12 +131,11 @@ const usersUsage = computed(() => license.value?.entitlements?.users?.usage ?? 0
 
 const ssoEnabled = computed(() => license.value?.entitlements?.sso?.enabled ?? false);
 
-const customPermissionsEnabled = computed(
-	() => license.value?.entitlements?.custom_permissions?.enabled ?? false,
-);
+const customPermissionsEnabled = computed(() => license.value?.entitlements?.custom_permissions?.enabled ?? false);
 
 const customLlmEnabled = computed(
-	() => (license.value?.entitlements as Record<string, { enabled?: boolean }> | undefined)?.custom_llm?.enabled ?? false,
+	() =>
+		(license.value?.entitlements as Record<string, { enabled?: boolean }> | undefined)?.custom_llm?.enabled ?? false,
 );
 
 const activePayload = computed(() => drawerPayload.value ?? previewPayload.value);
