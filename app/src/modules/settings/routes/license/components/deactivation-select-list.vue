@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 import VCheckbox from '@/components/v-checkbox.vue';
 import VDetail from '@/components/v-detail.vue';
+import { getMinimalGridClass } from '@/utils/get-minimal-grid-class';
 
 export type Item = {
 	name: string;
@@ -31,6 +32,10 @@ const emit = defineEmits<{
 
 const showAll = ref(false);
 
+const choices = computed(() => props.items.map((item) => ({ text: item.name })));
+
+const gridClass = computed(() => getMinimalGridClass(choices.value));
+
 const displayedItems = computed(() => {
 	if (showAll.value || props.items.length <= props.itemsShown) {
 		return props.items;
@@ -57,20 +62,26 @@ function toggleSelection(value: string) {
 	<div class="deactivation-select-list">
 		<h3 class="title">{{ title }}</h3>
 
-		<div class="items-grid">
-			<div v-for="item in displayedItems" :key="item.value" class="item">
-				<VCheckbox :model-value="modelValue.includes(item.value)" @update:model-value="toggleSelection(item.value)" />
+		<div class="items-grid" :class="gridClass">
+			<VCheckbox
+				v-for="item in displayedItems"
+				:key="item.value"
+				block
+				:model-value="modelValue.includes(item.value)"
+				@update:model-value="toggleSelection(item.value)"
+			>
 				<slot name="item" :item="item">
 					<div class="item-content">
 						<p class="name">{{ item.name }}</p>
 						<p v-if="item.description" class="description">{{ item.description }}</p>
 					</div>
 				</slot>
-			</div>
+			</VCheckbox>
 		</div>
 
 		<VDetail
 			v-if="!showAll && items.length > itemsShown"
+			:class="gridClass"
 			:label="`Show ${items.length - itemsShown} more`"
 			@update:model-value="showAll = true"
 		/>
@@ -88,39 +99,70 @@ function toggleSelection(value: string) {
 	padding: 1rem;
 
 	.items-grid {
+		--columns: 1;
+
 		display: grid;
-		grid-template-columns: repeat(4, 1fr);
-		gap: 1rem;
+		gap: 12px 32px;
+		grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
 		padding: 1rem;
+	}
 
-		.item {
-			display: flex;
-			align-items: center;
-			gap: 0.5rem;
-			padding: 0.825rem;
-			background-color: var(--theme--background-normal);
-			border-radius: var(--theme--border-radius);
+	.grid-2 {
+		@media (width > 640px) {
+			--columns: 2;
+		}
+	}
 
-			.item-content {
-				display: flex;
-				flex-direction: column;
-				overflow: hidden;
-				cursor: pointer;
+	.grid-3 {
+		@media (width > 640px) {
+			--columns: 3;
+		}
+	}
 
-				.name {
-					white-space: nowrap;
-					overflow: hidden;
-					text-overflow: ellipsis;
-				}
+	.grid-4 {
+		@media (width > 640px) {
+			--columns: 4;
+		}
+	}
 
-				.description {
-					font-size: 0.75rem;
-					color: var(--theme--foreground-subdued);
-					white-space: nowrap;
-					overflow: hidden;
-					text-overflow: ellipsis;
-				}
-			}
+	.v-detail {
+		margin-block: 0;
+
+		&.grid-1 {
+			grid-column: span 1;
+		}
+
+		&.grid-2 {
+			grid-column: span 2;
+		}
+
+		&.grid-3 {
+			grid-column: span 3;
+		}
+
+		&.grid-4 {
+			grid-column: span 4;
+		}
+	}
+
+	.item-content {
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+		cursor: pointer;
+
+		.name {
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		.description {
+			font-size: 0.75rem;
+			color: var(--theme--foreground-subdued);
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
 		}
 	}
 }
