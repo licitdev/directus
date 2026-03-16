@@ -1,13 +1,15 @@
 <script setup lang="ts">
+import type { DeepPartial } from '@directus/types';
+import type { Field } from '@directus/types';
 import { watchDebounced } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { computed, ref, watch } from 'vue';
+import { computed, provide, ref, watch } from 'vue';
 import { I18nT, useI18n } from 'vue-i18n';
 import SettingsNavigation from '../../components/navigation.vue';
 import VBreadcrumb from '@/components/v-breadcrumb.vue';
 import VButton from '@/components/v-button.vue';
-import VChip from '@/components/v-chip.vue';
 import VDrawer from '@/components/v-drawer.vue';
+import VForm from '@/components/v-form/v-form.vue';
 import VIcon from '@/components/v-icon/v-icon.vue';
 import VNotice from '@/components/v-notice.vue';
 import VProgressCircular from '@/components/v-progress-circular.vue';
@@ -128,7 +130,14 @@ const usersRemainingSeats = computed(() => license.value?.entitlements?.users?.r
 const usersUsage = computed(() => license.value?.entitlements?.users?.usage ?? 0);
 
 const ssoEnabled = computed(() => license.value?.entitlements?.sso?.enabled ?? false);
-const customPermissionsEnabled = computed(() => license.value?.entitlements?.custom_permissions?.enabled ?? false);
+
+const customPermissionsEnabled = computed(
+	() => license.value?.entitlements?.custom_permissions?.enabled ?? false,
+);
+
+const customLlmEnabled = computed(
+	() => (license.value?.entitlements as Record<string, { enabled?: boolean }> | undefined)?.custom_llm?.enabled ?? false,
+);
 
 const activePayload = computed(() => drawerPayload.value ?? previewPayload.value);
 const expiryFormatted = computed(() => activePayload.value?.expiry?.slice?.(0, 10) ?? null);
@@ -148,8 +157,6 @@ const canSaveLicenseKey = computed(() => {
 	const noError = !validationError.value;
 	return hasKey && isValid && notValidating && noError;
 });
-
-const addonsData = computed(() => addons.value?.data?.map(mapAddonToDisplay) ?? []);
 
 watch(currentLicenseKey, (val) => {
 	if (!val) clearPreview();
@@ -225,6 +232,114 @@ function mapAddonToDisplay(item: { id: string; name: string; description: string
 		showInfo: item.action === 'info',
 	};
 }
+
+const addonsData = computed(() => addons.value?.data?.map(mapAddonToDisplay) ?? []);
+
+provide('license:openDrawer', openDrawer);
+
+provide('license:onConfirmDeactivate', () => {
+	confirmDeactivate.value = true;
+});
+
+const licenseFormFields = computed<DeepPartial<Field>[]>(() => {
+	const items: DeepPartial<Field>[] = [
+		{
+			field: 'license_plan_section',
+			name: '',
+			type: 'alias',
+			meta: {
+				interface: 'presentation-license-section',
+				options: { section: 'plan' },
+				width: 'full',
+			},
+		},
+		{
+			field: 'license_banners_section',
+			name: '',
+			type: 'alias',
+			meta: {
+				interface: 'presentation-license-section',
+				options: { section: 'banners' },
+				width: 'full',
+			},
+		},
+		{
+			field: 'license_usage_section',
+			name: '',
+			type: 'alias',
+			meta: {
+				interface: 'presentation-license-section',
+				options: { section: 'usage' },
+				width: 'full',
+			},
+		},
+		{
+			field: 'license_addons_section',
+			name: '',
+			type: 'alias',
+			meta: {
+				interface: 'presentation-license-section',
+				options: { section: 'addons' },
+				width: 'full',
+			},
+		},
+	];
+
+	if (showDeactivateSection.value) {
+		items.push({
+			field: 'license_danger_section',
+			name: '',
+			type: 'alias',
+			meta: {
+				interface: 'presentation-license-section',
+				options: { section: 'danger' },
+				width: 'full',
+			},
+		});
+	}
+
+	return items;
+});
+
+const licenseFormValues = computed(() => ({
+	license_plan_section: {
+		planName: planName.value,
+		planExpiryText: planExpiryText.value,
+		licenseStatus: licenseStatus.value,
+		canManageLicense: canManageLicense.value,
+		addLicenseKeyLabel: addLicenseKeyLabel.value,
+		upgradePlanLabel: upgradePlanLabel.value,
+		version: info.value.version ?? '',
+	},
+	license_banners_section: {
+		showExpiringSoonWarning: showExpiringSoonWarning.value,
+		showGracePeriodWarning: showGracePeriodWarning.value,
+		showExpiredBeyondGraceNotice: showExpiredBeyondGraceNotice.value,
+		licenseSource: licenseSource.value,
+		daysUntilExpiry: daysUntilExpiry.value,
+		remainingGraceDays: remainingGraceDays.value,
+	},
+	license_usage_section: {
+		collectionsCount: collectionsUsage.value,
+		collectionsLimit: collectionsLimit.value,
+		usersCount: usersUsage.value,
+		usersLimit: usersUsage.value + usersRemainingSeats.value || 0,
+		customRulesAvailable: customPermissionsEnabled.value,
+		customLlmAvailable: customLlmEnabled.value,
+		ssoAvailable: ssoEnabled.value,
+	},
+	license_addons_section: {
+		addons: addonsData.value,
+		addonsLoading: false,
+		addonsError: null,
+		version: info.value.version ?? '',
+	},
+	license_danger_section: {
+		deactivating: deactivating.value,
+	},
+}));
+
+const licenseFormEdits = ref<Record<string, any> | null>(null);
 </script>
 
 <template>
@@ -238,155 +353,14 @@ function mapAddonToDisplay(item: { id: string; name: string; description: string
 		</template>
 
 		<div class="license-page-wrapper">
-			<div class="plan-section">
-				<div class="plan-info">
-					<h2 class="plan-name">{{ planName }}</h2>
-					<div class="plan-subtitle">
-						<VChip class="current-plan-chip" small>{{ t('settings_license_current_plan') }}</VChip>
-						<VChip v-if="licenseStatus === 'expired'" class="expired-plan-chip" small>
-							{{ t('license_status_expired') }}
-						</VChip>
-						<span class="plan-subtitle-sep">•</span>
-						<span class="plan-subtitle-expiry">{{ planExpiryText }}</span>
-					</div>
-				</div>
-				<div class="plan-actions">
-					<VButton v-if="canManageLicense" secondary small class="plan-action-btn" @click="openDrawer">
-						{{ addLicenseKeyLabel }}
-					</VButton>
-					<VButton
-						small
-						class="plan-action-btn"
-						:href="`https://directus.io/license-request?utm_source=self_hosted&utm_medium=product&utm_campaign=2025_10_kyc&utm_term=${info.version}&utm_content=settings_upgrade`"
-						target="_blank"
-					>
-						{{ upgradePlanLabel }}
-					</VButton>
-				</div>
-			</div>
-
-			<div class="license-page">
-				<div v-if="showExpiringSoonWarning" class="license-grace-period-banner license-expiring-soon-banner">
-					<div class="banner-accent" />
-					<div class="banner-content">
-						<div class="banner-icon-wrapper">
-							<VIcon name="warning" class="banner-icon" />
-						</div>
-						<span class="banner-text">
-							<I18nT keypath="license_expiring_soon_warning" tag="span">
-								<template #days>
-									<strong>{{ daysUntilExpiry }} {{ daysUntilExpiry === 1 ? 'day' : 'days' }}</strong>
-								</template>
-							</I18nT>
-						</span>
-					</div>
-				</div>
-
-				<div v-else-if="showGracePeriodWarning" class="license-grace-period-banner">
-					<div class="banner-accent" />
-					<div class="banner-content">
-						<div class="banner-icon-wrapper">
-							<VIcon name="dangerous" class="banner-icon" />
-						</div>
-						<span class="banner-text">
-							<I18nT keypath="license_grace_period_warning" tag="span">
-								<template #days>
-									<strong>{{ remainingGraceDays }} {{ remainingGraceDays === 1 ? 'day' : 'days' }}</strong>
-								</template>
-							</I18nT>
-						</span>
-					</div>
-				</div>
-
-				<div v-else-if="showExpiredBeyondGraceNotice" class="license-grace-period-banner">
-					<div class="banner-accent" />
-					<div class="banner-content">
-						<div class="banner-icon-wrapper">
-							<VIcon name="dangerous" class="banner-icon" />
-						</div>
-						<span class="banner-text">{{ t('license_project_locked_notice') }}</span>
-					</div>
-				</div>
-
-				<div v-if="licenseSource === 'env'" class="env-managed-banner">
-					<VNotice type="info">{{ t('settings_license_env_managed') }}</VNotice>
-				</div>
-
-				<div class="plan-usage-section">
-					<h3 class="section-title">
-						{{ t('settings_license_your_plan_usage') }}
-					</h3>
-					<div class="usage-grid">
-						<div class="usage-item">
-							<VIcon name="database" class="usage-icon" />
-							<span class="usage-label">{{ t('settings_license_usage_collections') }}</span>
-							<span class="usage-value">{{ collectionsUsage }} / {{ collectionsLimit || '∞' }}</span>
-						</div>
-						<div class="usage-item">
-							<VIcon name="admin_panel_settings" class="usage-icon" />
-							<span class="usage-label">{{ t('settings_license_usage_custom_rules') }}</span>
-							<span :class="['usage-badge', customPermissionsEnabled ? 'badge-available' : 'badge-unavailable']">
-								{{
-									customPermissionsEnabled
-										? t('settings_license_usage_available')
-										: t('settings_license_usage_unavailable')
-								}}
-							</span>
-						</div>
-						<div class="usage-item">
-							<VIcon name="group" class="usage-icon" />
-							<span class="usage-label">{{ t('settings_license_usage_seats') }}</span>
-							<span class="usage-value">{{ usersUsage }} / {{ usersUsage + usersRemainingSeats || '∞' }}</span>
-						</div>
-						<div class="usage-item">
-							<VIcon name="cloud_lock" class="usage-icon" />
-							<span class="usage-label">{{ t('settings_license_usage_sso') }}</span>
-							<span :class="['usage-badge', ssoEnabled ? 'badge-available' : 'badge-unavailable']">
-								{{ ssoEnabled ? t('settings_license_usage_available') : t('settings_license_usage_unavailable') }}
-							</span>
-						</div>
-					</div>
-				</div>
-
-				<div class="add-on-section">
-					<h3 class="section-title">
-						<VIcon name="diamond" class="section-icon" />
-						{{ t('settings_license_add_on_packages') }}
-					</h3>
-					<div class="add-on-grid">
-						<div v-for="pkg in addonsData" :key="pkg.id" class="add-on-card">
-							<div class="add-on-icon-wrapper">
-								<VIcon :name="pkg.icon" class="add-on-icon" />
-							</div>
-							<div class="add-on-content">
-								<span class="add-on-title">{{ pkg.name }}</span>
-								<span class="add-on-description">{{ pkg.description }}</span>
-							</div>
-							<VButton v-if="pkg.showPurchase" secondary small class="add-on-purchase-btn">
-								{{ t('settings_license_purchase') }}
-							</VButton>
-							<VIcon
-								v-else-if="pkg.showInfo"
-								v-tooltip.bottom="t('settings_license_add_on_info')"
-								name="info"
-								class="add-on-info-icon"
-							/>
-						</div>
-					</div>
-				</div>
-
-				<div v-if="showDeactivateSection" class="danger-zone-section">
-					<div class="danger-zone-header">
-						<VIcon name="emergency_home" class="danger-zone-icon" />
-						<h3 class="danger-zone-title">{{ t('settings_license_danger_zone') }}</h3>
-					</div>
-					<div class="danger-zone-separator" />
-					<div class="danger-zone-content">
-						<VButton kind="danger" :loading="deactivating" :disabled="deactivating" @click="confirmDeactivate = true">
-							{{ t('settings_license_deactivate') }}
-						</VButton>
-					</div>
-				</div>
+			<div class="license-form-plan-wrapper">
+				<VForm
+					v-model="licenseFormEdits"
+					:initial-values="licenseFormValues"
+					:fields="licenseFormFields as Field[]"
+					primary-key="license"
+					disabled-menu
+				/>
 			</div>
 		</div>
 
@@ -491,329 +465,21 @@ function mapAddonToDisplay(item: { id: string; name: string; description: string
 	inline-size: 100%;
 }
 
-.plan-section {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 24px;
+.license-form-plan-wrapper {
+	--theme--form--row-gap: 24px;
 	padding-inline: var(--content-padding);
-	padding-block: var(--content-padding) 0;
-	margin-block-end: 32px;
-	inline-size: 100%;
-	box-sizing: border-box;
+	padding-block: var(--content-padding) var(--content-padding-bottom);
 	max-inline-size: 1000px;
 }
 
-.license-page {
-	padding: var(--content-padding);
-	padding-block-end: var(--content-padding-bottom);
-	max-inline-size: 1000px;
-}
-
-.plan-info {
-	flex: 1;
-	min-inline-size: 0;
-}
-
-.plan-actions {
-	display: flex;
-	gap: 12px;
-	flex-shrink: 0;
-}
-
-.plan-action-btn {
-	white-space: nowrap;
-}
-
-.plan-name {
-	font-size: 20px;
-	font-weight: 600;
-	color: var(--theme--foreground-accent);
-	margin: 0 0 8px;
-}
-
-.plan-subtitle {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	font-size: 14px;
-	color: var(--theme--foreground-subdued);
-	margin: 0;
-}
-
-.plan-subtitle :deep(.current-plan-chip) {
-	--v-chip-color: var(--theme--primary);
-	--v-chip-background-color: var(--theme--primary-background);
-	--v-chip-border-color: var(--theme--primary-background);
-	border-radius: 9999px !important;
-}
-
-.plan-subtitle :deep(.expired-plan-chip) {
-	--v-chip-color: var(--theme--danger);
-	--v-chip-background-color: var(--theme--background-danger);
-	--v-chip-border-color: var(--theme--background-danger);
-	border-radius: 9999px !important;
-}
-
-.plan-subtitle-sep {
-	color: var(--theme--foreground-subdued);
-}
-
-.plan-subtitle-expiry {
-	color: var(--theme--foreground-subdued);
-}
-
-.section-title {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	font-size: 14px;
-	font-weight: 600;
-	color: var(--theme--foreground);
-	margin: 0 0 16px;
-}
-
-.section-icon {
-	--v-icon-color: var(--theme--primary);
-}
-
-.license-grace-period-banner {
-	display: flex;
-	align-items: stretch;
-	background: var(--theme--background-subdued);
-	border-radius: var(--theme--border-radius);
-	overflow: hidden;
-	margin-block-end: 24px;
-}
-
-.license-grace-period-banner .banner-accent {
-	inline-size: 6px;
-	flex-shrink: 0;
-	background: var(--theme--danger);
-	border-radius: var(--theme--border-radius) 0 0 var(--theme--border-radius);
-}
-
-.license-expiring-soon-banner .banner-accent {
-	background: var(--theme--warning);
-}
-
-.license-expiring-soon-banner .banner-icon {
-	--v-icon-color: var(--theme--warning);
-}
-
-.license-grace-period-banner .banner-content {
-	display: flex;
-	align-items: center;
-	gap: 16px;
-	padding: 16px 20px;
-	flex: 1;
-}
-
-.license-grace-period-banner .banner-icon-wrapper {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	inline-size: 24px;
-	block-size: 24px;
-	flex-shrink: 0;
-}
-
-.license-grace-period-banner .banner-icon {
-	--v-icon-color: var(--theme--danger);
-	--v-icon-size: 24px;
-}
-
-.license-grace-period-banner .banner-text {
-	font-size: 14px;
-	line-height: 22px;
-	color: var(--theme--foreground);
-}
-
-.license-grace-period-banner .banner-text strong {
-	font-weight: 600;
-}
-
-.env-managed-banner {
-	margin-block-end: 24px;
-}
-
-.plan-usage-section {
-	margin-block-end: 32px;
-}
-
-.usage-grid {
-	display: grid;
-	grid-template-columns: repeat(2, 1fr);
-	gap: 12px;
-}
-
-.usage-item {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	padding: 10px 12px;
-	background: var(--theme--background-subdued);
-	border-radius: 10px;
-}
-
-.usage-icon {
-	--v-icon-color: var(--theme--foreground-subdued);
-	--v-icon-size: 20px;
-	flex-shrink: 0;
-}
-
-.usage-label {
-	font-size: 13px;
-	color: var(--theme--foreground);
-	flex: 1;
-	min-inline-size: 0;
-}
-
-.usage-value {
-	font-size: 13px;
-	font-weight: 500;
-	color: var(--theme--foreground-accent);
-	flex-shrink: 0;
-}
-
-.usage-badge {
-	font-size: 12px;
-	font-weight: 500;
-	padding: 2px 8px;
-	border-radius: 8px;
-	flex-shrink: 0;
-}
-
-.badge-available {
-	background: var(--theme--success-background);
-	color: var(--theme--success);
-}
-
-.badge-unavailable {
-	background: var(--theme--background-normal);
-	color: var(--theme--foreground-accent);
-}
-
-.add-on-section {
-	margin-block-end: 32px;
-}
-
-.add-on-loading {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-	padding: 16px 20px;
-	color: var(--theme--foreground-subdued);
-	font-size: 14px;
-}
-
-.add-on-error {
+.license-form-plan-wrapper :deep(.v-form .field:first-child) {
+	padding-inline: 0;
+	padding-block: 0;
 	margin-block-end: 0;
 }
 
-.add-on-grid {
-	display: grid;
-	grid-template-columns: 1fr;
-	gap: 12px;
-}
-
-.add-on-card {
-	display: flex;
-	align-items: center;
-	gap: 16px;
-	padding: 16px 20px;
-	background: var(--theme--background-subdued);
-	border-radius: 8px;
-}
-
-.add-on-icon-wrapper {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	inline-size: 40px;
-	block-size: 40px;
-	border-radius: 50%;
-	background: var(--theme--primary);
-	flex-shrink: 0;
-}
-
-.add-on-icon {
-	--v-icon-color: var(--white);
-	--v-icon-size: 22px;
-	flex-shrink: 0;
-}
-
-.add-on-info-icon {
-	--v-icon-color: var(--theme--foreground-subdued);
-	--v-icon-size: 18px;
-	flex-shrink: 0;
-}
-
-.add-on-content {
-	display: flex;
-	flex-direction: column;
-	gap: 4px;
-	flex: 1;
-	min-inline-size: 0;
-}
-
-.add-on-purchase-btn {
-	white-space: nowrap;
-	flex-shrink: 0;
-}
-
-.add-on-title {
-	font-size: 14px;
-	font-weight: 600;
-	color: var(--theme--foreground);
-}
-
-.add-on-description {
-	font-size: 13px;
-	color: var(--theme--foreground-subdued);
-}
-
-.danger-zone-section {
-	margin-block-start: 48px;
-	padding-block-start: 24px;
-}
-
-.danger-zone-header {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	margin-block-end: 0;
-}
-
-.danger-zone-icon {
-	--v-icon-color: var(--theme--danger);
-	--v-icon-size: 20px;
-	flex-shrink: 0;
-}
-
-.danger-zone-title {
-	font-size: 14px;
-	font-weight: 600;
-	color: var(--theme--foreground);
-	margin: 0;
-}
-
-.danger-zone-separator {
-	block-size: 1px;
-	background: var(--theme--border-color);
-	margin-block: 12px 16px;
-}
-
-.danger-zone-content {
-	padding-block-start: 16px;
-	display: grid;
-	gap: 12px;
-}
-
-.danger-zone-notice {
-	font-size: 14px;
-	color: var(--theme--foreground-subdued);
-	margin: 0;
+.license-form-plan-wrapper :deep(.v-form .field:not(:first-child)) {
+	padding-inline: 0;
 }
 
 .drawer-content {
@@ -905,12 +571,5 @@ function mapAddonToDisplay(item: { id: string; name: string; description: string
 
 .status-icon--error {
 	--v-icon-color: var(--theme--danger);
-}
-
-.confirm-message {
-	font-size: 14px;
-	color: var(--theme--foreground);
-	margin: 0 0 16px;
-	padding-inline: 20px;
 }
 </style>
