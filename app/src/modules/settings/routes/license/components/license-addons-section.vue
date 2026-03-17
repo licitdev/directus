@@ -13,6 +13,8 @@ type Addon = {
 	icon: string;
 	showPurchase: boolean;
 	showInfo: boolean;
+	disabled?: boolean;
+	showUpgradePlan?: boolean;
 };
 
 defineProps<{
@@ -38,13 +40,21 @@ defineProps<{
 				{{ addonsError }}
 			</VNotice>
 			<template v-else>
-				<div v-for="pkg in addons" :key="pkg.id" class="add-on-card">
-					<div class="add-on-icon-wrapper">
+				<div v-for="pkg in addons" :key="pkg.id" class="add-on-card" :class="{ 'add-on-card--disabled': pkg.disabled }">
+					<div class="add-on-icon-wrapper" :class="{ 'add-on-icon-wrapper--disabled': pkg.disabled }">
 						<VIcon :name="pkg.icon" class="add-on-icon" />
 					</div>
 					<div class="add-on-content">
-						<span class="add-on-title">{{ pkg.name }}</span>
-						<span class="add-on-description">{{ pkg.description }}</span>
+						<span class="add-on-title" :class="{ 'add-on-title--disabled': pkg.disabled }">
+							{{ pkg.name }}
+						</span>
+						<span
+							v-if="pkg.description"
+							class="add-on-description"
+							:class="{ 'add-on-description--disabled': pkg.disabled }"
+						>
+							{{ pkg.description }}
+						</span>
 					</div>
 					<VButton
 						v-if="pkg.showPurchase"
@@ -54,7 +64,19 @@ defineProps<{
 						:href="`https://directus.io/license-request?utm_source=self_hosted&utm_medium=product&utm_campaign=2025_10_kyc&utm_term=${version}&utm_content=settings_addon_${pkg.id}`"
 						target="_blank"
 					>
+						<VIcon name="add_shopping_cart" class="add-on-purchase-icon" />
 						{{ $t('settings_license_purchase') }}
+					</VButton>
+					<VButton
+						v-else-if="pkg.showUpgradePlan"
+						secondary
+						small
+						class="add-on-upgrade-btn"
+						:href="`https://directus.io/license-request?utm_source=self_hosted&utm_medium=product&utm_campaign=2025_10_kyc&utm_term=${version}&utm_content=settings_addon_upgrade_${pkg.id}`"
+						target="_blank"
+					>
+						<VIcon name="diamond" class="add-on-upgrade-icon" />
+						{{ $t('settings_license_upgrade_plan') }}
 					</VButton>
 					<VIcon
 						v-else-if="pkg.showInfo"
@@ -126,6 +148,14 @@ defineProps<{
 	flex-shrink: 0;
 }
 
+.add-on-icon-wrapper--disabled {
+	background: var(--theme--background-normal);
+}
+
+.add-on-icon-wrapper--disabled .add-on-icon {
+	--v-icon-color: var(--theme--foreground-subdued);
+}
+
 .add-on-icon {
 	--v-icon-color: var(--white);
 	--v-icon-size: 22px;
@@ -151,14 +181,40 @@ defineProps<{
 	flex-shrink: 0;
 }
 
+.add-on-purchase-icon {
+	--v-icon-size: 18px;
+	margin-inline-end: 6px;
+}
+
+.add-on-upgrade-btn {
+	white-space: nowrap;
+	flex-shrink: 0;
+	--v-button-color: var(--theme--foreground-subdued);
+}
+
+.add-on-upgrade-icon {
+	--v-icon-color: var(--theme--foreground-subdued);
+	--v-icon-size: 18px;
+	margin-inline-end: 6px;
+}
+
 .add-on-title {
 	font-size: 14px;
 	font-weight: 600;
 	color: var(--theme--foreground);
 }
 
+.add-on-title--disabled {
+	color: var(--theme--foreground-subdued);
+}
+
 .add-on-description {
 	font-size: 13px;
 	color: var(--theme--foreground-subdued);
+}
+
+.add-on-description--disabled {
+	color: var(--theme--foreground-subdued);
+	opacity: 0.8;
 }
 </style>

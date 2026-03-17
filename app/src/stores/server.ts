@@ -109,6 +109,8 @@ export type Addon = {
 		description: string;
 		status: 'available' | 'purchased';
 		action: 'purchase' | 'info';
+		icon?: string;
+		disabled?: boolean;
 	}[];
 };
 

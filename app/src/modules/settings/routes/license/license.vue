@@ -217,18 +217,22 @@ function onLicenseKeyInput(v: string) {
 	};
 }
 
-const ADDON_ICON_MAP: Record<string, string> = {
-	sso: 'cloud_lock',
-	user_seats: 'group',
-	collections: 'inventory_2',
-};
-
-function mapAddonToDisplay(item: { id: string; name: string; description: string; status: string; action: string }) {
+function mapAddonToDisplay(item: {
+	id: string;
+	name: string;
+	description: string;
+	status: string;
+	action: string;
+	icon?: string;
+	disabled?: boolean;
+}) {
 	return {
 		...item,
-		icon: ADDON_ICON_MAP[item.id] ?? 'extension',
-		showPurchase: item.action === 'purchase',
+		icon: item.icon ?? 'extension',
+		disabled: item.disabled ?? false,
+		showPurchase: !(item.disabled ?? false) && item.action === 'purchase',
 		showInfo: item.action === 'info',
+		showUpgradePlan: item.disabled ?? false,
 	};
 }
 
