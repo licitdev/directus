@@ -52,6 +52,9 @@ const onConfirmDeactivate = inject<() => void>('license:onConfirmDeactivate', ()
 			:custom-rules-available="value.customRulesAvailable ?? false"
 			:custom-llm-available="value.customLlmAvailable ?? false"
 			:sso-available="value.ssoAvailable ?? false"
+			:label-included="value.labelIncluded"
+			:label-not-included="value.labelNotIncluded"
+			:label-optional="value.labelOptional"
 		/>
 		<LicenseAddonsSection
 			v-else-if="section === 'addons' && value"

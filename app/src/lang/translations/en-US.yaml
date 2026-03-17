@@ -65,10 +65,10 @@ settings_license_your_plan_usage: Your Plan Usage
 settings_license_add_on_packages: Add-on Packages
 settings_license_add_on_info: Learn more about this add-on
 settings_license_purchase: Purchase
-settings_license_usage_available: Enabled
-settings_license_usage_unavailable: Disabled
+settings_license_usage_available: Included
+settings_license_usage_unavailable: Not Included
 settings_license_usage_disabled: Disabled
-settings_license_usage_opt_in: Opt-in
+settings_license_usage_opt_in: Optional
 settings_license_usage_collections: Collections
 settings_license_usage_seats: Seats
 settings_license_usage_sso: SSO
