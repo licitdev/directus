@@ -23,7 +23,7 @@ export default async function validate({ key }: { key?: string }): Promise<void>
 			throw new Error('Invalid license key format');
 		}
 
-		const { token, projectId } = await validateLicense({ licenseKey: key });
+		const { token, project_id: projectId } = await validateLicense({ licenseKey: key });
 		const payload = await verify(token);
 
 		await saveToken(token);

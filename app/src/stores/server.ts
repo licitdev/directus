@@ -72,6 +72,10 @@ export type Info = {
 				collaborativeEditing?: boolean;
 		  };
 	version?: string;
+	show_license_key_field?: boolean;
+	license_source?: 'env' | 'settings' | null;
+	license?: Record<string, any> | null;
+	license_locked?: boolean;
 	extensions?: {
 		limit: number | null;
 	};
@@ -82,9 +86,30 @@ export type Info = {
 	};
 };
 
+export type License = {
+	entitlements: {
+		collections?: { limit?: number; warning_limit?: number; usage?: number; defaultExceededCount?: number };
+		users?: { remaining_seats?: number; warning_limit?: number; usage?: number; defaultExceededCount?: number };
+		activity_feed?: { limit?: number };
+		revisions?: { limit?: number };
+		sso?: { enabled?: boolean };
+		custom_permissions?: { enabled?: boolean };
+	};
+};
+
 export type Auth = {
 	providers: AuthProvider[];
 	disableDefault: boolean;
+};
+
+export type Addon = {
+	data: {
+		id: string;
+		name: string;
+		description: string;
+		status: 'available' | 'purchased';
+		action: 'purchase' | 'info';
+	}[];
 };
 
 export const useServerStore = defineStore('serverStore', () => {
@@ -106,6 +131,14 @@ export const useServerStore = defineStore('serverStore', () => {
 		disableDefault: false,
 	});
 
+	const license = reactive<License>({
+		entitlements: {},
+	});
+
+	const addons = reactive<Addon>({
+		data: [],
+	});
+
 	const providerOptions = computed(() => {
 		const options = auth.providers
 			.filter((provider) => !AUTH_SSO_DRIVERS.includes(provider.driver))
@@ -123,9 +156,11 @@ export const useServerStore = defineStore('serverStore', () => {
 	});
 
 	const hydrate = async () => {
-		const [serverInfoResponse, authResponse] = await Promise.all([
+		const [serverInfoResponse, authResponse, licenseResponse, addonsResponse] = await Promise.all([
 			api.get(`/server/info`),
 			api.get('/auth?sessionOnly'),
+			api.get('/server/license'),
+			api.get('/server/license/addons'),
 		]);
 
 		info.project = serverInfoResponse.data.data?.project;
@@ -133,6 +168,10 @@ export const useServerStore = defineStore('serverStore', () => {
 		info.ai_enabled = serverInfoResponse.data.data?.ai_enabled;
 		info.files = serverInfoResponse.data.data?.files;
 		info.setupCompleted = serverInfoResponse.data.data?.setupCompleted;
+		info.show_license_key_field = serverInfoResponse.data.data?.show_license_key_field ?? true;
+		info.license_source = serverInfoResponse.data.data?.license_source ?? null;
+		info.license = serverInfoResponse.data.data?.license ?? null;
+		info.license_locked = serverInfoResponse.data.data?.license_locked ?? false;
 		info.queryLimit = serverInfoResponse.data.data?.queryLimit;
 		info.extensions = serverInfoResponse.data.data?.extensions;
 		info.websocket = serverInfoResponse.data.data?.websocket;
@@ -141,6 +180,10 @@ export const useServerStore = defineStore('serverStore', () => {
 
 		auth.providers = authResponse.data.data;
 		auth.disableDefault = authResponse.data.disableDefault;
+
+		license.entitlements = licenseResponse.data.data?.entitlements ?? {};
+
+		addons.data = addonsResponse.data.data?.addons ?? [];
 
 		if (serverInfoResponse.data.data?.rateLimit !== undefined) {
 			if (serverInfoResponse.data.data?.rateLimit === false) {
@@ -155,6 +198,14 @@ export const useServerStore = defineStore('serverStore', () => {
 		}
 	};
 
+	const hydrateLicense = async () => {
+		const response = await api.get('/server/license');
+
+		if (response.data?.data) {
+			license.entitlements = response.data.data.entitlements;
+		}
+	};
+
 	const dehydrate = () => {
 		info.project = null;
 
@@ -162,7 +213,16 @@ export const useServerStore = defineStore('serverStore', () => {
 		auth.disableDefault = false;
 	};
 
-	return { info, auth, providerOptions, hydrate, dehydrate };
+	return {
+		info,
+		auth,
+		license,
+		addons,
+		providerOptions,
+		hydrate,
+		hydrateLicense,
+		dehydrate,
+	};
 });
 
 if (import.meta.hot) {

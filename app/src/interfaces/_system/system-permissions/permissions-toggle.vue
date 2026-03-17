@@ -1,7 +1,14 @@
 <script setup lang="ts">
 import { Collection, Permission, PermissionsAction } from '@directus/types';
 import { computed, ref, toRefs } from 'vue';
+import { useRouter } from 'vue-router';
+import VButton from '@/components/v-button.vue';
+import VCardActions from '@/components/v-card-actions.vue';
+import VCardText from '@/components/v-card-text.vue';
+import VCardTitle from '@/components/v-card-title.vue';
+import VCard from '@/components/v-card.vue';
 import VChip from '@/components/v-chip.vue';
+import VDialog from '@/components/v-dialog.vue';
 import VDivider from '@/components/v-divider.vue';
 import VIcon from '@/components/v-icon/v-icon.vue';
 import VListItemContent from '@/components/v-list-item-content.vue';
@@ -10,6 +17,7 @@ import VListItem from '@/components/v-list-item.vue';
 import VList from '@/components/v-list.vue';
 import VMenu from '@/components/v-menu.vue';
 import VProgressCircular from '@/components/v-progress-circular.vue';
+import { useServerStore } from '@/stores/server';
 
 const props = defineProps<{
 	collection: Collection;
@@ -42,6 +50,13 @@ const permissionLevel = computed<'all' | 'none' | 'custom'>(() => {
 });
 
 const saving = ref(false);
+const customPermissionFeatureGateModelActive = ref(false);
+const serverStore = useServerStore();
+const router = useRouter();
+
+const isAllowCustomPermissions = computed(() => {
+	return serverStore.license?.entitlements?.custom_permissions?.enabled;
+});
 
 const appMinimalLevel = computed(() => {
 	if (!props.appMinimal) return null;
@@ -55,6 +70,21 @@ const appMinimalLevel = computed(() => {
 
 	return 'partial';
 });
+
+const handleClickCustomEdit = () => {
+	if (isAllowCustomPermissions.value) {
+		emit('edit');
+		return;
+	}
+
+	customPermissionFeatureGateModelActive.value = true;
+	return;
+};
+
+const onUpgradePlanClick = () => {
+	customPermissionFeatureGateModelActive.value = false;
+	router.push('/settings/license');
+};
 </script>
 
 <template>
@@ -100,7 +130,7 @@ const appMinimalLevel = computed(() => {
 
 				<VDivider />
 
-				<VListItem clickable @click="emit('edit')">
+				<VListItem clickable @click="handleClickCustomEdit">
 					<VListItemIcon>
 						<VIcon name="rule" />
 					</VListItemIcon>
@@ -108,11 +138,27 @@ const appMinimalLevel = computed(() => {
 						{{ $t('use_custom') }}
 					</VListItemContent>
 					<VListItemIcon>
-						<VIcon name="launch" />
+						<VIcon v-if="!!isAllowCustomPermissions" name="launch" />
+						<VIcon v-if="!isAllowCustomPermissions" name="diamond" />
 					</VListItemIcon>
 				</VListItem>
 			</VList>
 		</VMenu>
+
+		<VDialog v-model="customPermissionFeatureGateModelActive" persistent>
+			<VCard>
+				<VCardTitle>{{ $t('upgrade_plan_modal_title') }}</VCardTitle>
+				<VCardText>{{ $t('upgrade_plan_modal_description') }}</VCardText>
+				<VCardActions>
+					<VButton secondary @click="customPermissionFeatureGateModelActive = false">
+						{{ $t('cancel') }}
+					</VButton>
+					<VButton @click="onUpgradePlanClick">
+						{{ $t('upgrade_plan') }}
+					</VButton>
+				</VCardActions>
+			</VCard>
+		</VDialog>
 	</div>
 </template>
 

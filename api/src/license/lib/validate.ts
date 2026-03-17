@@ -1,85 +1,35 @@
-import { useEnv } from '@directus/env';
-import {
-	InvalidLicenseConfigError,
-	InvalidLicenseKeyError,
-	InvalidLicenseTokenError,
-	isDirectusError,
-	ServiceUnavailableError,
-} from '@directus/errors';
-import type { AxiosError } from 'axios';
+import { InvalidLicenseTokenError } from '@directus/errors';
 import axios from 'axios';
-import { getProjectId } from '../../utils/get-project-id.js';
 import type { ValidateLicenseRequest, ValidateLicenseResponse } from '../types/index.js';
+import { handleLicenseApiError } from './handle-api-error.js';
+import { getLicenseBaseUrl, resolveProjectId, resolvePublicUrl } from './license-context.js';
 
 export async function validate({
 	licenseKey,
 	projectId,
 	publicUrl,
 }: ValidateLicenseRequest): Promise<ValidateLicenseResponse> {
-	const env = useEnv();
-	const url = env['LICENSE_SERVER_URL'];
-
-	if (typeof url !== 'string' || !url) {
-		throw new InvalidLicenseConfigError({ reason: 'LICENSE_SERVER_URL is missing or not a string' });
-	}
-
-	if (!projectId) {
-		const storedProjectId = await getProjectId();
-
-		if (typeof storedProjectId !== 'string' || !storedProjectId) {
-			throw new InvalidLicenseConfigError({ reason: 'project_id is missing or not a string' });
-		}
-
-		projectId = storedProjectId;
-	}
-
-	if (!publicUrl) {
-		const envPublicUrl = env['PUBLIC_URL'];
-
-		if (typeof envPublicUrl !== 'string' || !envPublicUrl) {
-			throw new InvalidLicenseConfigError({ reason: 'PUBLIC_URL is missing or not a string' });
-		}
-
-		publicUrl = envPublicUrl;
-	}
-
-	const baseUrl = url.replace(/\/$/, '');
+	const baseUrl = getLicenseBaseUrl();
 	const verifyUrl = `${baseUrl}/v1/validate`;
 
+	const resolvedProjectId = await resolveProjectId(projectId);
+	const resolvedPublicUrl = resolvePublicUrl(publicUrl);
+
 	try {
-		const getTokenResponse = await axios.post<ValidateLicenseResponse>(verifyUrl, {
+		const res = await axios.post<ValidateLicenseResponse>(verifyUrl, {
 			license_key: licenseKey,
-			project_id: projectId,
-			public_url: publicUrl,
+			project_id: resolvedProjectId,
+			public_url: resolvedPublicUrl,
 		});
 
-		const { token, projectId: newProjectId } = getTokenResponse.data;
+		const { token, project_id: newProjectId } = res.data;
 
 		if (typeof token !== 'string' || !token) {
 			throw new InvalidLicenseTokenError();
 		}
 
-		return { token, projectId: newProjectId };
+		return { token, project_id: newProjectId };
 	} catch (error) {
-		if (isDirectusError(error)) throw error;
-		if (!axios.isAxiosError(error)) throw error;
-
-		const axiosError = error as AxiosError<{ error?: string }>;
-		const reason = axiosError.response?.data?.error ?? axiosError.message ?? String(axiosError);
-		const status = axiosError.response?.status;
-
-		if (status === 400) {
-			throw new InvalidLicenseKeyError({ reason });
-		}
-
-		if (status === 429) {
-			throw new ServiceUnavailableError({ service: 'License Server', reason: 'Too many requests' });
-		}
-
-		if (!status || status >= 500) {
-			throw new ServiceUnavailableError({ service: 'License Server', reason });
-		}
-
-		throw new InvalidLicenseKeyError({ reason });
+		handleLicenseApiError(error);
 	}
 }

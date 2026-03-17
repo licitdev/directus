@@ -6,5 +6,5 @@ export type ValidateLicenseRequest = {
 
 export type ValidateLicenseResponse = {
 	token: string;
-	projectId: string;
+	project_id: string;
 };

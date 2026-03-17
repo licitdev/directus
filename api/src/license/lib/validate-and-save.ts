@@ -8,7 +8,7 @@ export async function validateAndSave(
 	projectId?: string,
 	storeKeyInDatabase = false,
 ): Promise<void> {
-	const { token, projectId: newProjectId } = await validate({ licenseKey, ...(projectId && { projectId }) });
+	const { token, project_id: newProjectId } = await validate({ licenseKey, ...(projectId && { projectId }) });
 
 	await saveToken(token, projectId);
 

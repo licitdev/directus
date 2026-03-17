@@ -100,4 +100,5 @@ export type SetupForm = {
 	password: string | null;
 	password_confirm: string | null;
 	license: boolean;
+	license_key: string | null;
 } & OwnerInformation;

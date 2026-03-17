@@ -82,6 +82,7 @@ export default defineConfig({
 		dir: path.resolve(__dirname, '..'),
 		include: ['app/**/*.test.ts'],
 		environment: 'happy-dom',
+		setupFiles: ['./src/__tests__/setup.ts'],
 		deps: {
 			optimizer: {
 				web: {

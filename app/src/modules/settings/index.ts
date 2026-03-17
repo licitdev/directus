@@ -9,6 +9,7 @@ import Extensions from './routes/extensions/extensions.vue';
 import FlowOperationDetail from './routes/flows/components/operation-detail.vue';
 import FlowsDetail from './routes/flows/flow.vue';
 import FlowsOverview from './routes/flows/overview.vue';
+import License from './routes/license/license.vue';
 import MarketplaceAccount from './routes/marketplace/routes/account/account.vue';
 import MarketplaceExtension from './routes/marketplace/routes/extension/extension.vue';
 import MarketplaceRegistry from './routes/marketplace/routes/registry/registry.vue';
@@ -30,6 +31,7 @@ import api from '@/api';
 import { useCollectionsStore } from '@/stores/collections';
 import { useFieldsStore } from '@/stores/fields';
 import { useFlowsStore } from '@/stores/flows';
+import { useServerStore } from '@/stores/server';
 import RouterPass from '@/utils/router-passthrough';
 
 export default defineModule({
@@ -51,6 +53,17 @@ export default defineModule({
 			name: 'settings-appearance',
 			path: 'appearance',
 			component: Appearance,
+		},
+		{
+			name: 'settings-license',
+			path: 'license',
+			beforeEnter() {
+				const collectionsStore = useCollectionsStore();
+				collectionsStore.hydrate();
+				const serverStore = useServerStore();
+				serverStore.hydrateLicense();
+			},
+			component: License,
 		},
 		{
 			path: 'data-model',

@@ -25,12 +25,16 @@ export interface PrivateViewProps {
 
 <script setup lang="ts">
 import { useCookies } from '@vueuse/integrations/useCookies';
+import { storeToRefs } from 'pinia';
 import { computed } from 'vue';
 import LicenseBanner from '../../components/license-banner.vue';
+import LicenseLockedOverlay from '../../components/license-locked-overlay.vue';
 import NotificationDialogs from '../../components/notification-dialogs.vue';
 import NotificationsDrawer from '../../components/notifications-drawer.vue';
 import PrivateViewNoAppAccess from './private-view-no-app-access.vue';
 import PrivateViewRoot from './private-view-root.vue';
+import PoweredByDirectus from '@/components/powered-by-directus.vue';
+import { useServerStore } from '@/stores/server';
 import { useSettingsStore } from '@/stores/settings';
 import { useUserStore } from '@/stores/user';
 
@@ -38,6 +42,9 @@ defineProps<PrivateViewProps>();
 defineOptions({ inheritAttrs: false });
 
 const userStore = useUserStore();
+const { info } = storeToRefs(useServerStore());
+
+const showPoweredBy = computed(() => info.value?.license?.whitelabel_enabled !== false);
 
 const appAccess = computed(() => {
 	if (!userStore.currentUser) return true;
@@ -56,6 +63,9 @@ const showLicenseBanner = computed(
 	<PrivateViewNoAppAccess v-if="appAccess === false" />
 	<PrivateViewRoot v-else v-bind="$props" :class="$attrs.class">
 		<template #navigation><slot name="navigation" /></template>
+		<template #navigation-footer>
+			<PoweredByDirectus v-if="showPoweredBy" />
+		</template>
 		<template #actions:append><slot name="actions:append" /></template>
 		<template #actions:prepend><slot name="actions:prepend" /></template>
 		<template #actions><slot name="actions" /></template>
@@ -74,4 +84,5 @@ const showLicenseBanner = computed(
 	<NotificationDialogs />
 
 	<LicenseBanner v-model="showLicenseBanner" />
+	<LicenseLockedOverlay />
 </template>

@@ -18,7 +18,7 @@ describe('validateAndSave', () => {
 	test('calls validate, saveToken, saveKey and setProjectId when validate returns projectId and storeKeyInDatabase is true', async () => {
 		vi.mocked(validateModule.validate).mockResolvedValue({
 			token: 'jwt-token',
-			projectId: 'new-project-id',
+			project_id: 'new-project-id',
 		});
 
 		await validateAndSave('my-license-key', undefined, true);
@@ -32,7 +32,7 @@ describe('validateAndSave', () => {
 	test('calls validate, saveToken and setProjectId but not saveKey when storeKeyInDatabase is false', async () => {
 		vi.mocked(validateModule.validate).mockResolvedValue({
 			token: 'jwt-token',
-			projectId: 'new-project-id',
+			project_id: 'new-project-id',
 		});
 
 		await validateAndSave('my-license-key');
@@ -46,7 +46,7 @@ describe('validateAndSave', () => {
 	test('does not call setProjectId when validate returns falsy projectId', async () => {
 		vi.mocked(validateModule.validate).mockResolvedValue({
 			token: 'jwt-token',
-			projectId: '',
+			project_id: '',
 		});
 
 		await validateAndSave('my-license-key', undefined, true);
@@ -59,7 +59,7 @@ describe('validateAndSave', () => {
 	test('passes projectId to validate, saveToken and saveKey when provided', async () => {
 		vi.mocked(validateModule.validate).mockResolvedValue({
 			token: 'jwt-token',
-			projectId: 'returned-project-id',
+			project_id: 'returned-project-id',
 		});
 
 		await validateAndSave('my-license-key', 'existing-project-id', true);

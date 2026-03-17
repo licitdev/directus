@@ -71,6 +71,7 @@ import rateLimiterGlobal from './middleware/rate-limiter-global.js';
 import rateLimiter from './middleware/rate-limiter-ip.js';
 import sanitizeQuery from './middleware/sanitize-query.js';
 import schema from './middleware/schema.js';
+import licenseCheckSchedule from './schedules/license-check.js';
 import metricsSchedule from './schedules/metrics.js';
 import projectSchedule from './schedules/project.js';
 import retentionSchedule from './schedules/retention.js';
@@ -369,6 +370,7 @@ export default async function createApp(): Promise<express.Application> {
 	await retentionSchedule();
 	await telemetrySchedule();
 	await tusSchedule();
+	await licenseCheckSchedule();
 	await metricsSchedule();
 	await projectSchedule();
 

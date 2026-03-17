@@ -1,6 +1,7 @@
 import { Readable } from 'node:stream';
 import { performance } from 'perf_hooks';
 import { useEnv } from '@directus/env';
+import { isSystemCollection } from '@directus/system-data';
 import type { AbstractServiceOptions, Accountability, SchemaOverview } from '@directus/types';
 import { toArray, toBoolean } from '@directus/utils';
 import { version } from 'directus/version';
@@ -9,6 +10,10 @@ import { merge } from 'lodash-es';
 import { getCache } from '../cache.js';
 import { FILE_UPLOADS, RESUMABLE_UPLOADS } from '../constants.js';
 import getDatabase, { hasDatabaseConnection } from '../database/index.js';
+import { defaultEntitlements } from '../license/defaults.js';
+import { getFeature } from '../license/index.js';
+import { getLicensePayload } from '../license/lib/get-license-payload.js';
+import { isLicenseLocked } from '../license/lib/license-status.js';
 import { useLogger } from '../logger/index.js';
 import getMailer from '../mailer.js';
 import { rateLimiterGlobal } from '../middleware/rate-limiter-global.js';
@@ -20,6 +25,17 @@ import { SettingsService } from './settings.js';
 
 const env = useEnv();
 const logger = useLogger();
+
+type LicenseData = {
+	entitlements: {
+		collections: { limit: number; warning_limit: number; usage?: number; defaultExceededCount?: number };
+		users: { remaining_seats?: number; warning_limit: number; usage?: number; defaultExceededCount?: number };
+		activity_feed: { limit: number };
+		revisions: { limit: number };
+		sso: { enabled: boolean };
+		custom_permissions: { enabled: boolean };
+	};
+};
 
 export class ServerService {
 	knex: Knex;
@@ -36,6 +52,140 @@ export class ServerService {
 
 	async isSetupCompleted(): Promise<boolean> {
 		return Boolean(await this.knex('directus_users').first());
+	}
+
+	async licenseData(): Promise<LicenseData | null> {
+		if (this.accountability?.user) {
+			const isAdmin = this.accountability?.admin === true;
+
+			const entitlements: LicenseData['entitlements'] = {
+				collections: {
+					limit: defaultEntitlements.collections.limit,
+					warning_limit: defaultEntitlements.collections.warningLimit,
+				},
+				users: {
+					warning_limit: defaultEntitlements.users.warningLimit,
+				},
+				activity_feed: {
+					limit: defaultEntitlements.activity_feed.limit,
+				},
+				revisions: {
+					limit: defaultEntitlements.revisions.limit,
+				},
+				sso: {
+					enabled: defaultEntitlements.sso.enabled,
+				},
+				custom_permissions: {
+					enabled: defaultEntitlements.custom_permissions.enabled,
+				},
+			};
+
+			let usersLimit = defaultEntitlements.users.limit;
+
+			if (isAdmin) {
+				try {
+					const collectionsFeature = await getFeature<{ limit?: number; warningLimit?: number }>('collections');
+
+					if (collectionsFeature?.limit != null) {
+						entitlements.collections.limit = collectionsFeature.limit;
+					}
+
+					if (collectionsFeature?.warningLimit != null) {
+						entitlements.collections.warning_limit = collectionsFeature.warningLimit;
+					}
+				} catch (error) {
+					logger.warn(error, '[license] Failed to load collections feature entitlements');
+				}
+
+				const allCollections = await this.knex('directus_collections').select('collection');
+				const collectionsCount = allCollections.filter(({ collection }) => !isSystemCollection(collection)).length;
+				entitlements.collections.usage = collectionsCount;
+
+				entitlements.collections.defaultExceededCount =
+					collectionsCount - defaultEntitlements.collections.limit > 0
+						? collectionsCount - defaultEntitlements.collections.limit
+						: 0;
+			}
+
+			try {
+				const usersFeature = await getFeature<{ limit?: number; warningLimit?: number }>('users');
+
+				if (usersFeature?.limit != null) {
+					usersLimit = usersFeature.limit;
+				}
+
+				if (usersFeature?.warningLimit != null) {
+					entitlements.users.warning_limit = usersFeature.warningLimit;
+				}
+			} catch (error) {
+				logger.warn(error, '[license] Failed to load user feature entitlements');
+			}
+
+			const activeUsersCountResult = await this.knex('directus_users')
+				.whereIn('status', ['active'])
+				.count<{ count: number }[]>({ count: '*' })
+				.first();
+
+			const activeUsersCount = Number(activeUsersCountResult?.count ?? 0);
+			const remainingSeats = Math.max(usersLimit - activeUsersCount, 0);
+
+			entitlements.users.remaining_seats = remainingSeats;
+
+			if (isAdmin) {
+				entitlements.users.usage = activeUsersCount;
+
+				entitlements.users.defaultExceededCount =
+					activeUsersCount - defaultEntitlements.users.limit > 0
+						? activeUsersCount - defaultEntitlements.users.limit
+						: 0;
+			}
+
+			try {
+				const activityFeedFeature = await getFeature<{ limit?: number }>('activity_feed');
+
+				if (activityFeedFeature?.limit != null) {
+					entitlements.activity_feed.limit = activityFeedFeature.limit;
+				}
+			} catch (error) {
+				logger.warn(error, '[license] Failed to load activity feed feature entitlements');
+			}
+
+			try {
+				const revisionsFeature = await getFeature<{ limit?: number }>('revisions');
+
+				if (revisionsFeature?.limit != null) {
+					entitlements.revisions.limit = revisionsFeature.limit;
+				}
+			} catch (error) {
+				logger.warn(error, '[license] Failed to load revisions feature entitlements');
+			}
+
+			try {
+				const ssoFeature = await getFeature<{ enabled?: boolean }>('sso');
+
+				if (ssoFeature?.enabled != null) {
+					entitlements.sso.enabled = ssoFeature.enabled;
+				}
+			} catch (error) {
+				logger.warn(error, '[license] Failed to load sso feature entitlements');
+			}
+
+			try {
+				const customPermissionsFeature = await getFeature<{ enabled?: boolean }>('custom_permissions');
+
+				if (customPermissionsFeature?.enabled != null) {
+					entitlements.custom_permissions.enabled = customPermissionsFeature.enabled;
+				}
+			} catch (error) {
+				logger.warn(error, '[license] Failed to load custom permissions feature entitlements');
+			}
+
+			return {
+				entitlements,
+			};
+		} else {
+			return null;
+		}
 	}
 
 	async serverInfo(): Promise<Record<string, any>> {
@@ -68,6 +218,11 @@ export class ServerService {
 		info['project'] = projectInfo;
 
 		info['setupCompleted'] = setupComplete;
+
+		const hasEnvLicenseKey =
+			typeof env['DIRECTUS_LICENSE_KEY'] === 'string' && String(env['DIRECTUS_LICENSE_KEY']).trim() !== '';
+
+		info['show_license_key_field'] = !hasEnvLicenseKey;
 
 		if (this.accountability?.user) {
 			info['mcp_enabled'] = toBoolean(env['MCP_ENABLED'] ?? true);
@@ -153,6 +308,27 @@ export class ServerService {
 		}
 
 		if (this.accountability?.user || !setupComplete) info['version'] = version;
+
+		if (this.accountability?.user) {
+			if (hasEnvLicenseKey) {
+				info['license_source'] = 'env';
+			} else {
+				const licenseSettings = (await this.settingsService.readSingleton({
+					fields: ['license_key'],
+				})) as { license_key?: string | null };
+
+				info['license_source'] = licenseSettings.license_key ? 'settings' : null;
+			}
+
+			try {
+				const licensePayload = await getLicensePayload(true);
+				info['license'] = licensePayload ?? null;
+				info['license_locked'] = licensePayload ? isLicenseLocked(licensePayload) : false;
+			} catch {
+				info['license'] = null;
+				info['license_locked'] = false;
+			}
+		}
 
 		return info;
 	}

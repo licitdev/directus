@@ -3,7 +3,7 @@ import { useLayout } from '@directus/composables';
 import { mergeFilters } from '@directus/utils';
 import { computed, ref, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { onBeforeRouteLeave, onBeforeRouteUpdate } from 'vue-router';
+import { onBeforeRouteLeave, onBeforeRouteUpdate, useRouter } from 'vue-router';
 import UsersNavigation from '../components/navigation.vue';
 import useNavigation from '../composables/use-navigation';
 import api from '@/api';
@@ -11,10 +11,12 @@ import { logout } from '@/auth';
 import VBreadcrumb from '@/components/v-breadcrumb.vue';
 import VButton from '@/components/v-button.vue';
 import VCardActions from '@/components/v-card-actions.vue';
+import VCardText from '@/components/v-card-text.vue';
 import VCardTitle from '@/components/v-card-title.vue';
 import VCard from '@/components/v-card.vue';
 import VDialog from '@/components/v-dialog.vue';
 import VInfo from '@/components/v-info.vue';
+import VNotice from '@/components/v-notice.vue';
 import { useCollectionPermissions } from '@/composables/use-permissions';
 import { usePreset } from '@/composables/use-preset';
 import { useServerStore } from '@/stores/server';
@@ -35,11 +37,14 @@ const { role } = toRefs(props);
 const { t } = useI18n();
 const { roles } = useNavigation(role);
 const userInviteModalActive = ref(false);
+const userLimitModalActive = ref(false);
 const serverStore = useServerStore();
 const userStore = useUserStore();
 
 const layoutRef = ref();
 const selection = ref<string[]>([]);
+
+const router = useRouter();
 
 const { layout, layoutOptions, layoutQuery, filter, search, resetPreset } = usePreset(ref('directus_users'));
 const { addNewLink } = useLinks();
@@ -47,6 +52,16 @@ const { addNewLink } = useLinks();
 const { confirmDelete, deleting, batchDelete, batchEditActive } = useBatch();
 
 const { breadcrumb, title } = useBreadcrumb();
+
+const remainingSeats = computed(() => serverStore.license.entitlements.users?.remaining_seats ?? 0);
+
+const usersWarningLimit = computed(() => serverStore.license.entitlements.users?.warning_limit ?? 0);
+
+const reachedUsersLimit = computed(() => remainingSeats.value === 0);
+
+const approachingUsersLimit = computed(
+	() => usersWarningLimit.value > 0 && remainingSeats.value > 0 && remainingSeats.value <= usersWarningLimit.value,
+);
 
 const roleFilter = computed(() => {
 	if (props.role) {
@@ -90,6 +105,7 @@ onBeforeRouteUpdate(() => {
 
 async function refresh() {
 	await layoutRef.value?.state?.refresh?.();
+	await serverStore.hydrateLicense();
 }
 
 function useBatch() {
@@ -172,6 +188,17 @@ function clearFilters() {
 	filter.value = null;
 	search.value = null;
 }
+
+function onCreateUserClick() {
+	if (reachedUsersLimit.value) {
+		userLimitModalActive.value = true;
+	}
+}
+
+function onPurchaseAddOnClick() {
+	userLimitModalActive.value = false;
+	router.push('/settings/license');
+}
 </script>
 
 <template>
@@ -246,9 +273,10 @@ function clearFilters() {
 
 				<PrivateViewHeaderBarActionButton
 					v-tooltip.bottom="createAllowed ? $t('create_item') : $t('not_allowed')"
-					:to="addNewLink"
+					:to="reachedUsersLimit ? undefined : addNewLink"
 					:disabled="createAllowed === false"
 					icon="add"
+					@click="onCreateUserClick"
 				/>
 			</template>
 
@@ -259,12 +287,31 @@ function clearFilters() {
 			<UsersInvite v-if="canInviteUsers" v-model="userInviteModalActive" @update:model-value="refresh" />
 
 			<component :is="`layout-${layout}`" v-bind="layoutState">
+				<template #message>
+					<VNotice v-if="reachedUsersLimit" type="danger" icon="cancel">
+						<template #title>{{ $t('users_limit_reached_notice') }}</template>
+					</VNotice>
+
+					<VNotice v-if="approachingUsersLimit && !reachedUsersLimit" type="warning" icon="warning">
+						<template #title>
+							{{
+								$t('users_approaching_limit_notice', {
+									count: remainingSeats,
+								})
+							}}
+						</template>
+					</VNotice>
+				</template>
+
 				<template #no-results>
 					<VInfo v-if="!filter && !search" :title="$t('user_count', 0)" icon="people_alt" center>
 						{{ $t('no_users_copy') }}
 
 						<template v-if="canInviteUsers" #append>
-							<VButton :to="role ? { path: `/users/roles/${role}/+` } : { path: '/users/+' }">
+							<VButton
+								:to="reachedUsersLimit ? undefined : role ? { path: `/users/roles/${role}/+` } : { path: '/users/+' }"
+								@click="onCreateUserClick"
+							>
 								{{ $t('create_user') }}
 							</VButton>
 						</template>
@@ -284,13 +331,33 @@ function clearFilters() {
 						{{ $t('no_users_copy') }}
 
 						<template v-if="canInviteUsers" #append>
-							<VButton :to="role ? { path: `/users/roles/${role}/+` } : { path: '/users/+' }">
+							<VButton
+								:to="reachedUsersLimit ? undefined : role ? { path: `/users/roles/${role}/+` } : { path: '/users/+' }"
+								@click="onCreateUserClick"
+							>
 								{{ $t('create_user') }}
 							</VButton>
 						</template>
 					</VInfo>
 				</template>
 			</component>
+
+			<VDialog v-model="userLimitModalActive" persistent>
+				<VCard>
+					<VCardTitle>{{ $t('users_limit_modal_title') }}</VCardTitle>
+					<VCardText>
+						{{ userStore.isAdmin ? $t('users_limit_admin_modal_description') : $t('users_limit_modal_description') }}
+					</VCardText>
+					<VCardActions>
+						<VButton secondary @click="userLimitModalActive = false">
+							{{ $t('cancel') }}
+						</VButton>
+						<VButton v-if="userStore.isAdmin" @click="onPurchaseAddOnClick">
+							{{ $t('purchase_add_on') }}
+						</VButton>
+					</VCardActions>
+				</VCard>
+			</VDialog>
 
 			<DrawerBatch
 				v-model:active="batchEditActive"
