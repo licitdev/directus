@@ -189,6 +189,7 @@ defineProps<{
 .add-on-upgrade-btn {
 	white-space: nowrap;
 	flex-shrink: 0;
+
 	--v-button-color: var(--theme--foreground-subdued);
 }
 

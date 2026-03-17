@@ -28,9 +28,7 @@ const { t } = useI18n();
 
 const displayLabelIncluded = computed(() => props.labelIncluded ?? t('settings_license_usage_available'));
 
-const displayLabelNotIncluded = computed(
-	() => props.labelNotIncluded ?? t('settings_license_usage_unavailable'),
-);
+const displayLabelNotIncluded = computed(() => props.labelNotIncluded ?? t('settings_license_usage_unavailable'));
 
 const displayLabelOptional = computed(() => props.labelOptional ?? t('settings_license_usage_opt_in'));
 </script>
