@@ -179,17 +179,21 @@ async function excludeCollections(collectionKeys: string[]) {
 async function handleDeactivation() {
 	if (selectedUsers.value.length > 0) {
 		const response = await archiveUsers(selectedUsers.value);
+
 		if (!response) {
 			notify({ title: t('error_archiving_users') });
 		}
+
 		return;
 	}
 
 	if (selectedCollections.value.length > 0) {
 		const response = await excludeCollections(selectedCollections.value);
+
 		if (!response) {
 			notify({ title: t('error_excluding_collections') });
 		}
+
 		return;
 	}
 
