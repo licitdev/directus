@@ -1,9 +1,6 @@
 import { ErrorCode, isDirectusError, LimitExceededError } from '@directus/errors';
-import { isSystemCollection } from '@directus/system-data';
 import type { Item } from '@directus/types';
 import { Router } from 'express';
-import getDatabase from '../database/index.js';
-import { getFeature } from '../license/index.js';
 import { respond } from '../middleware/respond.js';
 import { validateBatch } from '../middleware/validate-batch.js';
 import { CollectionsService } from '../services/collections.js';
@@ -23,16 +20,10 @@ router.post(
 		const attemptConcurrentIndex =
 			'concurrentIndexCreation' in req.query && req.query['concurrentIndexCreation'] !== 'false';
 
-		const db = getDatabase();
-		const allCollections = await db('directus_collections').select('collection');
-		const collectionsCount = allCollections.filter(({ collection }) => !isSystemCollection(collection)).length;
-
-		const collectionFeature = await getFeature<{ limit: number }>('collections');
-		const collectionsLimit = collectionFeature?.limit;
-
 		const newCollectionsCount = Array.isArray(req.body) ? req.body.length : 1;
+		const isWithinLimit = await collectionsService.checkAddingLimit(newCollectionsCount);
 
-		if (collectionsLimit && collectionsCount + newCollectionsCount > collectionsLimit) {
+		if (!isWithinLimit) {
 			throw new LimitExceededError({ category: 'collections' });
 		}
 
@@ -109,6 +100,29 @@ router.patch(
 			schema: req.schema,
 		});
 
+		let newAdded = 0;
+		let newExcluded = 0;
+
+		for (const collection of req.body) {
+			if (collection.meta?.excluded === false) {
+				newAdded++;
+			}
+
+			if (collection.meta?.excluded === true) {
+				newExcluded++;
+			}
+		}
+
+		const newCount = newAdded - newExcluded;
+
+		if (newCount > 0) {
+			const isWithinLimit = await collectionsService.checkAddingLimit(newCount);
+
+			if (!isWithinLimit) {
+				throw new LimitExceededError({ category: 'collections' });
+			}
+		}
+
 		const collectionKeys = await collectionsService.updateBatch(req.body);
 
 		try {
@@ -134,6 +148,16 @@ router.patch(
 			accountability: req.accountability,
 			schema: req.schema,
 		});
+
+		const excluded = req.body?.meta?.excluded;
+
+		if (excluded === false) {
+			const isWithinLimit = await collectionsService.checkAddingLimit(1);
+
+			if (!isWithinLimit) {
+				throw new LimitExceededError({ category: 'collections' });
+			}
+		}
 
 		await collectionsService.updateOne(req.params['collection']!, req.body);
 

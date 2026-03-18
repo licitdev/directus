@@ -107,6 +107,74 @@ describe('Integration Tests', () => {
 	});
 
 	describe('Services / Collections', () => {
+		describe('checkAddingLimit', () => {
+			test('should return true when feature has no limit configured', async () => {
+				const service = new CollectionsService({
+					knex: db,
+					schema,
+					accountability: null,
+				});
+
+				tracker.on
+					.select('directus_collections')
+					.response([{ collection: 'test_collection' }, { collection: 'directus_roles' }]);
+
+				const result = await service.checkAddingLimit(3);
+
+				expect(result).toBe(true);
+			});
+
+			test('should return true when total non-system collections after adding is within limit', async () => {
+				const service = new CollectionsService({
+					knex: db,
+					schema,
+					accountability: null,
+				});
+
+				tracker.on
+					.select('directus_collections')
+					.response([{ collection: 'public_articles' }, { collection: 'directus_users' }]);
+
+				const mockFeature = { limit: 5 };
+
+				const getFeatureSpy = vi
+					.spyOn(await import('../license/index.js'), 'getFeature')
+					.mockResolvedValue(mockFeature);
+
+				const result = await service.checkAddingLimit(2);
+
+				expect(result).toBe(true);
+				expect(getFeatureSpy).toHaveBeenCalledWith('collections');
+			});
+
+			test('should return false when total non-system collections after adding exceeds limit', async () => {
+				const service = new CollectionsService({
+					knex: db,
+					schema,
+					accountability: null,
+				});
+
+				tracker.on
+					.select('directus_collections')
+					.response([
+						{ collection: 'public_articles' },
+						{ collection: 'public_comments' },
+						{ collection: 'directus_users' },
+					]);
+
+				const mockFeature = { limit: 2 };
+
+				const getFeatureSpy = vi
+					.spyOn(await import('../license/index.js'), 'getFeature')
+					.mockResolvedValue(mockFeature);
+
+				const result = await service.checkAddingLimit(1);
+
+				expect(result).toBe(false);
+				expect(getFeatureSpy).toHaveBeenCalledWith('collections');
+			});
+		});
+
 		describe('createOne', () => {
 			test('should throw ForbiddenError for non-admin users', async () => {
 				const service = new CollectionsService({
