@@ -848,7 +848,12 @@ export class CollectionsService {
 	 * Verify if creating new collections is within the limit
 	 */
 	async checkAddingLimit(count: number): Promise<boolean> {
-		const allCollections = await this.knex.select('collection').from('directus_collections');
+		const allCollections = await this.knex
+			.select('collection')
+			.from('directus_collections')
+			.where({ excluded: false })
+			.orWhereNull('excluded');
+
 		const collectionsCount = allCollections.filter(({ collection }) => !isSystemCollection(collection)).length;
 
 		const collectionFeature = await getFeature<{ limit: number }>('collections');

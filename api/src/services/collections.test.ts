@@ -187,6 +187,42 @@ describe('Integration Tests', () => {
 			});
 		});
 
+		describe('isExcluded', () => {
+			test('should return true when collection is marked as excluded', async () => {
+				const service = new CollectionsService({
+					knex: db,
+					schema,
+					accountability: null,
+				});
+
+				tracker.on.select('directus_collections').responseOnce([{ excluded: true }]);
+
+				const result = await service.isExcluded('articles');
+
+				expect(result).toBe(true);
+			});
+
+			test('should return false when collection is not excluded or excluded is null', async () => {
+				const service = new CollectionsService({
+					knex: db,
+					schema,
+					accountability: null,
+				});
+
+				tracker.on.select('directus_collections').responseOnce([{ excluded: false }]);
+
+				const resultFalse = await service.isExcluded('articles');
+
+				expect(resultFalse).toBe(false);
+
+				tracker.on.select('directus_collections').responseOnce([{}]);
+
+				const resultNull = await service.isExcluded('articles');
+
+				expect(resultNull).toBe(false);
+			});
+		});
+
 		describe('createOne', () => {
 			test('should throw ForbiddenError for non-admin users', async () => {
 				const service = new CollectionsService({
