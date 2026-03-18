@@ -61,10 +61,10 @@ const collectionsWarningLimit = computed(() => {
 	return serverStore.license.entitlements.collections?.warning_limit ?? 0;
 });
 
-const reachedCollectionsLimit = computed(() => collectionsStore.databaseCollections.length >= collectionsLimit.value);
+const reachedCollectionsLimit = computed(() => collectionsStore.configuredCollections.length >= collectionsLimit.value);
 
 const approachingCollectionsLimit = computed(
-	() => collectionsStore.databaseCollections.length >= collectionsLimit.value - collectionsWarningLimit.value,
+	() => collectionsStore.configuredCollections.length >= collectionsLimit.value - collectionsWarningLimit.value,
 );
 
 const rootCollections = computed(() => {
@@ -184,6 +184,37 @@ function onPurchaseAddOnClick() {
 	collectionLimitModalActive.value = false;
 	router.push('/settings/license');
 }
+
+async function onUnExclude(collectionKey: string) {
+	const nonExcludedCount = collectionsStore.configuredCollections.filter(
+		(c) => (c.meta as { excluded?: boolean } | null)?.excluded !== true,
+	).length;
+
+	if (collectionsLimit.value > 0 && nonExcludedCount + 1 > collectionsLimit.value) {
+		collectionLimitModalActive.value = true;
+
+		return;
+	}
+
+	const previousCollections = [...collectionsStore.collections];
+
+	collectionsStore.collections = collectionsStore.collections.map((collection) => {
+		if (collection.collection === collectionKey) {
+			return merge({}, collection, {
+				meta: { ...collection.meta, excluded: false },
+			}) as Collection;
+		}
+
+		return collection;
+	});
+
+	try {
+		await api.patch('/collections', [{ collection: collectionKey, meta: { excluded: false } }]);
+	} catch (error) {
+		collectionsStore.collections = previousCollections;
+		unexpectedError(error);
+	}
+}
 </script>
 
 <template>
@@ -194,7 +225,7 @@ function onPurchaseAddOnClick() {
 
 		<template #actions:prepend>
 			<span v-if="collectionsLimit > 0" class="collections-usage-header">
-				({{ collectionsStore.databaseCollections.length }}/{{ collectionsLimit }}) {{ $t('collections') }}
+				({{ collectionsStore.configuredCollections.length }}/{{ collectionsLimit }}) {{ $t('collections') }}
 			</span>
 		</template>
 
@@ -239,7 +270,7 @@ function onPurchaseAddOnClick() {
 				<template #title>
 					{{
 						$t('collections_approaching_limit_notice', {
-							count: collectionsLimit - collectionsStore.databaseCollections.length,
+							count: collectionsLimit - collectionsStore.configuredCollections.length,
 						})
 					}}
 				</template>
@@ -287,6 +318,7 @@ function onPurchaseAddOnClick() {
 							@edit-collection="editCollection = $event"
 							@set-nested-sort="onSort"
 							@toggle-collapse="toggleCollapse"
+							@un-exclude="onUnExclude"
 						/>
 					</template>
 				</Draggable>
@@ -328,6 +360,7 @@ function onPurchaseAddOnClick() {
 					:visibility-tree="findVisibilityChild(collection.collection)!"
 					:is-collapsed="false"
 					disable-drag
+					@un-exclude="onUnExclude"
 				/>
 			</VDetail>
 		</div>

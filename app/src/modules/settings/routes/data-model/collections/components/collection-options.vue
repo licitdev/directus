@@ -86,7 +86,11 @@ async function update(updates: DeepPartial<Collection>) {
 				<VIcon name="more_vert" clickable class="ctx-toggle" @click.prevent="toggle" />
 			</template>
 			<VList>
-				<VListItem v-if="collection.schema" clickable :to="getCollectionRoute(collection.collection)">
+				<VListItem
+					v-if="collection.schema && !collection.meta?.excluded"
+					clickable
+					:to="getCollectionRoute(collection.collection)"
+				>
 					<VListItemIcon>
 						<VIcon name="box" />
 					</VListItemIcon>

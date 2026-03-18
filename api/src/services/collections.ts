@@ -2,7 +2,7 @@ import { useEnv } from '@directus/env';
 import { ForbiddenError, InvalidPayloadError } from '@directus/errors';
 import type { SchemaInspector } from '@directus/schema';
 import { createInspector } from '@directus/schema';
-import { type BaseCollectionMeta, systemCollectionRows } from '@directus/system-data';
+import { type BaseCollectionMeta, isSystemCollection, systemCollectionRows } from '@directus/system-data';
 import type {
 	AbstractServiceOptions,
 	Accountability,
@@ -24,6 +24,7 @@ import type { Helpers } from '../database/helpers/index.js';
 import { getHelpers } from '../database/helpers/index.js';
 import getDatabase, { getSchemaInspector } from '../database/index.js';
 import emitter from '../emitter.js';
+import { getFeature } from '../license/index.js';
 import { fetchAllowedCollections } from '../permissions/modules/fetch-allowed-collections/fetch-allowed-collections.js';
 import { validateAccess } from '../permissions/modules/validate-access/validate-access.js';
 import type { Collection } from '../types/index.js';
@@ -457,11 +458,21 @@ export class CollectionsService {
 				return collectionKey;
 			}
 
+			const allCollections = await this.knex('directus_collections').select('collection');
+			const collectionsCount = allCollections.filter(({ collection }) => !isSystemCollection(collection)).length;
+			const collectionFeature = await getFeature<{ limit?: number }>('collections');
+			const collectionsLimit = collectionFeature?.limit;
+
 			const exists = !!(await this.knex
 				.select('collection')
 				.from('directus_collections')
 				.where({ collection: collectionKey })
 				.first());
+
+			const effectiveCount = exists ? collectionsCount : collectionsCount + 1;
+			const excluded = collectionsLimit != null && effectiveCount > collectionsLimit;
+
+			Object.assign(payload.meta, { excluded });
 
 			if (exists) {
 				await collectionsItemsService.updateOne(collectionKey, payload.meta, {

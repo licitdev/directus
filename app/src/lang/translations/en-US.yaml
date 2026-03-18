@@ -981,6 +981,7 @@ make_collection_visible: Make Collection Visible
 make_collection_hidden: Make Collection Hidden
 make_folder_visible: Make Folder Visible
 make_folder_hidden: Make Folder Hidden
+un_exclude_collection: Un-exclude Collection
 goto_collection_content: View Content
 count_of_total_items: '{count} of {total} Items'
 start_end_of_count_items: '{start}-{end} of {count} Items'

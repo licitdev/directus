@@ -50,9 +50,14 @@ export const useCollectionsStore = defineStore('collectionsStore', () => {
 
 	/**
 	 * All non-system collections that are configured and visible (not hidden)
+	 * Excluded collections are always hidden from the content sidebar
 	 */
 	const visibleCollections = computed(() =>
-		configuredCollections.value.filter((collection) => collection.meta?.hidden !== true),
+		configuredCollections.value.filter((collection) => {
+			if (collection.meta?.hidden === true) return false;
+			if ((collection.meta as { excluded?: boolean } | null)?.excluded === true) return false;
+			return true;
+		}),
 	);
 
 	/**
