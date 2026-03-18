@@ -16,6 +16,7 @@ import { useSettingsStore } from '@/stores/settings';
 import { getAssetUrl } from '@/utils/get-asset-url';
 import { notify } from '@/utils/notify';
 import { unexpectedError } from '@/utils/unexpected-error';
+import DrawerItem from '@/views/private/components/drawer-item.vue';
 
 type UserItem = Item & { avatar: string };
 
@@ -72,6 +73,8 @@ const deactivationNoticeMessage = computed(() => {
 });
 
 const deactivating = ref(false);
+const selectedUserKey = ref<string | null>(null);
+const userDrawerActive = ref(false);
 
 const selectedCollections = ref<string[]>([]);
 const selectedUsers = ref<string[]>([]);
@@ -202,7 +205,7 @@ async function handleDeactivation() {
 </script>
 
 <template>
-	<VDialog v-model="confirmDeactivate" @esc="confirmDeactivate = false">
+	<VDialog v-model="confirmDeactivate" keep-behind @esc="confirmDeactivate = false">
 		<div class="deactivation-popup">
 			<div class="deactivation-popup-header">
 				<h2>{{ t('settings_license_deactivation_popup_title') }}</h2>
@@ -238,7 +241,15 @@ async function handleDeactivation() {
 						<div class="item-content">
 							<p class="name">{{ item.name }}</p>
 						</div>
-						<VIcon name="launch" class="launch-btn" clickable />
+						<VIcon
+							name="launch"
+							class="launch-btn"
+							clickable
+							@click.stop="
+								selectedUserKey = item.value;
+								userDrawerActive = true;
+							"
+						/>
 					</div>
 				</template>
 			</DeactivationSelectList>
@@ -253,6 +264,13 @@ async function handleDeactivation() {
 			</div>
 		</div>
 	</VDialog>
+	<DrawerItem
+		v-if="selectedUserKey"
+		v-model:active="userDrawerActive"
+		collection="directus_users"
+		:primary-key="selectedUserKey"
+		disabled
+	/>
 </template>
 
 <style scoped lang="scss">
