@@ -5,6 +5,7 @@ import DeactivationSelectList, { type Item } from './deactivation-select-list.vu
 import api from '@/api';
 import VAvatar from '@/components/v-avatar.vue';
 import VButton from '@/components/v-button.vue';
+import VChip from '@/components/v-chip.vue';
 import VDialog from '@/components/v-dialog.vue';
 import VDivider from '@/components/v-divider.vue';
 import VIcon from '@/components/v-icon/v-icon.vue';
@@ -208,51 +209,110 @@ async function handleDeactivation() {
 	<VDialog v-model="confirmDeactivate" keep-behind @esc="confirmDeactivate = false">
 		<div class="deactivation-popup">
 			<div class="deactivation-popup-header">
-				<h2>{{ t('settings_license_deactivation_popup_title') }}</h2>
-				<p>{{ t('settings_license_deactivation_popup_subtitle') }}</p>
-			</div>
-			<VDivider />
-
-			<div class="notice-wrapper">
-				<VNotice type="warning">
-					{{ deactivationNoticeMessage }}
-				</VNotice>
+				<h2 class="title">{{ t('settings_license_deactivation_popup_title') }}</h2>
+				<p class="subtitle">{{ t('settings_license_deactivation_popup_subtitle') }}</p>
 			</div>
 
-			<DeactivationSelectList
-				v-if="collectionsDefaultExceededCount > 0"
-				v-model="selectedCollections"
-				title="Data Collections"
-				:items="collections"
-			/>
-
-			<DeactivationSelectList
-				v-if="usersDefaultExceededCount > 0"
-				v-model="selectedUsers"
-				title="User Seats"
-				:items="users"
-			>
-				<template #item="{ item }">
-					<div class="user-item">
-						<VAvatar x-small round class="avatar">
-							<VIcon v-if="!item.avatar" name="person" />
-							<VImage v-else :src="item.avatar" :alt="$t('avatar')" />
-						</VAvatar>
-						<div class="item-content">
-							<p class="name">{{ item.name }}</p>
-						</div>
-						<VIcon
-							name="launch"
-							class="launch-btn"
-							clickable
-							@click.stop="
-								selectedUserKey = item.value;
-								userDrawerActive = true;
-							"
-						/>
+			<div class="deactivation-popup-body">
+				<div class="notice-wrapper">
+					<VNotice type="danger" icon="error">
+						{{ deactivationNoticeMessage }}
+					</VNotice>
+				</div>
+				<div class="deactivation-popup-list-wrapper">
+					<div class="list-header">
+						<VIcon name="database" class="header-icon" />
+						<h3 class="title">Data Collections</h3>
+						<VChip x-small class="badge">{{ t('settings_license_deactivation_popup_remaining', { count: 1 }) }}</VChip>
 					</div>
-				</template>
-			</DeactivationSelectList>
+
+					<VDivider />
+
+					<p class="helper-text">Select collections to deactivate</p>
+
+					<DeactivationSelectList
+						v-if="collectionsDefaultExceededCount >= 0"
+						v-model="selectedCollections"
+						:items="collections"
+					/>
+				</div>
+
+				<div class="deactivation-popup-list-wrapper">
+					<div class="list-header">
+						<VIcon name="group" class="header-icon" />
+						<h3 class="title">User Seats</h3>
+						<VChip x-small class="badge">{{ t('settings_license_deactivation_popup_remaining', { count: 1 }) }}</VChip>
+					</div>
+
+					<VDivider />
+
+					<div class="user-list-wrapper">
+						<div class="user-seats-list">
+							<p class="helper-text">Select user seat(s) to deactivate</p>
+
+							<DeactivationSelectList
+								v-if="usersDefaultExceededCount >= 0"
+								v-model="selectedUsers"
+								helper-text="Select user seat(s) to deactivate"
+								:items="users"
+							>
+								<template #item="{ item }">
+									<div class="user-item">
+										<VAvatar x-small round class="avatar">
+											<VIcon v-if="!item.avatar" name="person" />
+											<VImage v-else :src="item.avatar" :alt="$t('avatar')" />
+										</VAvatar>
+										<div class="item-content">
+											<p class="name">{{ item.name }}</p>
+										</div>
+										<VIcon
+											name="launch"
+											class="launch-btn"
+											clickable
+											@click.stop="
+												selectedUserKey = item.value;
+												userDrawerActive = true;
+											"
+										/>
+									</div>
+								</template>
+							</DeactivationSelectList>
+						</div>
+
+						<div class="admin-seat-list">
+							<p class="helper-text">Select admin seat(s) to deactivate</p>
+
+							<DeactivationSelectList
+								v-if="usersDefaultExceededCount >= 0"
+								v-model="selectedUsers"
+								helper-text="Select user seat(s) to deactivate"
+								:items="users"
+							>
+								<template #item="{ item }">
+									<div class="user-item">
+										<VAvatar x-small round class="avatar">
+											<VIcon v-if="!item.avatar" name="person" />
+											<VImage v-else :src="item.avatar" :alt="$t('avatar')" />
+										</VAvatar>
+										<div class="item-content">
+											<p class="name">{{ item.name }}</p>
+										</div>
+										<VIcon
+											name="launch"
+											class="launch-btn"
+											clickable
+											@click.stop="
+												selectedUserKey = item.value;
+												userDrawerActive = true;
+											"
+										/>
+									</div>
+								</template>
+							</DeactivationSelectList>
+						</div>
+					</div>
+				</div>
+			</div>
 
 			<div class="deactivation-popup-actions">
 				<VButton secondary @click="confirmDeactivate = false">
@@ -281,6 +341,11 @@ async function handleDeactivation() {
 	flex-direction: column;
 	border-radius: var(--theme--border-radius);
 	inline-size: max(100% - 8vw, 100% - var(--header-bar-height) * 2);
+	max-block-size: max(100% - 8vh, 100% - var(--header-bar-height) * 2);
+}
+
+.deactivation-popup-body {
+	overflow: scroll;
 }
 
 .deactivation-popup-header {
@@ -290,7 +355,8 @@ async function handleDeactivation() {
 		font-weight: bold;
 		padding-block-end: 0.5rem;
 	}
-	p {
+
+	.subtitle {
 		font-size: 0.875rem;
 	}
 }
@@ -300,10 +366,14 @@ async function handleDeactivation() {
 	justify-content: flex-end;
 	padding: 1rem;
 	gap: 1rem;
+	background-color: var(--theme--background-subdued);
+	border-block-start: 1px solid var(--theme--border-color);
+	border-end-start-radius: var(--theme--border-radius);
+	border-end-end-radius: var(--theme--border-radius);
 }
 
 .notice-wrapper {
-	padding: var(--content-padding);
+	padding: 0 1.5rem;
 }
 
 .user-item {
@@ -315,6 +385,12 @@ async function handleDeactivation() {
 
 	.launch-btn {
 		margin-inline-start: auto;
+
+		--v-icon-color: var(--theme--foreground-subdued);
+
+		&:hover {
+			--v-icon-color: var(--theme--primary);
+		}
 	}
 
 	.avatar {
@@ -333,5 +409,45 @@ async function handleDeactivation() {
 			text-overflow: ellipsis;
 		}
 	}
+}
+
+.list-header {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+
+	.header-icon {
+		--v-icon-color: var(--theme--foreground-subdued);
+	}
+
+	.title {
+		font-size: 1.25rem;
+	}
+
+	.badge {
+		--v-chip-background-color: var(--theme--danger-background);
+		--v-chip-color: var(--theme--danger);
+		font-weight: 600;
+	}
+}
+
+.helper-text {
+	font-size: 0.875rem;
+	margin-block-end: 0.25rem;
+	font-weight: 500;
+}
+
+.v-divider {
+	margin: 1.5rem 0;
+}
+
+.deactivation-popup-list-wrapper {
+	padding: 1.5rem;
+}
+
+.user-list-wrapper {
+	row-gap: 2.25rem;
+	display: flex;
+	flex-direction: column;
 }
 </style>

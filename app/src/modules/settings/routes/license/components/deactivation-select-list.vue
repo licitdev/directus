@@ -12,10 +12,13 @@ export type Item = {
 
 const props = withDefaults(
 	defineProps<{
-		title: string;
+		title?: string;
 		items: T[];
 		modelValue: string[];
 		itemsShown?: number;
+		icon?: string;
+		badge?: string;
+		helperText?: string;
 	}>(),
 	{
 		itemsShown: 12,
@@ -60,13 +63,13 @@ function toggleSelection(value: string) {
 
 <template>
 	<div class="deactivation-select-list">
-		<h3 class="title">{{ title }}</h3>
-
 		<div class="items-grid" :class="gridClass">
 			<VCheckbox
 				v-for="item in displayedItems"
 				:key="item.value"
 				block
+				class="selectable-tile"
+				:class="{ selected: modelValue.includes(item.value) }"
 				:model-value="modelValue.includes(item.value)"
 				@update:model-value="toggleSelection(item.value)"
 			>
@@ -89,22 +92,36 @@ function toggleSelection(value: string) {
 </template>
 
 <style scoped lang="scss">
-.title {
-	font-size: 1rem;
-	font-weight: bold;
-	padding-block-end: 0.5rem;
-}
-
 .deactivation-select-list {
-	padding: 1rem;
-
 	.items-grid {
 		--columns: 1;
 
 		display: grid;
-		gap: 12px 32px;
+		gap: 0.75rem 2rem;
 		grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
-		padding: 1rem;
+	}
+
+	.selectable-tile {
+		--v-checkbox-label-color: var(--theme--foreground);
+		border: 1px solid var(--theme--border-color);
+		border-radius: var(--theme--border-radius);
+		transition: all 0.2s ease;
+
+		&:hover {
+			background-color: var(--theme--background-subdued);
+			border-color: var(--theme--border-color-accent);
+		}
+
+		&.selected {
+			border-color: var(--theme--primary);
+			background-color: var(--theme--primary-subdued);
+
+			--v-checkbox-label-color: var(--theme--primary);
+		}
+
+		:deep(.v-checkbox-label) {
+			flex: 1;
+		}
 	}
 
 	.grid-2 {
