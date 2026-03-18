@@ -40,19 +40,15 @@ defineProps<{
 				{{ addonsError }}
 			</VNotice>
 			<template v-else>
-				<div v-for="pkg in addons" :key="pkg.id" class="add-on-card" :class="{ 'add-on-card--disabled': pkg.disabled }">
-					<div class="add-on-icon-wrapper" :class="{ 'add-on-icon-wrapper--disabled': pkg.disabled }">
+				<div v-for="pkg in addons" :key="pkg.id" class="add-on-card" :class="{ disabled: pkg.disabled }">
+					<div class="add-on-icon-wrapper" :class="{ disabled: pkg.disabled }">
 						<VIcon :name="pkg.icon" class="add-on-icon" />
 					</div>
 					<div class="add-on-content">
-						<span class="add-on-title" :class="{ 'add-on-title--disabled': pkg.disabled }">
+						<span class="add-on-title" :class="{ disabled: pkg.disabled }">
 							{{ pkg.name }}
 						</span>
-						<span
-							v-if="pkg.description"
-							class="add-on-description"
-							:class="{ 'add-on-description--disabled': pkg.disabled }"
-						>
+						<span v-if="pkg.description" class="add-on-description" :class="{ disabled: pkg.disabled }">
 							{{ pkg.description }}
 						</span>
 					</div>
@@ -148,11 +144,11 @@ defineProps<{
 	flex-shrink: 0;
 }
 
-.add-on-icon-wrapper--disabled {
+.add-on-icon-wrapper.disabled {
 	background: var(--theme--background-normal);
 }
 
-.add-on-icon-wrapper--disabled .add-on-icon {
+.add-on-icon-wrapper.disabled .add-on-icon {
 	--v-icon-color: var(--theme--foreground-subdued);
 }
 
@@ -205,7 +201,7 @@ defineProps<{
 	color: var(--theme--foreground);
 }
 
-.add-on-title--disabled {
+.add-on-title.disabled {
 	color: var(--theme--foreground-subdued);
 }
 
@@ -214,7 +210,7 @@ defineProps<{
 	color: var(--theme--foreground-subdued);
 }
 
-.add-on-description--disabled {
+.add-on-description.disabled {
 	color: var(--theme--foreground-subdued);
 	opacity: 0.8;
 }
