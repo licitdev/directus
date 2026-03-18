@@ -99,6 +99,8 @@ settings_license_deactivation_popup_notice_and: ' and '
 settings_license_deactivate_confirm:
   Are you sure you want to deactivate the license? This will remove the license from this project.
 settings_license_deactivate_success: License deactivated successfully
+error_archiving_users: Failed to deactivate selected users.
+error_excluding_collections: Failed to deactivate selected collections.
 license_valid: License Valid
 license_invalid: Invalid License Key
 license_expires_on: 'Expires on {date}'

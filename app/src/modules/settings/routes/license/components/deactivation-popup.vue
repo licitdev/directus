@@ -142,6 +142,63 @@ async function deactivateLicense() {
 		deactivating.value = false;
 	}
 }
+
+async function archiveUsers(userIds: string[]) {
+	if (!userIds.length) return;
+
+	try {
+		const response = await api.patch(
+			'/users',
+			userIds.map((id) => ({ id, status: 'archived' })),
+		);
+
+		return response?.data?.data;
+	} catch (error: unknown) {
+		unexpectedError(error);
+	}
+}
+
+async function excludeCollections(collectionKeys: string[]) {
+	if (!collectionKeys.length) return;
+
+	try {
+		const response = await api.patch(
+			'/collections',
+			collectionKeys.map((collection) => ({
+				collection,
+				meta: { excluded: true },
+			})),
+		);
+
+		return response?.data?.data;
+	} catch (error: unknown) {
+		unexpectedError(error);
+	}
+}
+
+async function handleDeactivation() {
+	if (selectedUsers.value.length > 0) {
+		const response = await archiveUsers(selectedUsers.value);
+
+		if (!response) {
+			notify({ title: t('error_archiving_users') });
+		}
+
+		return;
+	}
+
+	if (selectedCollections.value.length > 0) {
+		const response = await excludeCollections(selectedCollections.value);
+
+		if (!response) {
+			notify({ title: t('error_excluding_collections') });
+		}
+
+		return;
+	}
+
+	await deactivateLicense();
+}
 </script>
 
 <template>
@@ -190,7 +247,7 @@ async function deactivateLicense() {
 				<VButton secondary @click="confirmDeactivate = false">
 					{{ t('cancel') }}
 				</VButton>
-				<VButton kind="danger" :loading="deactivating" @click="deactivateLicense">
+				<VButton kind="danger" :loading="deactivating" @click="handleDeactivation">
 					{{ t('settings_license_deactivation_popup_confirm') }}
 				</VButton>
 			</div>
