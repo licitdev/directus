@@ -12,12 +12,9 @@ export type Item = {
 
 const props = withDefaults(
 	defineProps<{
-		title?: string;
 		items: T[];
 		modelValue: string[];
 		itemsShown?: number;
-		icon?: string;
-		badge?: string;
 		helperText?: string;
 	}>(),
 	{
