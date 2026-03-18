@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { User } from '@directus/types';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import DeactivationSelectList, { type Item } from './deactivation-select-list.vue';
@@ -33,6 +34,7 @@ const emit = defineEmits<{
 }>();
 
 const users = ref<UserItem[]>([]);
+const adminUsers = ref<UserItem[]>([]);
 const usersLoading = ref(false);
 
 const { t } = useI18n();
@@ -77,7 +79,7 @@ const deactivationNoticeMessage = computed(() => {
 });
 
 const deactivating = ref(false);
-const selectedUserKey = ref<string | null>(null);
+const showedUserInfoKey = ref<string | null>(null);
 const userDrawerActive = ref(false);
 const confirmDeactivate = ref(false);
 
@@ -92,30 +94,106 @@ const openDeactivatePopup = computed({
 async function fetchUsers() {
 	usersLoading.value = true;
 
-	async function getAvatarSrc(item: { avatar: string }) {
+	async function getAvatarSrc(item: User) {
 		if (!item.avatar) return;
 
-		return getAssetUrl(item.avatar, {
-			imageKey: 'system-small-contain',
-		});
+		if (typeof item.avatar === 'string') {
+			return getAssetUrl(item.avatar, {
+				imageKey: 'system-small-contain',
+			});
+		}
+
+		return '';
 	}
 
 	try {
-		const response = await api.get('/users');
+		const appUserResponse = await api.get('/users', {
+			params: {
+				filter: {
+					_and: [
+						{
+							status: 'active',
+						},
+						{
+							_or: [
+								{
+									policies: {
+										policy: {
+											app_access: true,
+											admin_access: false,
+										},
+									},
+								},
+								{
+									role: {
+										policies: {
+											policy: {
+												app_access: true,
+												admin_access: false,
+											},
+										},
+									},
+								},
+							],
+						},
+					],
+				},
+				fields: ['*', 'policies.policy.*', 'role.policies.policy.*'],
+			},
+		});
 
-		const newUsers = [];
+		const adminUserResponse = await api.get('/users', {
+			params: {
+				filter: {
+					_and: [
+						{
+							status: 'active',
+						},
+						{
+							_or: [
+								{
+									policies: {
+										policy: {
+											admin_access: true,
+											app_access: true,
+										},
+									},
+								},
+								{
+									role: {
+										policies: {
+											policy: {
+												admin_access: true,
+												app_access: true,
+											},
+										},
+									},
+								},
+							],
+						},
+					],
+				},
+			},
+		});
 
-		for (const user of response.data.data ?? []) {
-			const avatar = await getAvatarSrc(user);
+		const mapUser = async (data: User[]) => {
+			const result: UserItem[] = [];
 
-			newUsers.push({
-				name: user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : (user.email ?? user.id),
-				value: user.id,
-				avatar: avatar,
-			} as UserItem);
-		}
+			for (const user of data ?? []) {
+				const avatar = await getAvatarSrc(user);
 
-		users.value = newUsers;
+				result.push({
+					name: user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : (user.email ?? user.id),
+					value: user.id,
+					avatar: avatar,
+				} as UserItem);
+			}
+
+			return result;
+		};
+
+		users.value = await mapUser(appUserResponse.data?.data as User[]);
+		adminUsers.value = await mapUser(adminUserResponse.data?.data as User[]);
 	} catch (err: any) {
 		unexpectedError(err);
 	} finally {
@@ -278,7 +356,7 @@ async function onClickDeactivate() {
 											class="launch-btn"
 											clickable
 											@click.stop="
-												selectedUserKey = item.value;
+												showedUserInfoKey = item.value;
 												userDrawerActive = true;
 											"
 										/>
@@ -294,7 +372,7 @@ async function onClickDeactivate() {
 								v-if="usersDefaultExceededCount >= 0"
 								v-model="selectedUsers"
 								helper-text="Select user seat(s) to deactivate"
-								:items="users"
+								:items="adminUsers"
 							>
 								<template #item="{ item }">
 									<div class="user-item">
@@ -310,7 +388,7 @@ async function onClickDeactivate() {
 											class="launch-btn"
 											clickable
 											@click.stop="
-												selectedUserKey = item.value;
+												showedUserInfoKey = item.value;
 												userDrawerActive = true;
 											"
 										/>
@@ -352,10 +430,10 @@ async function onClickDeactivate() {
 		</VCard>
 	</VDialog>
 	<DrawerItem
-		v-if="selectedUserKey"
+		v-if="showedUserInfoKey"
 		v-model:active="userDrawerActive"
 		collection="directus_users"
-		:primary-key="selectedUserKey"
+		:primary-key="showedUserInfoKey"
 		disabled
 	/>
 </template>
