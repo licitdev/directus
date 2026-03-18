@@ -86,9 +86,32 @@ const confirmDeactivate = ref(false);
 const selectedCollections = ref<string[]>([]);
 const selectedUsers = ref<string[]>([]);
 
+const collectionLimit = computed(() => {
+	if (collectionsDefaultExceededCount.value <= 0) return 0;
+
+	return collectionsDefaultExceededCount.value - selectedCollections.value.length;
+});
+
+const userLimit = computed(() => {
+	if (usersDefaultExceededCount.value <= 0) return 0;
+
+	return usersDefaultExceededCount.value - selectedUsers.value.length;
+});
+
 const openDeactivatePopup = computed({
 	get: () => props.open,
 	set: (value: boolean) => emit('update:open', value),
+});
+
+const disabledDeactivateButton = computed(() => {
+	const selectedCollectionsCount = selectedCollections.value.length;
+	const selectedUsersCount = selectedUsers.value.length;
+
+	if (selectedCollectionsCount === 0 && selectedUsersCount === 0) {
+		return true;
+	}
+
+	return !!userLimit.value || !!collectionLimit.value;
 });
 
 async function fetchUsers() {
@@ -309,25 +332,51 @@ async function onClickDeactivate() {
 					<div class="list-header">
 						<VIcon name="database" class="header-icon" />
 						<h3 class="title">Data Collections</h3>
-						<VChip x-small class="badge">{{ t('settings_license_deactivation_popup_remaining', { count: 1 }) }}</VChip>
+						<VChip
+							x-small
+							class="badge"
+							:class="{
+								danger: collectionLimit > 0,
+								info: collectionLimit === 0,
+								success: collectionLimit === 0 && selectedCollections.length,
+							}"
+						>
+							<div v-if="collectionLimit === 0 && selectedCollections.length">
+								{{ t('settings_license_deactivation_popup_limit_count_success') }}
+							</div>
+							<div v-else>
+								{{ t('settings_license_deactivation_popup_remaining', { count: collectionLimit }) }}
+							</div>
+						</VChip>
 					</div>
 
 					<VDivider />
 
 					<p class="helper-text">Select collections to deactivate</p>
 
-					<DeactivationSelectList
-						v-if="collectionsDefaultExceededCount >= 0"
-						v-model="selectedCollections"
-						:items="collections"
-					/>
+					<DeactivationSelectList v-model="selectedCollections" :items="collections" />
 				</div>
 
 				<div class="deactivation-popup-list-wrapper">
 					<div class="list-header">
 						<VIcon name="group" class="header-icon" />
 						<h3 class="title">User Seats</h3>
-						<VChip x-small class="badge">{{ t('settings_license_deactivation_popup_remaining', { count: 1 }) }}</VChip>
+						<VChip
+							x-small
+							class="badge"
+							:class="{
+								danger: userLimit > 0,
+								info: userLimit === 0,
+								success: userLimit === 0 && selectedUsers.length,
+							}"
+						>
+							<div v-if="userLimit === 0 && selectedUsers.length">
+								{{ t('settings_license_deactivation_popup_limit_count_success') }}
+							</div>
+							<div v-else>
+								{{ t('settings_license_deactivation_popup_remaining', { count: userLimit }) }}
+							</div>
+						</VChip>
 					</div>
 
 					<VDivider />
@@ -337,7 +386,6 @@ async function onClickDeactivate() {
 							<p class="helper-text">Select user seat(s) to deactivate</p>
 
 							<DeactivationSelectList
-								v-if="usersDefaultExceededCount >= 0"
 								v-model="selectedUsers"
 								helper-text="Select user seat(s) to deactivate"
 								:items="users"
@@ -369,7 +417,6 @@ async function onClickDeactivate() {
 							<p class="helper-text">Select admin seat(s) to deactivate</p>
 
 							<DeactivationSelectList
-								v-if="usersDefaultExceededCount >= 0"
 								v-model="selectedUsers"
 								helper-text="Select user seat(s) to deactivate"
 								:items="adminUsers"
@@ -404,11 +451,7 @@ async function onClickDeactivate() {
 				<VButton secondary @click="openDeactivatePopup = false">
 					{{ t('cancel') }}
 				</VButton>
-				<VButton
-					kind="danger"
-					:disabled="!selectedCollections.length && !selectedUsers.length"
-					@click="onClickDeactivate"
-				>
+				<VButton kind="danger" :disabled="disabledDeactivateButton" @click="onClickDeactivate">
 					{{ t('settings_license_deactivation_popup_confirm') }}
 				</VButton>
 			</div>
@@ -530,9 +573,22 @@ async function onClickDeactivate() {
 	}
 
 	.badge {
-		--v-chip-background-color: var(--theme--danger-background);
-		--v-chip-color: var(--theme--danger);
 		font-weight: 600;
+
+		&.danger {
+			--v-chip-background-color: var(--theme--danger-background);
+			--v-chip-color: var(--theme--danger);
+		}
+
+		&.info {
+			--v-chip-background-color: var(--theme--info-background);
+			--v-chip-color: var(--theme--info);
+		}
+
+		&.success {
+			--v-chip-background-color: var(--theme--success-background);
+			--v-chip-color: var(--theme--success);
+		}
 	}
 }
 
