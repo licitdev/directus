@@ -13,9 +13,21 @@ vi.mock('@directus/env', () => ({
 	useEnv: vi.fn().mockReturnValue({}),
 }));
 
-vi.mock('../../src/database/index', async () => {
-	const { mockDatabase } = await import('../test-utils/database.js');
-	return mockDatabase();
+vi.mock('../../src/database/index', async (importOriginal) => {
+	const actual = await importOriginal<typeof import('../../src/database/index.js')>();
+
+	const fakeKnex = {
+		select: vi.fn().mockReturnThis(),
+		from: vi.fn().mockReturnThis(),
+		first: vi.fn().mockResolvedValue({}),
+	};
+
+	return {
+		...actual,
+		getDatabaseClient: vi.fn().mockReturnValue('postgres'),
+		getSchemaInspector: vi.fn(),
+		getDatabase: vi.fn().mockReturnValue(fakeKnex),
+	};
 });
 
 vi.mock('@directus/schema', async () => {
