@@ -5,6 +5,9 @@ import DeactivationSelectList, { type Item } from './deactivation-select-list.vu
 import api from '@/api';
 import VAvatar from '@/components/v-avatar.vue';
 import VButton from '@/components/v-button.vue';
+import VCardActions from '@/components/v-card-actions.vue';
+import VCardTitle from '@/components/v-card-title.vue';
+import VCard from '@/components/v-card.vue';
 import VChip from '@/components/v-chip.vue';
 import VDialog from '@/components/v-dialog.vue';
 import VDivider from '@/components/v-divider.vue';
@@ -76,11 +79,12 @@ const deactivationNoticeMessage = computed(() => {
 const deactivating = ref(false);
 const selectedUserKey = ref<string | null>(null);
 const userDrawerActive = ref(false);
+const confirmDeactivate = ref(false);
 
 const selectedCollections = ref<string[]>([]);
 const selectedUsers = ref<string[]>([]);
 
-const confirmDeactivate = computed({
+const openDeactivatePopup = computed({
 	get: () => props.open,
 	set: (value: boolean) => emit('update:open', value),
 });
@@ -130,7 +134,7 @@ watch(
 
 async function deactivateLicense() {
 	deactivating.value = true;
-	confirmDeactivate.value = false;
+	openDeactivatePopup.value = false;
 
 	try {
 		await api.post('/server/deactivate-license', {
@@ -203,10 +207,14 @@ async function handleDeactivation() {
 
 	await deactivateLicense();
 }
+
+async function onClickDeactivate() {
+	confirmDeactivate.value = true;
+}
 </script>
 
 <template>
-	<VDialog v-model="confirmDeactivate" keep-behind @esc="confirmDeactivate = false">
+	<VDialog v-model="openDeactivatePopup" keep-behind @esc="openDeactivatePopup = false">
 		<div class="deactivation-popup">
 			<div class="deactivation-popup-header">
 				<h2 class="title">{{ t('settings_license_deactivation_popup_title') }}</h2>
@@ -315,14 +323,33 @@ async function handleDeactivation() {
 			</div>
 
 			<div class="deactivation-popup-actions">
+				<VButton secondary @click="openDeactivatePopup = false">
+					{{ t('cancel') }}
+				</VButton>
+				<VButton
+					kind="danger"
+					:disabled="!selectedCollections.length && !selectedUsers.length"
+					@click="onClickDeactivate"
+				>
+					{{ t('settings_license_deactivation_popup_confirm') }}
+				</VButton>
+			</div>
+		</div>
+	</VDialog>
+	<VDialog v-model="confirmDeactivate" @esc="confirmDeactivate = false">
+		<VCard>
+			<VCardTitle>
+				Are you sure you want to deactivate these collections and user seats? This action can not be undone.
+			</VCardTitle>
+			<VCardActions>
 				<VButton secondary @click="confirmDeactivate = false">
 					{{ t('cancel') }}
 				</VButton>
 				<VButton kind="danger" :loading="deactivating" @click="handleDeactivation">
 					{{ t('settings_license_deactivation_popup_confirm') }}
 				</VButton>
-			</div>
-		</div>
+			</VCardActions>
+		</VCard>
 	</VDialog>
 	<DrawerItem
 		v-if="selectedUserKey"
