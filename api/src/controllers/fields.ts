@@ -6,6 +6,7 @@ import type { Field, RawField, Type } from '@directus/types';
 import { Router } from 'express';
 import Joi from 'joi';
 import { ALIAS_TYPES } from '../constants.js';
+import collectionExcluded from '../middleware/collection-excluded.js';
 import validateCollection from '../middleware/collection-exists.js';
 import { respond } from '../middleware/respond.js';
 import useCollection from '../middleware/use-collection.js';
@@ -86,6 +87,7 @@ const newFieldSchema = Joi.object({
 router.post(
 	'/:collection',
 	validateCollection,
+	collectionExcluded,
 	asyncHandler(async (req, res, next) => {
 		const service = new FieldsService({
 			accountability: req.accountability,
@@ -124,6 +126,7 @@ router.post(
 router.patch(
 	'/:collection',
 	validateCollection,
+	collectionExcluded,
 	asyncHandler(async (req, res, next) => {
 		const service = new FieldsService({
 			accountability: req.accountability,
@@ -187,6 +190,7 @@ const updateSchema = Joi.object({
 router.patch(
 	'/:collection/:field',
 	validateCollection,
+	collectionExcluded,
 	asyncHandler(async (req, res, next) => {
 		const service = new FieldsService({
 			accountability: req.accountability,
@@ -233,6 +237,7 @@ router.patch(
 router.delete(
 	'/:collection/:field',
 	validateCollection,
+	collectionExcluded,
 	asyncHandler(async (req, _res, next) => {
 		const service = new FieldsService({
 			accountability: req.accountability,
