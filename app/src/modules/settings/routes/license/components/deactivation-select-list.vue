@@ -99,26 +99,9 @@ function toggleSelection(value: string) {
 	}
 
 	.selectable-tile {
-		--v-checkbox-label-color: var(--theme--foreground);
 		border: 1px solid var(--theme--border-color);
 		border-radius: var(--theme--border-radius);
 		transition: all 0.2s ease;
-
-		&:hover {
-			background-color: var(--theme--background-subdued);
-			border-color: var(--theme--border-color-accent);
-		}
-
-		&.selected {
-			border-color: var(--theme--primary);
-			background-color: var(--theme--primary-subdued);
-
-			--v-checkbox-label-color: var(--theme--primary);
-		}
-
-		:deep(.v-checkbox-label) {
-			flex: 1;
-		}
 	}
 
 	.grid-2 {
