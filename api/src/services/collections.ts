@@ -3,6 +3,7 @@ import { ForbiddenError, InvalidPayloadError } from '@directus/errors';
 import type { SchemaInspector } from '@directus/schema';
 import { createInspector } from '@directus/schema';
 import { type BaseCollectionMeta, systemCollectionRows } from '@directus/system-data';
+import { isSystemCollection } from '@directus/system-data';
 import type {
 	AbstractServiceOptions,
 	Accountability,
@@ -24,6 +25,7 @@ import type { Helpers } from '../database/helpers/index.js';
 import { getHelpers } from '../database/helpers/index.js';
 import getDatabase, { getSchemaInspector } from '../database/index.js';
 import emitter from '../emitter.js';
+import { getFeature } from '../license/index.js';
 import { fetchAllowedCollections } from '../permissions/modules/fetch-allowed-collections/fetch-allowed-collections.js';
 import { validateAccess } from '../permissions/modules/validate-access/validate-access.js';
 import type { Collection } from '../types/index.js';
@@ -840,5 +842,53 @@ export class CollectionsService {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Verify if creating new collections is within the limit
+	 */
+	async checkAddingLimit(count: number): Promise<boolean> {
+		const allCollections = await this.knex
+			.select('collection')
+			.from('directus_collections')
+			.where({ excluded: false })
+			.orWhereNull('excluded');
+
+		const collectionsCount = allCollections.filter(({ collection }) => !isSystemCollection(collection)).length;
+
+		const collectionFeature = await getFeature<{ limit: number }>('collections');
+		const collectionsLimit = collectionFeature?.limit;
+
+		if (collectionsLimit && collectionsCount + count > collectionsLimit) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Check if a collection is excluded
+	 */
+	async isExcluded(collectionKey: string): Promise<boolean> {
+		const collection = await this.knex
+			.select('excluded')
+			.from('directus_collections')
+			.where({ collection: collectionKey })
+			.first();
+
+		return collection?.excluded === true;
+	}
+
+	/**
+	 * Check if a collection exists
+	 */
+	async isExisted(collectionKey: string): Promise<boolean> {
+		const collection = await this.knex
+			.select('collection')
+			.from('directus_collections')
+			.where({ collection: collectionKey })
+			.first();
+
+		return collection !== undefined;
 	}
 }
