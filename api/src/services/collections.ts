@@ -878,4 +878,17 @@ export class CollectionsService {
 
 		return collection?.excluded === true;
 	}
+
+	/**
+	 * Check if a collection exists
+	 */
+	async isExisted(collectionKey: string): Promise<boolean> {
+		const collection = await this.knex
+			.select('collection')
+			.from('directus_collections')
+			.where({ collection: collectionKey })
+			.first();
+
+		return collection !== undefined;
+	}
 }
