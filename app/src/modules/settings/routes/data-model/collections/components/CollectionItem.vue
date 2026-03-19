@@ -4,7 +4,6 @@ import Draggable from 'vuedraggable';
 import { CollectionTree } from '../collections.vue';
 import CollectionOptions from './collection-options.vue';
 import TransitionExpand from '@/components/transition/expand.vue';
-import VButton from '@/components/v-button.vue';
 import VHighlight from '@/components/v-highlight.vue';
 import VIcon from '@/components/v-icon/v-icon.vue';
 import VListItemIcon from '@/components/v-list-item-icon.vue';
@@ -54,16 +53,13 @@ function onGroupSortChange(collections: Collection[]) {
 			@click.self="!collection.schema ? $emit('editCollection', collection) : null"
 		>
 			<VListItemIcon>
-				<VButton
+				<VIcon
 					v-if="isExcluded"
 					v-tooltip="$t('un_exclude_collection')"
-					icon
-					secondary
-					x-small
+					name="add"
+					clickable
 					@click.stop="$emit('unExclude', collection.collection)"
-				>
-					<VIcon name="add" />
-				</VButton>
+				/>
 				<VIcon v-else-if="!disableDrag" class="drag-handle" name="drag_handle" />
 			</VListItemIcon>
 			<div class="collection-item-detail">
@@ -97,6 +93,7 @@ function onGroupSortChange(collections: Collection[]) {
 				:has-nested-collections="nestedCollections.length > 0"
 				:collection="collection"
 				@collection-toggle="toggleCollapse"
+				@un-exclude="$emit('unExclude', $event)"
 			/>
 		</VListItem>
 
