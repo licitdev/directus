@@ -76,6 +76,7 @@ export type Info = {
 	license_source?: 'env' | 'settings' | null;
 	license?: Record<string, any> | null;
 	license_locked?: boolean;
+	license_status?: 'missing' | 'valid' | 'expired' | 'locked' | 'revoked' | 'suspended' | 'invalid';
 	extensions?: {
 		limit: number | null;
 	};
@@ -175,6 +176,7 @@ export const useServerStore = defineStore('serverStore', () => {
 		info.license_source = serverInfoResponse.data.data?.license_source ?? null;
 		info.license = serverInfoResponse.data.data?.license ?? null;
 		info.license_locked = serverInfoResponse.data.data?.license_locked ?? false;
+		info.license_status = serverInfoResponse.data.data?.license_status ?? 'missing';
 		info.queryLimit = serverInfoResponse.data.data?.queryLimit;
 		info.extensions = serverInfoResponse.data.data?.extensions;
 		info.websocket = serverInfoResponse.data.data?.websocket;
