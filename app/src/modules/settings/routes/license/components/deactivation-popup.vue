@@ -152,7 +152,7 @@ async function archiveUsers(userIds: string[]) {
 	try {
 		const response = await api.patch(
 			'/users',
-			userIds.map((id) => ({ id, status: 'archived' })),
+			userIds.map((id) => ({ id, status: 'deactivated' })),
 		);
 
 		return response?.data?.data;

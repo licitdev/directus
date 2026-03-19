@@ -5,6 +5,7 @@ import {
 	InvalidCredentialsError,
 	InvalidOtpError,
 	ServiceUnavailableError,
+	UserDeactivatedError,
 	UserSuspendedError,
 } from '@directus/errors';
 import type { AbstractServiceOptions, Accountability, LoginResult, SchemaOverview } from '@directus/types';
@@ -361,6 +362,9 @@ export class AuthenticationService {
 			if (record.user_status === 'suspended') {
 				await stall(STALL_TIME, timeStart);
 				throw new UserSuspendedError();
+			} else if (record.user_status === 'deactivated') {
+				await stall(STALL_TIME, timeStart);
+				throw new UserDeactivatedError();
 			} else {
 				await stall(STALL_TIME, timeStart);
 				throw new InvalidCredentialsError();

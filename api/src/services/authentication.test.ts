@@ -1,10 +1,16 @@
-import { InvalidCredentialsError, InvalidOtpError, ServiceUnavailableError } from '@directus/errors';
+import {
+	InvalidCredentialsError,
+	InvalidOtpError,
+	ServiceUnavailableError,
+	UserSuspendedError,
+} from '@directus/errors';
 import { SchemaBuilder } from '@directus/schema-builder';
 import knex, { type Knex } from 'knex';
 import { createTracker, MockClient, type Tracker } from 'knex-mock-client';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, type MockedFunction, vi } from 'vitest';
 import { getAuthProvider } from '../auth.js';
 import emitter from '../emitter.js';
+import { stall } from '../utils/stall.js';
 import { ActivityService } from './activity.js';
 import { AuthenticationService } from './authentication.js';
 import { SettingsService } from './settings.js';
@@ -360,6 +366,72 @@ describe('Integration Tests', () => {
 					refreshToken: 'test-refresh-token',
 					id: mockUser.id,
 				});
+			});
+		});
+
+		describe('refresh', () => {
+			it('should delete session, stall, and throw UserSuspendedError when user is suspended', async () => {
+				const refreshToken = 'old-refresh-token';
+
+				tracker.on.select('directus_sessions').responseOnce([
+					{
+						session_expires: new Date(Date.now() + 60_000),
+						session_next_token: null,
+						user_id: mockUser.id,
+						user_first_name: mockUser.first_name,
+						user_last_name: mockUser.last_name,
+						user_email: mockUser.email,
+						user_password: mockUser.password,
+						user_status: 'suspended',
+						user_provider: mockUser.provider,
+						user_external_identifier: mockUser.external_identifier,
+						user_auth_data: mockUser.auth_data,
+						user_role: mockUser.role,
+						share_id: null,
+						share_start: null,
+						share_end: null,
+					},
+				]);
+
+				tracker.on.delete('directus_sessions').responseOnce(1);
+
+				await expect(service.refresh(refreshToken)).rejects.toBeInstanceOf(UserSuspendedError);
+
+				expect(tracker.history.delete[0]?.sql).toMatch(/directus_sessions/);
+				expect(tracker.history.delete[0]?.bindings).toContain(refreshToken);
+				expect(stall).toHaveBeenCalled();
+			});
+
+			it('should delete session, stall, and throw InvalidCredentialsError when user has other non-active status', async () => {
+				const refreshToken = 'old-refresh-token';
+
+				tracker.on.select('directus_sessions').responseOnce([
+					{
+						session_expires: new Date(Date.now() + 60_000),
+						session_next_token: null,
+						user_id: mockUser.id,
+						user_first_name: mockUser.first_name,
+						user_last_name: mockUser.last_name,
+						user_email: mockUser.email,
+						user_password: mockUser.password,
+						user_status: 'archived',
+						user_provider: mockUser.provider,
+						user_external_identifier: mockUser.external_identifier,
+						user_auth_data: mockUser.auth_data,
+						user_role: mockUser.role,
+						share_id: null,
+						share_start: null,
+						share_end: null,
+					},
+				]);
+
+				tracker.on.delete('directus_sessions').responseOnce(1);
+
+				await expect(service.refresh(refreshToken)).rejects.toBeInstanceOf(InvalidCredentialsError);
+
+				expect(tracker.history.delete[0]?.sql).toMatch(/directus_sessions/);
+				expect(tracker.history.delete[0]?.bindings).toContain(refreshToken);
+				expect(stall).toHaveBeenCalled();
 			});
 		});
 	});

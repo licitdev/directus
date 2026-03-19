@@ -31,6 +31,7 @@ export enum ErrorCode {
 	UnexpectedResponse = 'UNEXPECTED_RESPONSE',
 	UnprocessableContent = 'UNPROCESSABLE_CONTENT',
 	UnsupportedMediaType = 'UNSUPPORTED_MEDIA_TYPE',
+	UserDeactivated = 'USER_DEACTIVATED',
 	UserSuspended = 'USER_SUSPENDED',
 	ValueOutOfRange = 'VALUE_OUT_OF_RANGE',
 	ValueTooLong = 'VALUE_TOO_LONG',

@@ -10,7 +10,7 @@ export interface User {
 	last_name: string | null;
 	email: string | null;
 	password: string | null;
-	status: 'active' | 'suspended' | 'invited';
+	status: 'active' | 'suspended' | 'invited' | 'deactivated';
 	role: string | null;
 	provider: string;
 	external_identifier: string | null;

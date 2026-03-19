@@ -9,9 +9,9 @@ import {
 import type { PrimaryKey, RegisterUserInput } from '@directus/types';
 import express from 'express';
 import Joi from 'joi';
+import { isUndefined } from 'lodash-es';
 import { DEFAULT_AUTH_PROVIDER } from '../constants.js';
 import { getDatabase } from '../database/index.js';
-import { getFeature } from '../license/index.js';
 import checkRateLimit from '../middleware/rate-limiter-registration.js';
 import { respond } from '../middleware/respond.js';
 import useCollection from '../middleware/use-collection.js';
@@ -30,22 +30,17 @@ router.use(useCollection('directus_users'));
 router.post(
 	'/',
 	asyncHandler(async (req, res, next) => {
-		const db = getDatabase();
-		const usersCountResult = await db('directus_users').where('status', 'active').count({ count: '*' }).first();
-		const usersCount = Number(usersCountResult?.['count'] ?? 0);
-		const newUsersCount = Array.isArray(req.body) ? req.body.length : 1;
-
-		const usersFeature = await getFeature<{ limit?: number }>('users');
-		const usersLimit = usersFeature?.limit;
-
-		if (usersLimit && usersCount + newUsersCount > usersLimit) {
-			throw new LimitExceededError({ category: 'users' });
-		}
-
 		const service = new UsersService({
 			accountability: req.accountability,
 			schema: req.schema,
 		});
+
+		const newUsersCount = Array.isArray(req.body) ? req.body.length : 1;
+		const isWithinLimit = await service.checkAddingLimit(newUsersCount);
+
+		if (!isWithinLimit) {
+			throw new LimitExceededError({ category: 'users' });
+		}
 
 		const savedKeys: PrimaryKey[] = [];
 
@@ -205,6 +200,29 @@ router.patch(
 			schema: req.schema,
 		});
 
+		let newAdded = 0;
+		let newExcluded = 0;
+
+		for (const user of req.body) {
+			const isActive = await service.isActive(user.id);
+
+			if (user.status === 'active' && !isActive) {
+				newAdded++;
+			} else if (!isUndefined(user.status) && user.status !== 'active' && isActive) {
+				newExcluded++;
+			}
+		}
+
+		const newCount = newAdded - newExcluded;
+
+		if (newCount > 0) {
+			const isWithinLimit = await service.checkAddingLimit(newCount);
+
+			if (!isWithinLimit) {
+				throw new LimitExceededError({ category: 'users' });
+			}
+		}
+
 		let keys: PrimaryKey[] = [];
 
 		if (Array.isArray(req.body)) {
@@ -239,6 +257,15 @@ router.patch(
 			accountability: req.accountability,
 			schema: req.schema,
 		});
+
+		if (req.body?.status === 'active') {
+			const isActive = await service.isActive(req.params['pk']!);
+			const isWithinLimit = await service.checkAddingLimit(1);
+
+			if (!isActive && !isWithinLimit) {
+				throw new LimitExceededError({ category: 'users' });
+			}
+		}
 
 		const primaryKey = await service.updateOne(req.params['pk']!, req.body);
 
@@ -312,6 +339,12 @@ router.post(
 			accountability: req.accountability,
 			schema: req.schema,
 		});
+
+		const isWithinLimit = await service.checkAddingLimit(1);
+
+		if (!isWithinLimit) {
+			throw new LimitExceededError({ category: 'users' });
+		}
 
 		await service.inviteUser(req.body.email, req.body.role, req.body.invite_url || null);
 		return next();
@@ -475,6 +508,12 @@ router.post(
 		if (error) throw new InvalidPayloadError({ reason: error.message });
 
 		const usersService = new UsersService({ accountability: null, schema: req.schema });
+		const isWithinLimit = await usersService.checkAddingLimit(1);
+
+		if (!isWithinLimit) {
+			throw new LimitExceededError({ category: 'users' });
+		}
+
 		await usersService.registerUser(value);
 
 		return next();
@@ -494,6 +533,12 @@ router.get(
 		}
 
 		const service = new UsersService({ accountability: null, schema: req.schema });
+		const isWithinLimit = await service.checkAddingLimit(1);
+
+		if (!isWithinLimit) {
+			throw new LimitExceededError({ category: 'users' });
+		}
+
 		const id = await service.verifyRegistration(value);
 
 		return res.redirect(`/admin/users/${id}`);

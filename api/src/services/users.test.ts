@@ -5,13 +5,26 @@ import { UserIntegrityCheckFlag } from '@directus/types';
 import knex from 'knex';
 import { createTracker, MockClient } from 'knex-mock-client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import * as license from '../license/index.js';
 import { validateRemainingAdminUsers } from '../permissions/modules/validate-remaining-admin/validate-remaining-admin-users.js';
 import { ItemsService, MailService, UsersService } from './index.js';
 
-vi.mock('../../src/database/index', () => ({
-	default: vi.fn(),
-	getDatabaseClient: vi.fn().mockReturnValue('postgres'),
-}));
+vi.mock('../../src/database/index', async (importOriginal) => {
+	const actual = await importOriginal<typeof import('../../src/database/index.js')>();
+
+	const fakeKnex = {
+		select: vi.fn().mockReturnThis(),
+		from: vi.fn().mockReturnThis(),
+		first: vi.fn().mockResolvedValue({}),
+	};
+
+	return {
+		...actual,
+		getDatabaseClient: vi.fn().mockReturnValue('postgres'),
+		getSchemaInspector: vi.fn(),
+		getDatabase: vi.fn().mockReturnValue(fakeKnex),
+	};
+});
 
 vi.mock('./mail', () => {
 	const MailService = vi.fn();
@@ -437,6 +450,66 @@ describe('Integration Tests', () => {
 
 				expect(superUpdateManySpy.mock.lastCall![0]).toEqual([mockUser.id]);
 				expect(superUpdateManySpy.mock.lastCall![1]).toEqual({ role: 'invite-role' });
+			});
+		});
+
+		describe('checkAddingLimit', () => {
+			it('returns true when there is no users feature limit configured', async () => {
+				tracker.on.select('directus_users').responseOnce([{ count: '3' }]);
+
+				vi.spyOn(license, 'getFeature').mockResolvedValueOnce(undefined as any);
+
+				const result = await service.checkAddingLimit(10);
+
+				expect(result).toBe(true);
+			});
+
+			it('returns true when current active users plus count is within the limit', async () => {
+				tracker.on.select('directus_users').responseOnce([{ count: '2' }]);
+
+				vi.spyOn(license, 'getFeature').mockResolvedValueOnce({ limit: 5 } as any);
+
+				const result = await service.checkAddingLimit(2);
+
+				// 2 existing + 2 new = 4 <= 5
+				expect(result).toBe(true);
+			});
+
+			it('returns false when current active users plus count exceeds the limit', async () => {
+				tracker.on.select('directus_users').responseOnce([{ count: '4' }]);
+
+				vi.spyOn(license, 'getFeature').mockResolvedValueOnce({ limit: 5 } as any);
+
+				const result = await service.checkAddingLimit(2);
+
+				// 4 existing + 2 new = 6 > 5
+				expect(result).toBe(false);
+			});
+		});
+
+		describe('isActive', () => {
+			it('returns true when user status is active', async () => {
+				tracker.on.select('directus_users').responseOnce([{ status: 'active' }]);
+
+				const result = await service.isActive('user-id-active');
+
+				expect(result).toBe(true);
+			});
+
+			it('returns false when user status is not active', async () => {
+				tracker.on.select('directus_users').responseOnce([{ status: 'suspended' }]);
+
+				const result = await service.isActive('user-id-suspended');
+
+				expect(result).toBe(false);
+			});
+
+			it('returns false when user does not exist', async () => {
+				tracker.on.select('directus_users').responseOnce([]);
+
+				const result = await service.isActive('non-existent-id');
+
+				expect(result).toBe(false);
 			});
 		});
 	});
