@@ -61,6 +61,14 @@ export const useCollectionsStore = defineStore('collectionsStore', () => {
 	);
 
 	/**
+	 * Count of collections that count toward usage limit (configured, non-system, non-excluded)
+	 */
+	const collectionsUsageCount = computed(
+		() =>
+			configuredCollections.value.filter((c) => (c.meta as { excluded?: boolean } | null)?.excluded !== true).length,
+	);
+
+	/**
 	 * All non-system collections that are configured and have a corresponding database table
 	 */
 	const databaseCollections = computed(() => allCollections.value.filter((collection) => collection.schema));
@@ -78,6 +86,7 @@ export const useCollectionsStore = defineStore('collectionsStore', () => {
 		allCollections,
 		visibleCollections,
 		configuredCollections,
+		collectionsUsageCount,
 		databaseCollections,
 		systemCollections,
 		crudSafeSystemCollections,

@@ -97,8 +97,12 @@ export class ServerService {
 					logger.warn(error, '[license] Failed to load collections feature entitlements');
 				}
 
-				const allCollections = await this.knex('directus_collections').select('collection');
-				const collectionsCount = allCollections.filter(({ collection }) => !isSystemCollection(collection)).length;
+				const allCollections = await this.knex('directus_collections').select('collection', 'excluded');
+
+				const collectionsCount = allCollections.filter(
+					({ collection, excluded }) => !isSystemCollection(collection) && excluded !== true,
+				).length;
+
 				entitlements.collections.usage = collectionsCount;
 
 				entitlements.collections.defaultExceededCount =

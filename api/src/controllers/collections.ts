@@ -24,8 +24,11 @@ router.post(
 			'concurrentIndexCreation' in req.query && req.query['concurrentIndexCreation'] !== 'false';
 
 		const db = getDatabase();
-		const allCollections = await db('directus_collections').select('collection');
-		const collectionsCount = allCollections.filter(({ collection }) => !isSystemCollection(collection)).length;
+		const allCollections = await db('directus_collections').select('collection', 'excluded');
+
+		const collectionsCount = allCollections.filter(
+			({ collection, excluded }) => !isSystemCollection(collection) && excluded !== true,
+		).length;
 
 		const collectionFeature = await getFeature<{ limit: number }>('collections');
 		const collectionsLimit = collectionFeature?.limit;
