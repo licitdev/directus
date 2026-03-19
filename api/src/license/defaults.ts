@@ -8,6 +8,7 @@ export const DEFAULT_ACTIVITY_FEED_DAYS = 3;
 export const DEFAULT_REVISIONS_DAYS = 3;
 export const DEFAULT_SSO_ENABLED = false;
 export const DEFAULT_CUSTOM_PERMISSIONS_ENABLED = false;
+export const DEFAULT_LLM_ENABLED = false;
 
 export const defaultEntitlements: EntitlementsType = {
 	[Entitlements.COLLECTIONS]: {
@@ -29,5 +30,8 @@ export const defaultEntitlements: EntitlementsType = {
 	},
 	[Entitlements.CUSTOM_PERMISSIONS]: {
 		enabled: DEFAULT_CUSTOM_PERMISSIONS_ENABLED,
+	},
+	[Entitlements.LLM]: {
+		enabled: DEFAULT_LLM_ENABLED,
 	},
 };

@@ -1,5 +1,6 @@
-import { ErrorCode, isDirectusError } from '@directus/errors';
+import { ErrorCode, ForbiddenError, isDirectusError } from '@directus/errors';
 import express from 'express';
+import { getFeature } from '../license/lib/get-feature.js';
 import { handleLicenseApiError } from '../license/lib/handle-api-error.js';
 import { resolvePublicUrl } from '../license/lib/license-context.js';
 import { validate } from '../license/lib/validate.js';
@@ -81,6 +82,28 @@ router.patch(
 			body.license_key = null;
 			body.license_token = null;
 			await clearCacheTokenPayload();
+		}
+
+		const {
+			ai_openai_compatible_name,
+			ai_openai_compatible_base_url,
+			ai_openai_compatible_api_key,
+			ai_openai_compatible_headers,
+			ai_openai_compatible_models,
+		} = body || {};
+
+		if (
+			ai_openai_compatible_name ||
+			ai_openai_compatible_base_url ||
+			ai_openai_compatible_api_key ||
+			ai_openai_compatible_headers ||
+			ai_openai_compatible_models
+		) {
+			const llmFeature = await getFeature<{ enabled?: boolean }>('llm');
+
+			if (!llmFeature?.enabled) {
+				throw new ForbiddenError({ reason: 'LLM feature is not enabled' });
+			}
 		}
 
 		await service.upsertSingleton(body);

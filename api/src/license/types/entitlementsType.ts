@@ -5,6 +5,7 @@ export enum Entitlements {
 	USERS = 'users',
 	SSO = 'sso',
 	CUSTOM_PERMISSIONS = 'custom_permissions',
+	LLM = 'llm',
 }
 
 export type CollectionsEntitlements = {
@@ -33,6 +34,10 @@ export type CustomPermissionsEntitlements = {
 	enabled: boolean;
 };
 
+export type LlmEntitlements = {
+	enabled: boolean;
+};
+
 export type EntitlementsType = {
 	[Entitlements.COLLECTIONS]: CollectionsEntitlements;
 	[Entitlements.ACTIVITY_FEED]: ActivityFeedEntitlements;
@@ -40,4 +45,5 @@ export type EntitlementsType = {
 	[Entitlements.USERS]: UsersEntitlements;
 	[Entitlements.SSO]: SSOEntitlements;
 	[Entitlements.CUSTOM_PERMISSIONS]: CustomPermissionsEntitlements;
+	[Entitlements.LLM]: LlmEntitlements;
 };
