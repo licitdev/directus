@@ -91,7 +91,7 @@ function toggleSelection(value: string) {
 <style scoped lang="scss">
 .deactivation-select-list {
 	.items-grid {
-		--columns: 1;
+		--columns: 4;
 
 		display: grid;
 		gap: 0.75rem 2rem;
@@ -102,24 +102,6 @@ function toggleSelection(value: string) {
 		border: 1px solid var(--theme--border-color);
 		border-radius: var(--theme--border-radius);
 		transition: all 0.2s ease;
-	}
-
-	.grid-2 {
-		@media (width > 640px) {
-			--columns: 2;
-		}
-	}
-
-	.grid-3 {
-		@media (width > 640px) {
-			--columns: 3;
-		}
-	}
-
-	.grid-4 {
-		@media (width > 640px) {
-			--columns: 4;
-		}
 	}
 
 	.v-detail {
