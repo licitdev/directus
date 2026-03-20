@@ -40,26 +40,32 @@ function onGroupSortChange(collections: Collection[]) {
 
 	emit('setNestedSort', updates);
 }
+
+function onListItemClick() {
+	if (isExcluded.value) {
+		emit('unExclude', props.collection.collection);
+		return;
+	}
+
+	if (!props.collection.schema) {
+		emit('editCollection', props.collection);
+	}
+}
 </script>
 
 <template>
 	<div v-show="visibilityTree.visible" class="collection-item">
 		<VListItem
+			v-tooltip="isExcluded ? $t('excluded_click_to_configure') : undefined"
 			block
 			dense
 			clickable
 			:class="{ hidden: collection.meta?.hidden, excluded: isExcluded }"
 			:to="collection.schema && !isExcluded ? `/settings/data-model/${collection.collection}` : undefined"
-			@click.self="!collection.schema ? $emit('editCollection', collection) : null"
+			@click="onListItemClick"
 		>
 			<VListItemIcon>
-				<VIcon
-					v-if="isExcluded"
-					v-tooltip="$t('un_exclude_collection')"
-					name="add"
-					clickable
-					@click.stop="$emit('unExclude', collection.collection)"
-				/>
+				<VIcon v-if="isExcluded" name="add" />
 				<VIcon v-else-if="!disableDrag" class="drag-handle" name="drag_handle" />
 			</VListItemIcon>
 			<div class="collection-item-detail">
