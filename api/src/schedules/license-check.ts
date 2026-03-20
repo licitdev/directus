@@ -31,7 +31,7 @@ export async function handleLicenseCheckJob() {
  */
 export default async function schedule(): Promise<boolean> {
 	const env = useEnv();
-	const cronTime = env['LICENSE_VALIDATE_SCHEDULE'] ? String(env['LICENSE_VALIDATE_SCHEDULE']) : '* * */6 * * *';
+	const cronTime = env['LICENSE_VALIDATE_SCHEDULE'] ? String(env['LICENSE_VALIDATE_SCHEDULE']) : '0 0 */6 * * *';
 
 	scheduleSynchronizedJob('license-check', cronTime, handleLicenseCheckJob);
 
