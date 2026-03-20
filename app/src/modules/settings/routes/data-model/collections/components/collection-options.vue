@@ -29,6 +29,10 @@ type Props = {
 
 const props = withDefaults(defineProps<Props>(), {});
 
+const emit = defineEmits<{
+	unExclude: [collectionKey: string];
+}>();
+
 const collectionsStore = useCollectionsStore();
 const fieldsStore = useFieldsStore();
 const relationsStore = useRelationsStore();
@@ -80,13 +84,26 @@ async function update(updates: DeepPartial<Collection>) {
 </script>
 
 <template>
-	<div v-if="isSystemCollection(collection.collection) === false">
+	<div v-if="isSystemCollection(collection.collection) === false || collection.meta?.excluded">
 		<VMenu placement="left-start" show-arrow>
 			<template #activator="{ toggle }">
 				<VIcon name="more_vert" clickable class="ctx-toggle" @click.prevent="toggle" />
 			</template>
 			<VList>
-				<VListItem v-if="collection.schema" clickable :to="getCollectionRoute(collection.collection)">
+				<VListItem v-if="collection.meta?.excluded" clickable @click="emit('unExclude', collection.collection)">
+					<VListItemIcon>
+						<VIcon name="add" />
+					</VListItemIcon>
+					<VListItemContent>
+						{{ $t('un_exclude_collection') }}
+					</VListItemContent>
+				</VListItem>
+
+				<VListItem
+					v-if="collection.schema && !collection.meta?.excluded"
+					clickable
+					:to="getCollectionRoute(collection.collection)"
+				>
 					<VListItemIcon>
 						<VIcon name="box" />
 					</VListItemIcon>

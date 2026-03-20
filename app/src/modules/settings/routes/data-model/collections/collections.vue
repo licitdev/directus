@@ -28,6 +28,7 @@ import VNotice from '@/components/v-notice.vue';
 import { useCollectionsStore } from '@/stores/collections';
 import { useServerStore } from '@/stores/server';
 import { Collection } from '@/types/collections';
+import { extractErrorCode } from '@/utils/extract-error-code';
 import { translate } from '@/utils/translate-object-values';
 import { unexpectedError } from '@/utils/unexpected-error';
 import { PrivateViewHeaderBarActionButton } from '@/views/private';
@@ -61,10 +62,10 @@ const collectionsWarningLimit = computed(() => {
 	return serverStore.license.entitlements.collections?.warning_limit ?? 0;
 });
 
-const reachedCollectionsLimit = computed(() => collectionsStore.databaseCollections.length >= collectionsLimit.value);
+const reachedCollectionsLimit = computed(() => collectionsStore.collectionsUsageCount >= collectionsLimit.value);
 
 const approachingCollectionsLimit = computed(
-	() => collectionsStore.databaseCollections.length >= collectionsLimit.value - collectionsWarningLimit.value,
+	() => collectionsStore.collectionsUsageCount >= collectionsLimit.value - collectionsWarningLimit.value,
 );
 
 const rootCollections = computed(() => {
@@ -180,9 +181,51 @@ function onCreateCollectionClick() {
 	}
 }
 
+function onDbOnlyClick() {
+	if (reachedCollectionsLimit.value) {
+		collectionLimitModalActive.value = true;
+	}
+}
+
 function onPurchaseAddOnClick() {
 	collectionLimitModalActive.value = false;
 	router.push('/settings/license');
+}
+
+async function onUnExclude(collectionKey: string) {
+	const nonExcludedCount = collectionsStore.configuredCollections.filter(
+		(c) => (c.meta as { excluded?: boolean } | null)?.excluded !== true,
+	).length;
+
+	if (collectionsLimit.value > 0 && nonExcludedCount + 1 > collectionsLimit.value) {
+		collectionLimitModalActive.value = true;
+
+		return;
+	}
+
+	const previousCollections = [...collectionsStore.collections];
+
+	collectionsStore.collections = collectionsStore.collections.map((collection) => {
+		if (collection.collection === collectionKey) {
+			return merge({}, collection, {
+				meta: { ...collection.meta, excluded: false },
+			}) as Collection;
+		}
+
+		return collection;
+	});
+
+	try {
+		await api.patch('/collections', [{ collection: collectionKey, meta: { excluded: false } }]);
+	} catch (error) {
+		collectionsStore.collections = previousCollections;
+
+		if (extractErrorCode(error) === 'LIMIT_EXCEEDED') {
+			collectionLimitModalActive.value = true;
+		} else {
+			unexpectedError(error);
+		}
+	}
 }
 </script>
 
@@ -194,7 +237,7 @@ function onPurchaseAddOnClick() {
 
 		<template #actions:prepend>
 			<span v-if="collectionsLimit > 0" class="collections-usage-header">
-				({{ collectionsStore.databaseCollections.length }}/{{ collectionsLimit }}) {{ $t('collections') }}
+				({{ collectionsStore.collectionsUsageCount }}/{{ collectionsLimit }}) {{ $t('collections') }}
 			</span>
 		</template>
 
@@ -239,7 +282,7 @@ function onPurchaseAddOnClick() {
 				<template #title>
 					{{
 						$t('collections_approaching_limit_notice', {
-							count: collectionsLimit - collectionsStore.databaseCollections.length,
+							count: collectionsLimit - collectionsStore.collectionsUsageCount,
 						})
 					}}
 				</template>
@@ -287,6 +330,7 @@ function onPurchaseAddOnClick() {
 							@edit-collection="editCollection = $event"
 							@set-nested-sort="onSort"
 							@toggle-collapse="toggleCollapse"
+							@un-exclude="onUnExclude"
 						/>
 					</template>
 				</Draggable>
@@ -307,10 +351,18 @@ function onPurchaseAddOnClick() {
 						<VIcon name="add" />
 					</VListItemIcon>
 
-					<RouterLink class="collection-name" :to="`/settings/data-model/${collection.collection}`">
+					<RouterLink
+						v-if="!reachedCollectionsLimit"
+						class="collection-name"
+						:to="`/settings/data-model/${collection.collection}`"
+					>
 						<VIcon class="collection-icon" name="dns" />
 						<span class="collection-name">{{ collection.name }}</span>
 					</RouterLink>
+					<div v-else class="collection-name collection-name-link" @click="onDbOnlyClick">
+						<VIcon class="collection-icon" name="dns" />
+						<span class="collection-name">{{ collection.name }}</span>
+					</div>
 
 					<CollectionOptions :collection="collection" :has-nested-collections="false" />
 				</VListItem>
@@ -328,6 +380,7 @@ function onPurchaseAddOnClick() {
 					:visibility-tree="findVisibilityChild(collection.collection)!"
 					:is-collapsed="false"
 					disable-drag
+					@un-exclude="onUnExclude"
 				/>
 			</VDetail>
 		</div>
@@ -413,6 +466,10 @@ function onPurchaseAddOnClick() {
 .hidden .collection-name {
 	color: var(--theme--foreground-subdued);
 	flex-grow: 1;
+}
+
+.collection-name-link {
+	cursor: pointer;
 }
 
 .draggable-list :deep(.sortable-ghost) {

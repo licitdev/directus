@@ -18,7 +18,9 @@ const props = defineProps<{
 	disableDrag?: boolean;
 }>();
 
-const emit = defineEmits(['setNestedSort', 'editCollection', 'toggleCollapse']);
+const emit = defineEmits(['setNestedSort', 'editCollection', 'toggleCollapse', 'unExclude']);
+
+const isExcluded = computed(() => props.collection.meta?.excluded === true);
 
 const toggleCollapse = () => {
 	emit('toggleCollapse', props.collection.collection);
@@ -46,20 +48,29 @@ function onGroupSortChange(collections: Collection[]) {
 			block
 			dense
 			clickable
-			:class="{ hidden: collection.meta?.hidden }"
-			:to="collection.schema ? `/settings/data-model/${collection.collection}` : undefined"
+			:class="{ hidden: collection.meta?.hidden, excluded: isExcluded }"
+			:to="collection.schema && !isExcluded ? `/settings/data-model/${collection.collection}` : undefined"
 			@click.self="!collection.schema ? $emit('editCollection', collection) : null"
 		>
 			<VListItemIcon>
-				<VIcon v-if="!disableDrag" class="drag-handle" name="drag_handle" />
+				<VIcon
+					v-if="isExcluded"
+					v-tooltip="$t('un_exclude_collection')"
+					name="add"
+					clickable
+					@click.stop="$emit('unExclude', collection.collection)"
+				/>
+				<VIcon v-else-if="!disableDrag" class="drag-handle" name="drag_handle" />
 			</VListItemIcon>
 			<div class="collection-item-detail">
 				<VIcon
 					:color="
-						collection.meta?.hidden ? 'var(--theme--foreground-subdued)' : (collection.color ?? 'var(--theme--primary)')
+						collection.meta?.hidden || isExcluded
+							? 'var(--theme--foreground-subdued)'
+							: (collection.color ?? 'var(--theme--primary)')
 					"
 					class="collection-icon"
-					:name="collection.meta?.hidden ? 'visibility_off' : collection.icon"
+					:name="isExcluded ? 'diamond' : collection.meta?.hidden ? 'visibility_off' : collection.icon"
 				/>
 				<VHighlight
 					ref="collectionName"
@@ -82,6 +93,7 @@ function onGroupSortChange(collections: Collection[]) {
 				:has-nested-collections="nestedCollections.length > 0"
 				:collection="collection"
 				@collection-toggle="toggleCollapse"
+				@un-exclude="$emit('unExclude', $event)"
 			/>
 		</VListItem>
 
@@ -106,6 +118,7 @@ function onGroupSortChange(collections: Collection[]) {
 						@edit-collection="$emit('editCollection', $event)"
 						@set-nested-sort="$emit('setNestedSort', $event)"
 						@toggle-collapse="$emit('toggleCollapse', $event)"
+						@un-exclude="$emit('unExclude', $event)"
 					/>
 				</template>
 			</Draggable>
@@ -137,7 +150,8 @@ function onGroupSortChange(collections: Collection[]) {
 	flex-shrink: 0;
 }
 
-.hidden .collection-name {
+.hidden .collection-name,
+.excluded .collection-name {
 	color: var(--theme--foreground-subdued);
 }
 
