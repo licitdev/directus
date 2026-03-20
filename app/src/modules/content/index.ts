@@ -42,6 +42,19 @@ const checkForSystem: NavigationGuard = (to, from) => {
 	return;
 };
 
+const checkExcluded: NavigationGuard = (to) => {
+	if (!to.params?.collection || typeof to.params.collection !== 'string') return;
+
+	const collectionsStore = useCollectionsStore();
+	const collection = collectionsStore.getCollection(to.params.collection);
+
+	if (collection?.meta?.excluded === true) {
+		return { name: 'content-item-not-found', params: { _: 'not-found' } };
+	}
+
+	return;
+};
+
 const getArchiveValue = (query: LocationQuery) => {
 	if ('all' in query) {
 		return 'all';
@@ -130,14 +143,14 @@ export default defineModule({
 							archive,
 						};
 					},
-					beforeEnter: checkForSystem,
+					beforeEnter: [checkForSystem],
 				},
 				{
 					name: 'content-item',
 					path: ':primaryKey',
 					component: Item,
 					props: true,
-					beforeEnter: checkForSystem,
+					beforeEnter: [checkForSystem, checkExcluded],
 				},
 			],
 		},
