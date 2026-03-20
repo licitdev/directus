@@ -87,7 +87,7 @@ async function update(updates: DeepPartial<Collection>) {
 	<div v-if="isSystemCollection(collection.collection) === false || collection.meta?.excluded">
 		<VMenu placement="left-start" show-arrow>
 			<template #activator="{ toggle }">
-				<VIcon name="more_vert" clickable class="ctx-toggle" @click.prevent="toggle" />
+				<VIcon name="more_vert" clickable class="ctx-toggle" @click.stop.prevent="toggle" />
 			</template>
 			<VList>
 				<VListItem v-if="collection.meta?.excluded" clickable @click="emit('unExclude', collection.collection)">

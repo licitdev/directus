@@ -63,14 +63,7 @@ defineProps<{
 						<VIcon name="add_shopping_cart" class="add-on-purchase-icon" />
 						{{ $t('settings_license_purchase') }}
 					</VButton>
-					<VButton
-						v-else-if="pkg.showUpgradePlan"
-						secondary
-						small
-						class="add-on-upgrade-btn"
-						:href="`https://directus.io/license-request?utm_source=self_hosted&utm_medium=product&utm_campaign=2025_10_kyc&utm_term=${version}&utm_content=settings_addon_upgrade_${pkg.id}`"
-						target="_blank"
-					>
+					<VButton v-else-if="pkg.showUpgradePlan" secondary small class="add-on-upgrade-btn" disabled>
 						<VIcon name="diamond" class="add-on-upgrade-icon" />
 						{{ $t('settings_license_upgrade_plan') }}
 					</VButton>
@@ -187,6 +180,10 @@ defineProps<{
 	flex-shrink: 0;
 
 	--v-button-color: var(--theme--foreground-subdued);
+}
+
+.add-on-upgrade-btn :deep(.button:disabled) {
+	cursor: default;
 }
 
 .add-on-upgrade-icon {
