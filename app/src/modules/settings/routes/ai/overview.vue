@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useCollection } from '@directus/composables';
+import { Field } from '@directus/types';
 import { clone } from 'lodash';
 import { computed, ref, unref } from 'vue';
 import { useRouter } from 'vue-router';
@@ -25,10 +26,50 @@ const router = useRouter();
 const settingsStore = useSettingsStore();
 const serverStore = useServerStore();
 
+const isLlmAllowed = computed(() => {
+	return serverStore.license?.entitlements?.llm?.enabled;
+});
+
 const { fields: allFields } = useCollection('directus_settings');
 
-const aiFields = computed(() =>
-	unref(allFields).filter((field) => field.meta?.group === 'ai_group' || field.field === 'ai_group'),
+const aiFields = computed(
+	() =>
+		unref(allFields)
+			.filter((field) => field.meta?.group === 'ai_group' || field.field === 'ai_group')
+			.map((field) => {
+				if (
+					[
+						'ai_openai_compatible_name',
+						'ai_openai_compatible_base_url',
+						'ai_openai_compatible_api_key',
+						'ai_openai_compatible_headers',
+						'ai_openai_compatible_models',
+					].includes(field.field)
+				) {
+					return {
+						...field,
+						meta: {
+							...field.meta,
+							readonly: !isLlmAllowed.value,
+						},
+					};
+				}
+
+				if (field.field === 'ai_openai_compatible_divider') {
+					return {
+						...field,
+						meta: {
+							...field.meta,
+							options: {
+								...field.meta?.options,
+								...(!isLlmAllowed.value && { icon: 'diamond' }),
+							},
+						},
+					};
+				}
+
+				return field;
+			}) as Field[],
 );
 
 const mcpFields = computed(() =>

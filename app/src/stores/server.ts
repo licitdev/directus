@@ -94,6 +94,7 @@ export type License = {
 		revisions?: { limit?: number };
 		sso?: { enabled?: boolean };
 		custom_permissions?: { enabled?: boolean };
+		llm?: { enabled?: boolean };
 	};
 };
 

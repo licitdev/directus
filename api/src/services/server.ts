@@ -34,6 +34,7 @@ type LicenseData = {
 		revisions: { limit: number };
 		sso: { enabled: boolean };
 		custom_permissions: { enabled: boolean };
+		llm: { enabled: boolean };
 	};
 };
 
@@ -77,6 +78,9 @@ export class ServerService {
 				},
 				custom_permissions: {
 					enabled: defaultEntitlements.custom_permissions.enabled,
+				},
+				llm: {
+					enabled: defaultEntitlements.llm.enabled,
 				},
 			};
 
@@ -182,6 +186,16 @@ export class ServerService {
 				}
 			} catch (error) {
 				logger.warn(error, '[license] Failed to load custom permissions feature entitlements');
+			}
+
+			try {
+				const llmFeature = await getFeature<{ enabled?: boolean }>('llm');
+
+				if (llmFeature?.enabled != null) {
+					entitlements.llm.enabled = llmFeature.enabled;
+				}
+			} catch (error) {
+				logger.warn(error, '[license] Failed to load llm feature entitlements');
 			}
 
 			return {
