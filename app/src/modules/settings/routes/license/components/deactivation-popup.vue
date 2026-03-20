@@ -235,7 +235,6 @@ watch(
 
 async function deactivateLicense() {
 	deactivating.value = true;
-	openDeactivatePopup.value = false;
 
 	try {
 		await api.post('/server/deactivate-license', {
@@ -250,6 +249,7 @@ async function deactivateLicense() {
 	} finally {
 		deactivating.value = false;
 		confirmDeactivate.value = false;
+		openDeactivatePopup.value = false;
 	}
 }
 
@@ -459,10 +459,10 @@ async function onClickDeactivate() {
 	<VDialog v-model="confirmDeactivate" @esc="confirmDeactivate = false">
 		<VCard>
 			<VCardTitle>
-				Are you sure you want to deactivate these collections and user seats? This action can not be undone.
+				{{ t('settings_license_deactivate_confirm') }}
 			</VCardTitle>
 			<VCardActions>
-				<VButton secondary @click="confirmDeactivate = false">
+				<VButton secondary :disabled="deactivating" @click="confirmDeactivate = false">
 					{{ t('cancel') }}
 				</VButton>
 				<VButton kind="danger" :loading="deactivating" @click="handleDeactivation">
