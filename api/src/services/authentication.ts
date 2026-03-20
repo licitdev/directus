@@ -124,7 +124,12 @@ export class AuthenticationService {
 		);
 
 		if (user?.status !== 'active' || user?.provider !== providerName) {
-			const loginError = new InvalidCredentialsError();
+			let loginError = new InvalidCredentialsError();
+
+			if (user?.status === 'deactivated') {
+				loginError = new UserDeactivatedError();
+			}
+
 			emitStatus('fail', updatedPayload, user, loginError);
 			await stall(STALL_TIME, timeStart);
 			throw loginError;

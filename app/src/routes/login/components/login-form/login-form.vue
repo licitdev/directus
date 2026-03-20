@@ -52,6 +52,10 @@ const errorFormatted = computed(() => {
 		return translateAPIError('INVALID_CREDENTIALS');
 	}
 
+	if (error.value === 'USER_DEACTIVATED') {
+		return translateAPIError('USER_DEACTIVATED');
+	}
+
 	if (error.value) {
 		return translateAPIError(error.value);
 	}
