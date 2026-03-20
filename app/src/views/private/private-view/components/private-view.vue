@@ -110,6 +110,11 @@ const deactivationPopupTitle = computed(() => {
 
 	<LicenseBanner v-model="showLicenseBanner" />
 	<LicenseLockedOverlay />
-	<LicenseLockDialog :open="isLicenseDeactivated && !userStore.isAdmin" />
-	<DeactivationPopup :open="isLicenseDeactivated && userStore.isAdmin" is-suspended :title="deactivationPopupTitle" />
+	<LicenseLockDialog v-if="!userStore.isAdmin" :open="isLicenseDeactivated" />
+	<DeactivationPopup
+		v-if="userStore.isAdmin"
+		:open="isLicenseDeactivated"
+		is-suspended
+		:title="deactivationPopupTitle"
+	/>
 </template>

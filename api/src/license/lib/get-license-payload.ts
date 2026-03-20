@@ -27,50 +27,6 @@ export async function getLicensePayload(allowLocked = false): Promise<Record<str
 }
 
 async function fetchLicensePayloadFromSource(): Promise<Record<string, unknown> | undefined> {
-	// return {
-	// 	project_id: 'c97e19fb-008d-477b-837f-ab99bac360a4',
-	// 	public_url: '/',
-	// 	metadata: {
-	// 		license: {
-	// 			status: 'SUSPENDED',
-	// 			expiry: null,
-	// 			name: 'Linh Test License',
-	// 			grace_period: 604800000,
-	// 		},
-	// 		policy: {
-	// 			name: 'Feature Gating Policy',
-	// 		},
-	// 		entitlements: [
-	// 			{
-	// 				name: 'custom_permissions',
-	// 				enabled: true,
-	// 			},
-	// 			{
-	// 				name: 'sso',
-	// 				enabled: true,
-	// 			},
-	// 			{
-	// 				name: 'revisions',
-	// 				limit: 10,
-	// 			},
-	// 			{
-	// 				name: 'activity_feed',
-	// 				limit: 10,
-	// 			},
-	// 			{
-	// 				name: 'users',
-	// 				limit: 10,
-	// 			},
-	// 			{
-	// 				name: 'collections',
-	// 				limit: 10,
-	// 			},
-	// 		],
-	// 	},
-	// 	iat: 1773918512,
-	// 	exp: 1774177712,
-	// };
-
 	const database = getDatabase();
 	const settings = await database.select('license_token', 'project_id').from('directus_settings').first();
 
