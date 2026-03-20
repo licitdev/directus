@@ -63,6 +63,14 @@ const errorFormatted = computed(() => {
 	return null;
 });
 
+const errorType = computed(() => {
+	if (error.value === 'USER_DEACTIVATED') {
+		return 'danger';
+	}
+
+	return 'warning';
+});
+
 async function onSubmit() {
 	// Simple RegEx, not for validation, but to prevent unnecessary login requests when the value is clearly invalid
 
@@ -123,7 +131,7 @@ async function onSubmit() {
 			/>
 		</TransitionExpand>
 
-		<VNotice v-if="error" type="warning">
+		<VNotice v-if="error" :type="errorType">
 			{{ errorFormatted }}
 		</VNotice>
 		<div class="buttons">
