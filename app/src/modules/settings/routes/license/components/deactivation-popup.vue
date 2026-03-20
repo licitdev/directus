@@ -249,6 +249,7 @@ async function deactivateLicense() {
 		unexpectedError(err);
 	} finally {
 		deactivating.value = false;
+		confirmDeactivate.value = false;
 	}
 }
 
@@ -291,9 +292,8 @@ async function handleDeactivation() {
 
 		if (!response) {
 			notify({ title: t('error_archiving_users') });
+			return;
 		}
-
-		return;
 	}
 
 	if (selectedCollections.value.length > 0) {
@@ -301,9 +301,8 @@ async function handleDeactivation() {
 
 		if (!response) {
 			notify({ title: t('error_excluding_collections') });
+			return;
 		}
-
-		return;
 	}
 
 	await deactivateLicense();
