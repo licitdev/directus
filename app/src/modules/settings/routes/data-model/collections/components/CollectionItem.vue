@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { orderBy } from 'lodash';
 import { computed } from 'vue';
 import Draggable from 'vuedraggable';
 import { CollectionTree } from '../collections.vue';
@@ -26,9 +27,15 @@ const toggleCollapse = () => {
 	emit('toggleCollapse', props.collection.collection);
 };
 
-const nestedCollections = computed(() =>
-	props.collections.filter((collection) => collection.meta?.group === props.collection.collection),
-);
+const nestedCollections = computed(() => {
+	const nested = props.collections.filter((collection) => collection.meta?.group === props.collection.collection);
+
+	return orderBy(nested, [
+		(c) => ((c.meta as { excluded?: boolean } | null)?.excluded === true ? 1 : 0),
+		'meta.sort',
+		'collection',
+	]);
+});
 
 function onGroupSortChange(collections: Collection[]) {
 	const updates = collections.map((collection) => ({

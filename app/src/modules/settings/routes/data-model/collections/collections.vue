@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { saveAs } from 'file-saver';
-import { merge } from 'lodash';
+import { merge, orderBy } from 'lodash';
 import { computed, ref } from 'vue';
 import { RouterLink, RouterView, useRouter } from 'vue-router';
 import Draggable from 'vuedraggable';
@@ -69,7 +69,9 @@ const approachingCollectionsLimit = computed(
 );
 
 const rootCollections = computed(() => {
-	return collections.value.filter((collection) => !collection.meta?.group);
+	const roots = collections.value.filter((collection) => !collection.meta?.group);
+
+	return orderBy(roots, [(c) => (c.meta?.excluded === true ? 1 : 0), 'meta.sort', 'collection']);
 });
 
 export type CollectionTree = {
