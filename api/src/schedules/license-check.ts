@@ -1,8 +1,8 @@
 import { useEnv } from '@directus/env';
-import { CronJob } from 'cron';
-import { get } from 'lodash-es';
+import { get, random } from 'lodash-es';
 import { getKey, getLicensePayload, validateAndSave } from '../license/index.js';
 import { setTTLCacheTokenPayload } from '../utils/cache-token-payload.js';
+import { scheduleSynchronizedJob } from '../utils/schedule.js';
 
 export async function handleLicenseCheckJob() {
 	const licenseKey = await getKey();
@@ -31,13 +31,12 @@ export async function handleLicenseCheckJob() {
  */
 export default async function schedule(): Promise<boolean> {
 	const env = useEnv();
-	const cronTime = env['LICENSE_VALIDATE_SCHEDULE'] ? String(env['LICENSE_VALIDATE_SCHEDULE']) : '* * */6 * * *';
 
-	CronJob.from({
-		cronTime,
-		onTick: handleLicenseCheckJob,
-		start: true,
-	});
+	const cronTime = env['LICENSE_VALIDATE_SCHEDULE']
+		? String(env['LICENSE_VALIDATE_SCHEDULE'])
+		: `${random(59)} ${random(59)} */6 * * *`;
+
+	scheduleSynchronizedJob('license-check', cronTime, handleLicenseCheckJob);
 
 	return true;
 }
