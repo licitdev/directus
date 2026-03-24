@@ -2,10 +2,12 @@
 import { useI18n } from 'vue-i18n';
 import VButton from '@/components/v-button.vue';
 import VIcon from '@/components/v-icon/v-icon.vue';
+import VNotice from '@/components/v-notice.vue';
 
 defineProps<{
 	deactivating: boolean;
 	onConfirmDeactivate: () => void;
+	isLicenseFromEnv: boolean;
 }>();
 
 const { t } = useI18n();
@@ -17,9 +19,20 @@ const { t } = useI18n();
 			<VIcon name="emergency_home" class="danger-zone-icon" />
 			<h3 class="danger-zone-title">{{ t('settings_license_danger_zone') }}</h3>
 		</div>
+
 		<div class="danger-zone-separator" />
+
+		<div v-if="isLicenseFromEnv" class="danger-zone-banner">
+			<VNotice type="info">{{ t('settings_license_env_managed') }}</VNotice>
+		</div>
+
 		<div class="danger-zone-content">
-			<VButton kind="danger" :loading="deactivating" :disabled="deactivating" @click="onConfirmDeactivate">
+			<VButton
+				kind="danger"
+				:loading="deactivating"
+				:disabled="isLicenseFromEnv || deactivating"
+				@click="onConfirmDeactivate"
+			>
 				{{ t('settings_license_deactivate') }}
 			</VButton>
 		</div>
@@ -58,8 +71,11 @@ const { t } = useI18n();
 }
 
 .danger-zone-content {
-	padding-block-start: 20px;
 	display: grid;
 	gap: 16px;
+}
+
+.danger-zone-banner {
+	margin-block: 2.25rem;
 }
 </style>

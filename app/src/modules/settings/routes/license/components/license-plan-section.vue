@@ -32,7 +32,7 @@ const { t } = useI18n();
 				</div>
 			</div>
 			<div class="plan-actions">
-				<VButton v-if="canManageLicense" secondary small class="plan-action-btn" @click="onOpenDrawer">
+				<VButton :disabled="!canManageLicense" secondary small class="plan-action-btn" @click="onOpenDrawer">
 					{{ addLicenseKeyLabel }}
 				</VButton>
 				<VButton

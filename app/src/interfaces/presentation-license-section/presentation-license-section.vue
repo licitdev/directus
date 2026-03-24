@@ -67,6 +67,7 @@ const onConfirmDeactivate = inject<() => void>('license:onConfirmDeactivate', ()
 			v-else-if="section === 'danger' && value"
 			:deactivating="value.deactivating ?? false"
 			:on-confirm-deactivate="onConfirmDeactivate"
+			:is-license-from-env="value.isLicenseFromEnv ?? false"
 		/>
 	</div>
 </template>

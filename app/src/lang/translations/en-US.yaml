@@ -54,7 +54,7 @@ license_key_management_notice: Have a license key? Enter it below to activate yo
 settings_license_no_key: No license key configured
 settings_license_value_stored: Value Securely Stored
 settings_license_edit: Edit License Key
-settings_license_env_managed: Managed via environment variable
+settings_license_env_managed: You will need to manage your license key through your ENV.
 settings_license_add: Add License Key
 settings_license_manage: Manage License
 settings_license_upgrade_plan: Upgrade Plan

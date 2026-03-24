@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { I18nT, useI18n } from 'vue-i18n';
 import VIcon from '@/components/v-icon/v-icon.vue';
-import VNotice from '@/components/v-notice.vue';
 
 defineProps<{
 	showExpiringSoonWarning: boolean;
@@ -57,10 +56,6 @@ const { t } = useI18n();
 				</div>
 				<span class="banner-text">{{ t('license_project_locked_notice') }}</span>
 			</div>
-		</div>
-
-		<div v-if="licenseSource === 'env'" class="env-managed-banner">
-			<VNotice type="info">{{ t('settings_license_env_managed') }}</VNotice>
 		</div>
 	</div>
 </template>
@@ -131,10 +126,5 @@ const { t } = useI18n();
 
 .license-grace-period-banner .banner-text strong {
 	font-weight: 600;
-}
-
-.env-managed-banner {
-	inline-size: 100%;
-	margin-block-end: 24px;
 }
 </style>

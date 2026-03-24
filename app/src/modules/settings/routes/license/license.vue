@@ -111,8 +111,6 @@ const showExpiredBeyondGraceNotice = computed(
 
 const drawerPayload = computed(() => (savedSuccessfully.value ? info.value.license : null));
 
-const showDeactivateSection = computed(() => licenseSource.value === 'settings' && info.value.license != null);
-
 const canManageLicense = computed(() => licenseSource.value !== 'env');
 
 const addLicenseKeyLabel = computed(() =>
@@ -240,65 +238,58 @@ provide('license:onConfirmDeactivate', () => {
 	confirmDeactivate.value = true;
 });
 
-const licenseFormFields = computed<DeepPartial<Field>[]>(() => {
-	const items: DeepPartial<Field>[] = [
-		{
-			field: 'license_plan_section',
-			name: '',
-			type: 'alias',
-			meta: {
-				interface: 'presentation-license-section',
-				options: { section: 'plan' },
-				width: 'full',
-			},
+const licenseFormFields: DeepPartial<Field[]> = [
+	{
+		field: 'license_plan_section',
+		name: '',
+		type: 'alias',
+		meta: {
+			interface: 'presentation-license-section',
+			options: { section: 'plan' },
+			width: 'full',
 		},
-		{
-			field: 'license_banners_section',
-			name: '',
-			type: 'alias',
-			meta: {
-				interface: 'presentation-license-section',
-				options: { section: 'banners' },
-				width: 'full',
-			},
+	},
+	{
+		field: 'license_banners_section',
+		name: '',
+		type: 'alias',
+		meta: {
+			interface: 'presentation-license-section',
+			options: { section: 'banners' },
+			width: 'full',
 		},
-		{
-			field: 'license_usage_section',
-			name: '',
-			type: 'alias',
-			meta: {
-				interface: 'presentation-license-section',
-				options: { section: 'usage' },
-				width: 'full',
-			},
+	},
+	{
+		field: 'license_usage_section',
+		name: '',
+		type: 'alias',
+		meta: {
+			interface: 'presentation-license-section',
+			options: { section: 'usage' },
+			width: 'full',
 		},
-		{
-			field: 'license_addons_section',
-			name: '',
-			type: 'alias',
-			meta: {
-				interface: 'presentation-license-section',
-				options: { section: 'addons' },
-				width: 'full',
-			},
+	},
+	{
+		field: 'license_addons_section',
+		name: '',
+		type: 'alias',
+		meta: {
+			interface: 'presentation-license-section',
+			options: { section: 'addons' },
+			width: 'full',
 		},
-	];
-
-	if (showDeactivateSection.value) {
-		items.push({
-			field: 'license_danger_section',
-			name: '',
-			type: 'alias',
-			meta: {
-				interface: 'presentation-license-section',
-				options: { section: 'danger' },
-				width: 'full',
-			},
-		});
-	}
-
-	return items;
-});
+	},
+	{
+		field: 'license_danger_section',
+		name: '',
+		type: 'alias',
+		meta: {
+			interface: 'presentation-license-section',
+			options: { section: 'danger' },
+			width: 'full',
+		},
+	},
+];
 
 const licenseFormValues = computed(() => ({
 	license_plan_section: {
@@ -335,6 +326,7 @@ const licenseFormValues = computed(() => ({
 	},
 	license_danger_section: {
 		deactivating: deactivating.value,
+		isLicenseFromEnv: licenseSource.value === 'env',
 	},
 }));
 
@@ -502,22 +494,6 @@ const licenseFormEdits = ref<Record<string, any> | null>(null);
 
 .drawer-info-banner {
 	margin-block-end: 0;
-}
-
-.drawer-info-row {
-	display: flex;
-	align-items: flex-start;
-	gap: 12px;
-	font-size: 14px;
-	line-height: 22px;
-	color: var(--theme--foreground);
-}
-
-.drawer-info-icon {
-	--v-icon-color: var(--theme--primary);
-	--v-icon-size: 20px;
-	flex-shrink: 0;
-	margin-block-start: 1px;
 }
 
 .drawer-info-banner a {
