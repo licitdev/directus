@@ -1,7 +1,7 @@
 import { ErrorCode, isDirectusError, LimitExceededError } from '@directus/errors';
 import type { Item } from '@directus/types';
 import { Router } from 'express';
-import { isNil } from 'lodash-es';
+import { isNil, isNull } from 'lodash-es';
 import { respond } from '../middleware/respond.js';
 import { validateBatch } from '../middleware/validate-batch.js';
 import { CollectionsService } from '../services/collections.js';
@@ -114,12 +114,13 @@ router.patch(
 			}
 
 			const isCurrentlyExcluded = await collectionsService.isExcluded(collection.collection!);
+			const excludedValue = collection.meta?.excluded;
 
-			if (!collection.meta?.excluded && isCurrentlyExcluded) {
+			if ((isNull(excludedValue) || excludedValue === false) && isCurrentlyExcluded) {
 				newAdded++;
 			}
 
-			if (collection.meta?.excluded && !isCurrentlyExcluded) {
+			if (excludedValue && !isCurrentlyExcluded) {
 				newExcluded++;
 			}
 		}
@@ -171,7 +172,7 @@ router.patch(
 		let checkLimitForExcludedCollection = false;
 		const excluded = meta?.excluded;
 
-		if (!excluded) {
+		if (isNull(excluded) || excluded === false) {
 			const isCurrentlyExcluded = await collectionsService.isExcluded(req.params['collection']!);
 			checkLimitForExcludedCollection = !!isCurrentlyExcluded;
 		}

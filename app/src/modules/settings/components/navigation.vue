@@ -58,7 +58,7 @@ const links = computed<Link[][]>(() => [
 			to: `/settings/project`,
 		},
 		{
-			icon: 'policy',
+			icon: 'diamond',
 			name: t('settings_license'),
 			to: `/settings/license`,
 		},

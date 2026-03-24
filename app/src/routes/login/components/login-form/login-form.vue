@@ -52,11 +52,23 @@ const errorFormatted = computed(() => {
 		return translateAPIError('INVALID_CREDENTIALS');
 	}
 
+	if (error.value === 'USER_DEACTIVATED') {
+		return translateAPIError('USER_DEACTIVATED');
+	}
+
 	if (error.value) {
 		return translateAPIError(error.value);
 	}
 
 	return null;
+});
+
+const errorType = computed(() => {
+	if (error.value === 'USER_DEACTIVATED') {
+		return 'danger';
+	}
+
+	return 'warning';
 });
 
 async function onSubmit() {
@@ -119,7 +131,7 @@ async function onSubmit() {
 			/>
 		</TransitionExpand>
 
-		<VNotice v-if="error" type="warning">
+		<VNotice v-if="error" :type="errorType">
 			{{ errorFormatted }}
 		</VNotice>
 		<div class="buttons">

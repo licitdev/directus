@@ -132,11 +132,7 @@ const usersUsage = computed(() => license.value?.entitlements?.users?.usage ?? 0
 const ssoEnabled = computed(() => license.value?.entitlements?.sso?.enabled ?? false);
 
 const customPermissionsEnabled = computed(() => license.value?.entitlements?.custom_permissions?.enabled ?? false);
-
-const customLlmEnabled = computed(
-	() =>
-		(license.value?.entitlements as Record<string, { enabled?: boolean }> | undefined)?.custom_llm?.enabled ?? false,
-);
+const customLlmEnabled = computed(() => license.value?.entitlements?.llm?.enabled ?? false);
 
 const activePayload = computed(() => drawerPayload.value ?? previewPayload.value);
 const expiryFormatted = computed(() => activePayload.value?.expiry?.slice?.(0, 10) ?? null);
@@ -217,18 +213,22 @@ function onLicenseKeyInput(v: string) {
 	};
 }
 
-const ADDON_ICON_MAP: Record<string, string> = {
-	sso: 'cloud_lock',
-	user_seats: 'group',
-	collections: 'inventory_2',
-};
-
-function mapAddonToDisplay(item: { id: string; name: string; description: string; status: string; action: string }) {
+function mapAddonToDisplay(item: {
+	id: string;
+	name: string;
+	description: string;
+	status: string;
+	action: string;
+	icon?: string;
+	disabled?: boolean;
+}) {
 	return {
 		...item,
-		icon: ADDON_ICON_MAP[item.id] ?? 'extension',
-		showPurchase: item.action === 'purchase',
+		icon: item.icon ?? 'extension',
+		disabled: item.disabled ?? false,
+		showPurchase: !(item.disabled ?? false) && item.action === 'purchase',
 		showInfo: item.action === 'info',
+		showUpgradePlan: item.disabled ?? false,
 	};
 }
 

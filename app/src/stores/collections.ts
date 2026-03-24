@@ -50,9 +50,22 @@ export const useCollectionsStore = defineStore('collectionsStore', () => {
 
 	/**
 	 * All non-system collections that are configured and visible (not hidden)
+	 * Excluded collections are always hidden from the content sidebar
 	 */
 	const visibleCollections = computed(() =>
-		configuredCollections.value.filter((collection) => collection.meta?.hidden !== true),
+		configuredCollections.value.filter((collection) => {
+			if (collection.meta?.hidden === true) return false;
+			if ((collection.meta as { excluded?: boolean } | null)?.excluded === true) return false;
+			return true;
+		}),
+	);
+
+	/**
+	 * Count of collections that count toward usage limit (configured, non-system, non-excluded)
+	 */
+	const collectionsUsageCount = computed(
+		() =>
+			configuredCollections.value.filter((c) => (c.meta as { excluded?: boolean } | null)?.excluded !== true).length,
 	);
 
 	/**
@@ -73,6 +86,7 @@ export const useCollectionsStore = defineStore('collectionsStore', () => {
 		allCollections,
 		visibleCollections,
 		configuredCollections,
+		collectionsUsageCount,
 		databaseCollections,
 		systemCollections,
 		crudSafeSystemCollections,

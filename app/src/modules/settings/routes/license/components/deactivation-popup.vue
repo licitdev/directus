@@ -1,10 +1,15 @@
 <script setup lang="ts">
+import { User } from '@directus/types';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import DeactivationSelectList, { type Item } from './deactivation-select-list.vue';
 import api from '@/api';
 import VAvatar from '@/components/v-avatar.vue';
 import VButton from '@/components/v-button.vue';
+import VCardActions from '@/components/v-card-actions.vue';
+import VCardTitle from '@/components/v-card-title.vue';
+import VCard from '@/components/v-card.vue';
+import VChip from '@/components/v-chip.vue';
 import VDialog from '@/components/v-dialog.vue';
 import VDivider from '@/components/v-divider.vue';
 import VIcon from '@/components/v-icon/v-icon.vue';
@@ -29,6 +34,7 @@ const emit = defineEmits<{
 }>();
 
 const users = ref<UserItem[]>([]);
+const adminUsers = ref<UserItem[]>([]);
 const usersLoading = ref(false);
 
 const { t } = useI18n();
@@ -73,44 +79,144 @@ const deactivationNoticeMessage = computed(() => {
 });
 
 const deactivating = ref(false);
-const selectedUserKey = ref<string | null>(null);
+const showedUserInfoKey = ref<string | null>(null);
 const userDrawerActive = ref(false);
+const confirmDeactivate = ref(false);
 
 const selectedCollections = ref<string[]>([]);
 const selectedUsers = ref<string[]>([]);
 
-const confirmDeactivate = computed({
+const collectionLimit = computed(() => {
+	if (collectionsDefaultExceededCount.value <= 0) return 0;
+
+	return collectionsDefaultExceededCount.value - selectedCollections.value.length;
+});
+
+const userLimit = computed(() => {
+	if (usersDefaultExceededCount.value <= 0) return 0;
+
+	return usersDefaultExceededCount.value - selectedUsers.value.length;
+});
+
+const openDeactivatePopup = computed({
 	get: () => props.open,
 	set: (value: boolean) => emit('update:open', value),
+});
+
+const disabledDeactivateButton = computed(() => {
+	const selectedCollectionsCount = selectedCollections.value.length;
+	const selectedUsersCount = selectedUsers.value.length;
+
+	if (selectedCollectionsCount === 0 && selectedUsersCount === 0) {
+		return true;
+	}
+
+	return !!userLimit.value || !!collectionLimit.value;
 });
 
 async function fetchUsers() {
 	usersLoading.value = true;
 
-	async function getAvatarSrc(item: { avatar: string }) {
+	async function getAvatarSrc(item: User) {
 		if (!item.avatar) return;
 
-		return getAssetUrl(item.avatar, {
-			imageKey: 'system-small-contain',
-		});
+		if (typeof item.avatar === 'string') {
+			return getAssetUrl(item.avatar, {
+				imageKey: 'system-small-contain',
+			});
+		}
+
+		return '';
 	}
 
 	try {
-		const response = await api.get('/users');
+		const appUserResponse = await api.get('/users', {
+			params: {
+				filter: {
+					_and: [
+						{
+							status: 'active',
+						},
+						{
+							_or: [
+								{
+									policies: {
+										policy: {
+											app_access: true,
+											admin_access: false,
+										},
+									},
+								},
+								{
+									role: {
+										policies: {
+											policy: {
+												app_access: true,
+												admin_access: false,
+											},
+										},
+									},
+								},
+							],
+						},
+					],
+				},
+				fields: ['*', 'policies.policy.*', 'role.policies.policy.*'],
+			},
+		});
 
-		const newUsers = [];
+		const adminUserResponse = await api.get('/users', {
+			params: {
+				filter: {
+					_and: [
+						{
+							status: 'active',
+						},
+						{
+							_or: [
+								{
+									policies: {
+										policy: {
+											admin_access: true,
+											app_access: true,
+										},
+									},
+								},
+								{
+									role: {
+										policies: {
+											policy: {
+												admin_access: true,
+												app_access: true,
+											},
+										},
+									},
+								},
+							],
+						},
+					],
+				},
+			},
+		});
 
-		for (const user of response.data.data ?? []) {
-			const avatar = await getAvatarSrc(user);
+		const mapUser = async (data: User[]) => {
+			const result: UserItem[] = [];
 
-			newUsers.push({
-				name: user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : (user.email ?? user.id),
-				value: user.id,
-				avatar: avatar,
-			} as UserItem);
-		}
+			for (const user of data ?? []) {
+				const avatar = await getAvatarSrc(user);
 
-		users.value = newUsers;
+				result.push({
+					name: user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : (user.email ?? user.id),
+					value: user.id,
+					avatar: avatar,
+				} as UserItem);
+			}
+
+			return result;
+		};
+
+		users.value = await mapUser(appUserResponse.data?.data as User[]);
+		adminUsers.value = await mapUser(adminUserResponse.data?.data as User[]);
 	} catch (err: any) {
 		unexpectedError(err);
 	} finally {
@@ -129,7 +235,6 @@ watch(
 
 async function deactivateLicense() {
 	deactivating.value = true;
-	confirmDeactivate.value = false;
 
 	try {
 		await api.post('/server/deactivate-license', {
@@ -143,6 +248,8 @@ async function deactivateLicense() {
 		unexpectedError(err);
 	} finally {
 		deactivating.value = false;
+		confirmDeactivate.value = false;
+		openDeactivatePopup.value = false;
 	}
 }
 
@@ -152,7 +259,7 @@ async function archiveUsers(userIds: string[]) {
 	try {
 		const response = await api.patch(
 			'/users',
-			userIds.map((id) => ({ id, status: 'archived' })),
+			userIds.map((id) => ({ id, status: 'deactivated' })),
 		);
 
 		return response?.data?.data;
@@ -185,9 +292,8 @@ async function handleDeactivation() {
 
 		if (!response) {
 			notify({ title: t('error_archiving_users') });
+			return;
 		}
-
-		return;
 	}
 
 	if (selectedCollections.value.length > 0) {
@@ -195,80 +301,181 @@ async function handleDeactivation() {
 
 		if (!response) {
 			notify({ title: t('error_excluding_collections') });
+			return;
 		}
-
-		return;
 	}
 
 	await deactivateLicense();
 }
+
+async function onClickDeactivate() {
+	confirmDeactivate.value = true;
+}
 </script>
 
 <template>
-	<VDialog v-model="confirmDeactivate" keep-behind @esc="confirmDeactivate = false">
+	<VDialog v-model="openDeactivatePopup" keep-behind @esc="openDeactivatePopup = false">
 		<div class="deactivation-popup">
 			<div class="deactivation-popup-header">
-				<h2>{{ t('settings_license_deactivation_popup_title') }}</h2>
-				<p>{{ t('settings_license_deactivation_popup_subtitle') }}</p>
-			</div>
-			<VDivider />
-
-			<div class="notice-wrapper">
-				<VNotice type="warning">
-					{{ deactivationNoticeMessage }}
-				</VNotice>
+				<h2 class="title">{{ t('settings_license_deactivation_popup_title') }}</h2>
+				<p class="subtitle">{{ t('settings_license_deactivation_popup_subtitle') }}</p>
 			</div>
 
-			<DeactivationSelectList
-				v-if="collectionsDefaultExceededCount > 0"
-				v-model="selectedCollections"
-				title="Data Collections"
-				:items="collections"
-			/>
-
-			<DeactivationSelectList
-				v-if="usersDefaultExceededCount > 0"
-				v-model="selectedUsers"
-				title="User Seats"
-				:items="users"
-			>
-				<template #item="{ item }">
-					<div class="user-item">
-						<VAvatar x-small round class="avatar">
-							<VIcon v-if="!item.avatar" name="person" />
-							<VImage v-else :src="item.avatar" :alt="$t('avatar')" />
-						</VAvatar>
-						<div class="item-content">
-							<p class="name">{{ item.name }}</p>
-						</div>
-						<VIcon
-							name="launch"
-							class="launch-btn"
-							clickable
-							@click.stop="
-								selectedUserKey = item.value;
-								userDrawerActive = true;
-							"
-						/>
+			<div class="deactivation-popup-body">
+				<div class="notice-wrapper">
+					<VNotice type="danger" icon="error">
+						{{ deactivationNoticeMessage }}
+					</VNotice>
+				</div>
+				<div class="deactivation-popup-list-wrapper">
+					<div class="list-header">
+						<VIcon name="database" class="header-icon" />
+						<h3 class="title">Data Collections</h3>
+						<VChip
+							x-small
+							class="badge"
+							:class="{
+								danger: collectionLimit > 0,
+								info: collectionLimit === 0,
+								success: collectionLimit === 0 && selectedCollections.length,
+							}"
+						>
+							<div v-if="collectionLimit === 0 && selectedCollections.length">
+								{{ t('settings_license_deactivation_popup_limit_count_success') }}
+							</div>
+							<div v-else>
+								{{ t('settings_license_deactivation_popup_remaining', { count: collectionLimit }) }}
+							</div>
+						</VChip>
 					</div>
-				</template>
-			</DeactivationSelectList>
+
+					<VDivider />
+
+					<p class="helper-text">Select collections to deactivate</p>
+
+					<DeactivationSelectList v-model="selectedCollections" :items="collections" />
+				</div>
+
+				<div class="deactivation-popup-list-wrapper">
+					<div class="list-header">
+						<VIcon name="group" class="header-icon" />
+						<h3 class="title">User Seats</h3>
+						<VChip
+							x-small
+							class="badge"
+							:class="{
+								danger: userLimit > 0,
+								info: userLimit === 0,
+								success: userLimit === 0 && selectedUsers.length,
+							}"
+						>
+							<div v-if="userLimit === 0 && selectedUsers.length">
+								{{ t('settings_license_deactivation_popup_limit_count_success') }}
+							</div>
+							<div v-else>
+								{{ t('settings_license_deactivation_popup_remaining', { count: userLimit }) }}
+							</div>
+						</VChip>
+					</div>
+
+					<VDivider />
+
+					<div class="user-list-wrapper">
+						<div class="user-seats-list">
+							<p class="helper-text">Select user seat(s) to deactivate</p>
+
+							<DeactivationSelectList
+								v-model="selectedUsers"
+								helper-text="Select user seat(s) to deactivate"
+								:items="users"
+							>
+								<template #item="{ item }">
+									<div class="user-item">
+										<VAvatar x-small round class="avatar">
+											<VIcon v-if="!item.avatar" name="person" />
+											<VImage v-else :src="item.avatar" :alt="$t('avatar')" />
+										</VAvatar>
+										<div class="item-content">
+											<p class="name">{{ item.name }}</p>
+										</div>
+										<VIcon
+											name="launch"
+											class="launch-btn"
+											clickable
+											@click.stop="
+												showedUserInfoKey = item.value;
+												userDrawerActive = true;
+											"
+										/>
+									</div>
+								</template>
+							</DeactivationSelectList>
+						</div>
+
+						<div class="admin-seat-list">
+							<p class="helper-text">Select admin seat(s) to deactivate</p>
+
+							<DeactivationSelectList
+								v-model="selectedUsers"
+								helper-text="Select user seat(s) to deactivate"
+								:items="adminUsers"
+							>
+								<template #item="{ item }">
+									<div class="user-item">
+										<VAvatar x-small round class="avatar">
+											<VIcon v-if="!item.avatar" name="person" />
+											<VImage v-else :src="item.avatar" :alt="$t('avatar')" />
+										</VAvatar>
+										<div class="item-content">
+											<p class="name">{{ item.name }}</p>
+										</div>
+										<VIcon
+											name="launch"
+											class="launch-btn"
+											clickable
+											@click.stop="
+												showedUserInfoKey = item.value;
+												userDrawerActive = true;
+											"
+										/>
+									</div>
+								</template>
+							</DeactivationSelectList>
+						</div>
+					</div>
+				</div>
+			</div>
 
 			<div class="deactivation-popup-actions">
-				<VButton secondary @click="confirmDeactivate = false">
+				<VButton secondary @click="openDeactivatePopup = false">
 					{{ t('cancel') }}
 				</VButton>
-				<VButton kind="danger" :loading="deactivating" @click="handleDeactivation">
+				<VButton kind="danger" :disabled="disabledDeactivateButton" @click="onClickDeactivate">
 					{{ t('settings_license_deactivation_popup_confirm') }}
 				</VButton>
 			</div>
 		</div>
 	</VDialog>
+	<VDialog v-model="confirmDeactivate" @esc="confirmDeactivate = false">
+		<VCard>
+			<VCardTitle>
+				{{ t('settings_license_deactivate_confirm') }}
+			</VCardTitle>
+			<VCardActions>
+				<VButton secondary :disabled="deactivating" @click="confirmDeactivate = false">
+					{{ t('cancel') }}
+				</VButton>
+				<VButton kind="danger" :loading="deactivating" @click="handleDeactivation">
+					{{ t('settings_license_deactivation_popup_confirm') }}
+				</VButton>
+			</VCardActions>
+		</VCard>
+	</VDialog>
 	<DrawerItem
-		v-if="selectedUserKey"
+		v-if="showedUserInfoKey"
 		v-model:active="userDrawerActive"
 		collection="directus_users"
-		:primary-key="selectedUserKey"
+		:primary-key="showedUserInfoKey"
 		disabled
 	/>
 </template>
@@ -281,6 +488,11 @@ async function handleDeactivation() {
 	flex-direction: column;
 	border-radius: var(--theme--border-radius);
 	inline-size: max(100% - 8vw, 100% - var(--header-bar-height) * 2);
+	max-block-size: max(100% - 8vh, 100% - var(--header-bar-height) * 2);
+}
+
+.deactivation-popup-body {
+	overflow: scroll;
 }
 
 .deactivation-popup-header {
@@ -290,7 +502,8 @@ async function handleDeactivation() {
 		font-weight: bold;
 		padding-block-end: 0.5rem;
 	}
-	p {
+
+	.subtitle {
 		font-size: 0.875rem;
 	}
 }
@@ -300,10 +513,14 @@ async function handleDeactivation() {
 	justify-content: flex-end;
 	padding: 1rem;
 	gap: 1rem;
+	background-color: var(--theme--background-subdued);
+	border-block-start: 1px solid var(--theme--border-color);
+	border-end-start-radius: var(--theme--border-radius);
+	border-end-end-radius: var(--theme--border-radius);
 }
 
 .notice-wrapper {
-	padding: var(--content-padding);
+	padding: 0 1.5rem;
 }
 
 .user-item {
@@ -315,6 +532,12 @@ async function handleDeactivation() {
 
 	.launch-btn {
 		margin-inline-start: auto;
+
+		--v-icon-color: var(--theme--foreground-subdued);
+
+		&:hover {
+			--v-icon-color: var(--theme--primary);
+		}
 	}
 
 	.avatar {
@@ -333,5 +556,58 @@ async function handleDeactivation() {
 			text-overflow: ellipsis;
 		}
 	}
+}
+
+.list-header {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+
+	.header-icon {
+		--v-icon-color: var(--theme--foreground-subdued);
+	}
+
+	.title {
+		font-size: 1.25rem;
+	}
+
+	.badge {
+		font-weight: 600;
+
+		&.danger {
+			--v-chip-background-color: var(--theme--danger-background);
+			--v-chip-color: var(--theme--danger);
+		}
+
+		&.info {
+			--v-chip-background-color: var(--theme--info-background);
+			--v-chip-color: var(--theme--info);
+		}
+
+		&.success {
+			--v-chip-background-color: var(--theme--success-background);
+			--v-chip-color: var(--theme--success);
+		}
+	}
+}
+
+.helper-text {
+	font-size: 0.875rem;
+	margin-block-end: 0.25rem;
+	font-weight: 500;
+}
+
+.v-divider {
+	margin: 1.5rem 0;
+}
+
+.deactivation-popup-list-wrapper {
+	padding: 1.5rem;
+}
+
+.user-list-wrapper {
+	row-gap: 2.25rem;
+	display: flex;
+	flex-direction: column;
 }
 </style>

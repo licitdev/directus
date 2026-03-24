@@ -82,6 +82,8 @@ describe('hydrate action', async () => {
 				description: 'Allows SSO configuration',
 				status: 'available',
 				action: 'purchase',
+				icon: 'cloud_lock',
+				disabled: false,
 			},
 		];
 

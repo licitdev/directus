@@ -7,6 +7,7 @@ export type Role = {
 	icon: string;
 	users: string[];
 	parent: string | null;
+	policies?: Policy[];
 };
 
 export type Avatar = {
@@ -16,7 +17,7 @@ export type Avatar = {
 
 export type User = {
 	id: string;
-	status: 'draft' | 'invited' | 'unverified' | 'active' | 'suspended' | 'archived';
+	status: 'draft' | 'invited' | 'unverified' | 'active' | 'suspended' | 'archived' | 'deactivated';
 	first_name: string | null;
 	last_name: string | null;
 	email: string | null;
@@ -37,7 +38,7 @@ export type User = {
 	policies: Policy[];
 	language: string | null;
 	text_direction: 'ltr' | 'rtl' | 'auto';
-	avatar: Avatar | null;
+	avatar: Avatar | null | string;
 	title: string | null;
 	description: string | null;
 	location: string | null;

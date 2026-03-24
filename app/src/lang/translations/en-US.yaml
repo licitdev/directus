@@ -65,10 +65,10 @@ settings_license_your_plan_usage: Your Plan Usage
 settings_license_add_on_packages: Add-on Packages
 settings_license_add_on_info: Learn more about this add-on
 settings_license_purchase: Purchase
-settings_license_usage_available: Enabled
-settings_license_usage_unavailable: Disabled
+settings_license_usage_available: Included
+settings_license_usage_unavailable: Not Included
 settings_license_usage_disabled: Disabled
-settings_license_usage_opt_in: Opt-in
+settings_license_usage_opt_in: Optional
 settings_license_usage_collections: Collections
 settings_license_usage_seats: Seats
 settings_license_usage_sso: SSO
@@ -96,9 +96,11 @@ settings_license_deactivation_popup_notice_no_requirements: You can proceed to d
 settings_license_deactivation_popup_notice_collections: '{count} collection(s)'
 settings_license_deactivation_popup_notice_users: '{count} user seat(s)'
 settings_license_deactivation_popup_notice_and: ' and '
-settings_license_deactivate_confirm:
-  Are you sure you want to deactivate the license? This will remove the license from this project.
+settings_license_deactivation_popup_remaining: '{count} remaining'
+settings_license_deactivation_popup_limit_count_success: 'All set'
+settings_license_deactivate_confirm: Are you sure you want to deactivate these collections and user seats?
 settings_license_deactivate_success: License deactivated successfully
+user_status_deactivated: Deactivated
 error_archiving_users: Failed to deactivate selected users.
 error_excluding_collections: Failed to deactivate selected collections.
 license_valid: License Valid
@@ -264,6 +266,7 @@ edit_collection: Edit Collection
 exclusive: Exclusive
 children: Children
 db_only_click_to_configure: 'Database Only: Click to Configure'
+excluded_click_to_configure: 'Excluded: Click to Configure'
 show_active_items: Show Active Items
 show_archived_items: Show Archived Items
 show_all_items: Show All Items
@@ -917,6 +920,7 @@ errors:
   INTERNAL_SERVER_ERROR: Unexpected Error
   INVALID_CONFIG: Invalid config
   INVALID_CREDENTIALS: Wrong username or password
+  USER_DEACTIVATED: Account has been deactivated. Contact your admin to resolve the issue.
   INVALID_FOREIGN_KEY: Invalid foreign key
   INVALID_IP: IP Address not allowed
   INVALID_OTP: Wrong one-time password
@@ -981,6 +985,7 @@ make_collection_visible: Make Collection Visible
 make_collection_hidden: Make Collection Hidden
 make_folder_visible: Make Folder Visible
 make_folder_hidden: Make Folder Hidden
+un_exclude_collection: Un-exclude Collection
 goto_collection_content: View Content
 count_of_total_items: '{count} of {total} Items'
 start_end_of_count_items: '{start}-{end} of {count} Items'
@@ -1603,6 +1608,7 @@ fields:
     status_active: Active
     status_suspended: Suspended
     status_archived: Archived
+    status_deactivated: Deactivated
     role: Role
     token: Token
     provider: Provider
