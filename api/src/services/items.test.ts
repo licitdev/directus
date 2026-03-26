@@ -26,6 +26,9 @@ const schema = new SchemaBuilder()
 	.collection('test', (c) => {
 		c.field('id').id();
 	})
+	.collection('directus_users', (c) => {
+		c.field('id').uuid().primary();
+	})
 	.collection('directus_versions', (c) => {
 		c.field('id').id();
 		c.field('item').string();
@@ -214,6 +217,39 @@ describe('Integration Tests', () => {
 				['upsertSingleton', () => service.upsertSingleton({})],
 			] as const)('throws when collection is excluded (%s)', async (_name, invoke) => {
 				await expect(invoke()).rejects.toThrow(/excluded/i);
+			});
+		});
+
+		describe('system collections', () => {
+			const userId = '123e4567-e89b-12d3-a456-426614174000';
+
+			let systemItemsService: ItemsService;
+
+			beforeEach(() => {
+				vi.spyOn(CollectionsService.prototype, 'isExcluded').mockResolvedValue(true);
+
+				systemItemsService = new ItemsService('directus_users', {
+					knex: db,
+					schema,
+				});
+			});
+
+			it('does not call isExcluded when reading a system collection (assertCollectionNotExcluded short-circuits)', async () => {
+				const isExcludedSpy = vi.spyOn(CollectionsService.prototype, 'isExcluded').mockResolvedValue(true);
+				systemItemsService.readByQuery = vi.fn(async () => [{ id: userId }]);
+
+				await systemItemsService.readOne(userId, { version: 'main' });
+
+				expect(isExcludedSpy).not.toHaveBeenCalled();
+			});
+
+			it('does not throw excluded error for system collection when isExcluded would be true', async () => {
+				vi.spyOn(CollectionsService.prototype, 'isExcluded').mockResolvedValue(true);
+				systemItemsService.readByQuery = vi.fn(async () => [{ id: userId }]);
+
+				await expect(systemItemsService.readOne(userId, { version: 'main' })).resolves.toEqual({
+					id: userId,
+				});
 			});
 		});
 	});

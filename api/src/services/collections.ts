@@ -18,7 +18,7 @@ import type {
 import { addFieldFlag } from '@directus/utils';
 import type Keyv from 'keyv';
 import type { Knex } from 'knex';
-import { chunk, groupBy, isNil, isNull, merge, omit } from 'lodash-es';
+import { chunk, groupBy, isNil, isNull, isUndefined, merge, omit } from 'lodash-es';
 import { clearSystemCache, getCache } from '../cache.js';
 import { ALIAS_TYPES } from '../constants.js';
 import type { Helpers } from '../database/helpers/index.js';
@@ -976,25 +976,55 @@ export class CollectionsService {
 	 * Check if a collection is excluded
 	 */
 	async isExcluded(collectionKey: string): Promise<boolean> {
+		const cacheKey = `excluded:${collectionKey}`;
+		const cachedValue = await this.getInternalCache(cacheKey);
+
+		if (!isUndefined(cachedValue)) {
+			return cachedValue;
+		}
+
 		const collection = await this.knex
 			.select('excluded')
 			.from('directus_collections')
 			.where({ collection: collectionKey })
 			.first();
 
-		return collection?.excluded === true;
+		const excluded = collection?.excluded === true;
+		await this.setInternalCache(cacheKey, excluded);
+		return excluded;
 	}
 
 	/**
 	 * Check if a collection exists
 	 */
 	async isExisted(collectionKey: string): Promise<boolean> {
+		const cacheKey = `existed:${collectionKey}`;
+		const cachedValue = await this.getInternalCache(cacheKey);
+
+		if (!isUndefined(cachedValue)) {
+			return cachedValue;
+		}
+
 		const collection = await this.knex
 			.select('collection')
 			.from('directus_collections')
 			.where({ collection: collectionKey })
 			.first();
 
-		return collection !== undefined;
+		const existed = collection !== undefined;
+		await this.setInternalCache(cacheKey, existed);
+		return existed;
+	}
+
+	private getCacheKey(key: string): string {
+		return `CollectionsService:${key}`;
+	}
+
+	private async getInternalCache(collectionKey: string): Promise<boolean | undefined> {
+		return await this.systemCache.get(this.getCacheKey(collectionKey));
+	}
+
+	private async setInternalCache(cacheKey: string, value: boolean): Promise<void> {
+		await this.systemCache.set(this.getCacheKey(cacheKey), value);
 	}
 }

@@ -66,6 +66,10 @@ export class ItemsService<Item extends AnyItem = AnyItem, Collection extends str
 	}
 
 	private async assertCollectionNotExcluded(): Promise<void> {
+		if (isSystemCollection(this.collection)) {
+			return;
+		}
+
 		if (await this.collectionsService.isExcluded(this.collection)) {
 			throw createCollectionExcludedError('', this.collection);
 		}

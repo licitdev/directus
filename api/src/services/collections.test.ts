@@ -106,6 +106,8 @@ const schema = new SchemaBuilder()
 	})
 	.build();
 
+const defaultGetCacheReturn = cacheModule.getCache();
+
 describe('Integration Tests', () => {
 	const { db, tracker, mockSchemaBuilder } = createMockKnex();
 
@@ -116,6 +118,7 @@ describe('Integration Tests', () => {
 
 	afterEach(() => {
 		resetKnexMocks(tracker, mockSchemaBuilder);
+		vi.mocked(cacheModule.getCache).mockReturnValue(defaultGetCacheReturn);
 	});
 
 	describe('Services / Collections', () => {
@@ -370,7 +373,14 @@ describe('Integration Tests', () => {
 
 				vi.mocked(cacheModule.getCache).mockReturnValue({
 					cache: { clear: clearSpy } as any,
-					systemCache: { clear: vi.fn() } as any,
+					systemCache: {
+						clear: vi.fn(),
+						get: vi.fn().mockResolvedValue(undefined),
+						set: vi.fn().mockResolvedValue(undefined),
+						delete: vi.fn().mockResolvedValue(true),
+					} as any,
+					localSchemaCache: { get: vi.fn(), set: vi.fn() } as any,
+					lockCache: undefined,
 				} as unknown as ReturnType<typeof cacheModule.getCache>);
 
 				const service = new CollectionsService({
@@ -829,7 +839,14 @@ describe('Integration Tests', () => {
 
 				vi.mocked(cacheModule.getCache).mockReturnValue({
 					cache: { clear: clearSpy } as any,
-					systemCache: { clear: vi.fn() } as any,
+					systemCache: {
+						clear: vi.fn(),
+						get: vi.fn().mockResolvedValue(undefined),
+						set: vi.fn().mockResolvedValue(undefined),
+						delete: vi.fn().mockResolvedValue(true),
+					} as any,
+					localSchemaCache: { get: vi.fn(), set: vi.fn() } as any,
+					lockCache: undefined,
 				} as unknown as ReturnType<typeof cacheModule.getCache>);
 
 				const service = new CollectionsService({
