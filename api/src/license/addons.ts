@@ -5,12 +5,7 @@
 
 export interface LicenseAddon {
 	id: string;
-	name: string;
-	description: string;
-	status: 'available' | 'purchased';
-	action: 'purchase' | 'info';
-	icon?: string;
-	disabled?: boolean;
+	quantity?: number; // numeric addons only (e.g. user_seats, collections)
 }
 
 export interface LicenseAddonsResponse {
@@ -18,48 +13,16 @@ export interface LicenseAddonsResponse {
 }
 
 /**
- * Returns mocked add-on packages metadata.
+ * Returns purchased add-on IDs with optional quantity for numeric addons.
+ * Boolean addons (e.g. sso) are represented by presence alone.
  * TODO: Replace with real licensing service API call.
  */
 export async function getLicenseAddons(): Promise<LicenseAddonsResponse> {
+	// Example of a list of no purchased add-ons
+	// return { addons: [] };
+
+	// Example of a list of purchased add-ons with quantities
 	return {
-		addons: [
-			{
-				id: 'user_seats',
-				name: 'User Seats',
-				description: '$15.00 per seat',
-				status: 'available',
-				action: 'purchase',
-				icon: 'group',
-				disabled: false,
-			},
-			{
-				id: 'sso',
-				name: 'SSO Feature',
-				description: 'Allows SSO configuration',
-				status: 'available',
-				action: 'purchase',
-				icon: 'cloud_lock',
-				disabled: false,
-			},
-			{
-				id: 'collections',
-				name: 'Data Model Collections',
-				description: 'Additional collections',
-				status: 'available',
-				action: 'purchase',
-				icon: 'inventory_2',
-				disabled: true,
-			},
-			{
-				id: 'basic_support',
-				name: 'Basic Support',
-				description: '',
-				status: 'available',
-				action: 'purchase',
-				icon: 'support_agent',
-				disabled: true,
-			},
-		],
+		addons: [{ id: 'user_seats', quantity: 2 }, { id: 'collections', quantity: 1 }, { id: 'sso' }],
 	};
 }

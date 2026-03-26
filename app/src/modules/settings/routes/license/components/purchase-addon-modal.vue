@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import VButton from '@/components/v-button.vue';
@@ -48,9 +48,13 @@ const addonData: Record<string, AddonInfo> = {
 	basic_support: { title: t('settings_license_addon_basic_support_title'), type: 'boolean' },
 };
 
-const addonInfo = ref(props.addonId ? addonData[props.addonId] : undefined);
+const addonInfo = computed(() => addonData[props.addonId]);
 
 const quantity = ref(addonInfo.value?.type === 'numeric' ? (addonInfo.value?.min ?? 1) : 1);
+
+watch(addonInfo, (info) => {
+	quantity.value = info?.type === 'numeric' ? (info.min ?? 1) : 1;
+});
 
 function cancel() {
 	emit('update:modelValue', false);
@@ -100,8 +104,10 @@ function confirm() {
 			</template>
 
 			<VCardActions class="modal-actions">
-				<VButton secondary large class="cancel-btn" @click="cancel">Cancel</VButton>
-				<VButton large class="confirm-btn" @click="confirm">Confirm Purchase</VButton>
+				<VButton secondary large class="cancel-btn" @click="cancel">{{ $t('cancel') }}</VButton>
+				<VButton large class="confirm-btn" @click="confirm">
+					{{ $t('settings_license_addon_confirm_purchase') }}
+				</VButton>
 			</VCardActions>
 		</VCard>
 	</VDialog>
