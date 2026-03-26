@@ -4,27 +4,20 @@ import type { Accountability, MutationOptions } from '@directus/types';
 import { UserIntegrityCheckFlag } from '@directus/types';
 import knex from 'knex';
 import { createTracker, MockClient } from 'knex-mock-client';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as license from '../license/index.js';
 import { validateRemainingAdminUsers } from '../permissions/modules/validate-remaining-admin/validate-remaining-admin-users.js';
 import { ItemsService, MailService, UsersService } from './index.js';
 
-vi.mock('../../src/database/index', async (importOriginal) => {
-	const actual = await importOriginal<typeof import('../../src/database/index.js')>();
-
-	const fakeKnex = {
-		select: vi.fn().mockReturnThis(),
-		from: vi.fn().mockReturnThis(),
-		first: vi.fn().mockResolvedValue({}),
-	};
-
-	return {
-		...actual,
-		getDatabaseClient: vi.fn().mockReturnValue('postgres'),
-		getSchemaInspector: vi.fn(),
-		getDatabase: vi.fn().mockReturnValue(fakeKnex),
-	};
+vi.mock('@directus/schema', async () => {
+	const { mockSchema } = await import('../test-utils/schema.js');
+	return mockSchema();
 });
+
+vi.mock('../database/index.js', () => ({
+	default: vi.fn(),
+	getDatabaseClient: vi.fn().mockReturnValue('postgres'),
+}));
 
 vi.mock('./mail', () => {
 	const MailService = vi.fn();
@@ -364,6 +357,10 @@ describe('Integration Tests', () => {
 			});
 
 			vi.spyOn(UsersService.prototype as any, 'inviteUrl').mockImplementation(() => vi.fn());
+
+			beforeEach(() => {
+				tracker.on.select('directus_collections').response([{ excluded: false }]);
+			});
 
 			it('should invite new users', async () => {
 				vi.spyOn(UsersService.prototype as any, 'getUserByEmail').mockResolvedValueOnce(undefined);

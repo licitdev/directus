@@ -48,6 +48,16 @@ vi.mock('@directus/env', async (importOriginal) => {
 	};
 });
 
+vi.mock('@directus/schema', async () => {
+	const { mockSchema } = await import('../test-utils/schema.js');
+	return mockSchema();
+});
+
+vi.mock('../database/index.js', () => ({
+	default: vi.fn(),
+	getDatabaseClient: vi.fn().mockReturnValue('postgres'),
+}));
+
 vi.mock('../storage/index.js');
 vi.mock('@directus/storage');
 vi.mock('./files/lib/extract-metadata.js');

@@ -6,6 +6,11 @@ import { createTracker, MockClient } from 'knex-mock-client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AccessService, ItemsService, PresetsService, RolesService, UsersService } from './index.js';
 
+vi.mock('@directus/schema', async () => {
+	const { mockSchema } = await import('../test-utils/schema.js');
+	return mockSchema();
+});
+
 vi.mock('../../src/database/index', () => ({
 	default: vi.fn(),
 	getDatabaseClient: vi.fn().mockReturnValue('postgres'),
