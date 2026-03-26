@@ -676,10 +676,9 @@ describe('Integration Tests', () => {
 					accountability: null,
 				});
 
-				// Omit `meta` so batch net quota (newAdded − newExcluded) stays 0; nested updateOne no-ops without meta.
 				const result = await service.updateBatch([
-					{ collection: 'collection1' } as Partial<Collection>,
-					{ collection: 'collection2' } as Partial<Collection>,
+					{ collection: 'collection1', meta: {} } as Partial<Collection>,
+					{ collection: 'collection2', meta: {} } as Partial<Collection>,
 				]);
 
 				expect(result).toEqual(['collection1', 'collection2']);
@@ -729,8 +728,9 @@ describe('Integration Tests', () => {
 					accountability: null,
 				});
 
-				// Empty patch: no meta, so pre-flight quota (db meta + un-exclude) is zero; nested updateOne no-ops.
-				const result = await service.updateMany(['collection1', 'collection2'], {});
+				const result = await service.updateMany(['collection1', 'collection2'], {
+					meta: { hidden: true },
+				} as Partial<Collection>);
 
 				expect(result).toEqual(['collection1', 'collection2']);
 				expect(updateOneSpy).toHaveBeenCalledTimes(2);
