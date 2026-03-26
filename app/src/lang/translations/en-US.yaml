@@ -100,6 +100,11 @@ settings_license_deactivation_popup_remaining: '{count} remaining'
 settings_license_deactivation_popup_limit_count_success: 'All set'
 settings_license_deactivate_confirm: Are you sure you want to deactivate these collections and user seats?
 settings_license_deactivate_success: License deactivated successfully
+settings_license_addon_user_seats_title: Purchase Additional User Seats
+settings_license_addon_collections_title: Additional Collections Pack(s)
+settings_license_addon_collections_helper_text: 1 Pack = 25 Collections
+settings_license_addon_sso_title: Are you sure you want to purchase SSO feature?
+settings_license_addon_basic_support_title: Are you sure you want to purchase Basic Support feature?
 user_status_deactivated: Deactivated
 error_archiving_users: Failed to deactivate selected users.
 error_excluding_collections: Failed to deactivate selected collections.

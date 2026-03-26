@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ref } from 'vue';
+import PurchaseAddonModal from './purchase-addon-modal.vue';
 import VButton from '@/components/v-button.vue';
 import VIcon from '@/components/v-icon/v-icon.vue';
 import VNotice from '@/components/v-notice.vue';
@@ -23,6 +25,16 @@ defineProps<{
 	addonsError: string | null;
 	version: string;
 }>();
+
+const showPurchaseModal = ref(false);
+const selectedAddonInfo = ref<string | null>(null);
+
+function openPurchaseModal(addon: Addon) {
+	if (addon.id) {
+		selectedAddonInfo.value = addon.id;
+		showPurchaseModal.value = true;
+	}
+}
 </script>
 
 <template>
@@ -52,14 +64,7 @@ defineProps<{
 							{{ pkg.description }}
 						</span>
 					</div>
-					<VButton
-						v-if="pkg.showPurchase"
-						secondary
-						small
-						class="add-on-purchase-btn"
-						:href="`https://directus.io/license-request?utm_source=self_hosted&utm_medium=product&utm_campaign=2025_10_kyc&utm_term=${version}&utm_content=settings_addon_${pkg.id}`"
-						target="_blank"
-					>
+					<VButton v-if="pkg.showPurchase" secondary small class="add-on-purchase-btn" @click="openPurchaseModal(pkg)">
 						<VIcon name="add_shopping_cart" class="add-on-purchase-icon" />
 						{{ $t('settings_license_purchase') }}
 					</VButton>
@@ -77,6 +82,8 @@ defineProps<{
 			</template>
 		</div>
 	</div>
+
+	<PurchaseAddonModal v-if="selectedAddonInfo" v-model="showPurchaseModal" :addon-id="selectedAddonInfo" />
 </template>
 
 <style scoped>
