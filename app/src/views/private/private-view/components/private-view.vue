@@ -45,6 +45,7 @@ const userStore = useUserStore();
 const { info } = storeToRefs(useServerStore());
 
 const showPoweredBy = computed(() => info.value?.license?.whitelabel_enabled !== false);
+const isOig = computed(() => !!info.value?.license?.is_oig);
 
 const appAccess = computed(() => {
 	if (!userStore.currentUser) return true;
@@ -64,7 +65,7 @@ const showLicenseBanner = computed(
 	<PrivateViewRoot v-else v-bind="$props" :class="$attrs.class">
 		<template #navigation><slot name="navigation" /></template>
 		<template #navigation-footer>
-			<PoweredByDirectus v-if="showPoweredBy" />
+			<PoweredByDirectus v-if="showPoweredBy" :is-oig="isOig" />
 		</template>
 		<template #actions:append><slot name="actions:append" /></template>
 		<template #actions:prepend><slot name="actions:prepend" /></template>

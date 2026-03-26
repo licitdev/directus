@@ -20,6 +20,7 @@ const serverStore = useServerStore();
 const { info } = storeToRefs(serverStore);
 
 const showPoweredBy = computed(() => info.value?.license?.whitelabel_enabled !== false);
+const isOig = computed(() => !!info.value?.license?.is_oig);
 
 const hasCustomBackground = computed(() => {
 	return !!info.value?.project?.public_background;
@@ -100,7 +101,7 @@ const logoURL = computed<string | null>(() => {
 				<div v-if="info?.project?.public_note" v-md="info?.project.public_note" class="note" />
 			</div>
 			<div v-if="showPoweredBy" class="powered-by-container">
-				<PoweredByDirectus light />
+				<PoweredByDirectus :is-oig="isOig" />
 			</div>
 		</div>
 	</div>
