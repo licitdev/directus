@@ -61,6 +61,7 @@ export type BaseCollectionMeta = Pick<
 	| 'accountability'
 	| 'group'
 	| 'system'
+	| 'excluded'
 >;
 
 export type RawCollection = {

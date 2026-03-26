@@ -6,7 +6,13 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, type MockedFunc
 import { getDatabaseClient } from '../database/index.js';
 import { validateUserCountIntegrity } from '../utils/validate-user-count-integrity.js';
 import { handleVersion } from '../utils/versioning/handle-version.js';
+import { CollectionsService } from './collections.js';
 import { ItemsService } from './index.js';
+
+vi.mock('@directus/schema', async () => {
+	const { mockSchema } = await import('../test-utils/schema.js');
+	return mockSchema();
+});
 
 vi.mock('../../src/database/index', () => ({
 	default: vi.fn(),
@@ -49,6 +55,8 @@ describe('Integration Tests', () => {
 		let service: ItemsService;
 
 		beforeEach(() => {
+			vi.spyOn(CollectionsService.prototype, 'isExcluded').mockResolvedValue(false);
+
 			service = new ItemsService('test', {
 				knex: db,
 				schema,
@@ -184,6 +192,28 @@ describe('Integration Tests', () => {
 				await service.deleteMany([1], { userIntegrityCheckFlags: UserIntegrityCheckFlag.All });
 
 				expect(validateUserCountIntegrity).toHaveBeenCalled();
+			});
+		});
+
+		describe('excluded collection', () => {
+			beforeEach(() => {
+				vi.spyOn(CollectionsService.prototype, 'isExcluded').mockResolvedValue(true);
+			});
+
+			test.each([
+				['createMany', () => service.createMany([{}])],
+				['readOne', () => service.readOne(1)],
+				['readMany', () => service.readMany([1])],
+				['updateByQuery', () => service.updateByQuery({}, {})],
+				['updateOne', () => service.updateOne(1, {})],
+				['updateBatch', () => service.updateBatch([{ id: 1 }])],
+				['upsertOne', () => service.upsertOne({})],
+				['upsertMany', () => service.upsertMany([{}])],
+				['deleteByQuery', () => service.deleteByQuery({})],
+				['deleteOne', () => service.deleteOne(1)],
+				['upsertSingleton', () => service.upsertSingleton({})],
+			] as const)('throws when collection is excluded (%s)', async (_name, invoke) => {
+				await expect(invoke()).rejects.toThrow(/excluded/i);
 			});
 		});
 	});
