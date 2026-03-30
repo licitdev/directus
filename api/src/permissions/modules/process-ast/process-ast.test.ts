@@ -1,6 +1,6 @@
 import { ForbiddenError } from '@directus/errors';
 import { SchemaBuilder } from '@directus/schema-builder';
-import type { Accountability } from '@directus/types';
+import type { Accountability, SchemaOverview } from '@directus/types';
 import { beforeEach, expect, test, vi } from 'vitest';
 import type { AST } from '../../../types/ast.js';
 import { fetchPermissions } from '../../lib/fetch-permissions.js';
@@ -74,6 +74,117 @@ test('Validates all paths existence in AST if current user is admin', async () =
 	await expect(async () =>
 		processAst({ action: 'read', accountability, ast }, { schema } as Context),
 	).rejects.toThrowError(ForbiddenError);
+});
+
+test('Rejects relational fields that touch excluded collections (admin path when knex is present)', async () => {
+	const ast = {
+		type: 'root',
+		name: 'cities',
+		children: [
+			{
+				type: 'field',
+				fieldKey: 'country',
+				name: 'country',
+			},
+		],
+	} as unknown as AST;
+
+	const schema: SchemaOverview = {
+		collections: {
+			cities: {
+				collection: 'cities',
+				primary: 'id',
+				singleton: false,
+				accountability: null,
+				note: null,
+				sortField: null,
+				fields: {
+					id: {
+						field: 'id',
+						type: 'integer',
+						dbType: null,
+						defaultValue: null,
+						nullable: false,
+						generated: false,
+						alias: false,
+						searchable: true,
+						note: null,
+						precision: null,
+						scale: null,
+						special: [],
+						validation: null,
+					},
+					country: {
+						field: 'country',
+						type: 'alias',
+						dbType: null,
+						defaultValue: null,
+						nullable: true,
+						generated: false,
+						alias: true,
+						searchable: true,
+						note: null,
+						precision: null,
+						scale: null,
+						special: ['m2o'],
+						validation: null,
+					},
+				},
+			},
+		},
+		relations: [
+			{
+				collection: 'cities',
+				field: 'country',
+				related_collection: 'countries',
+				schema: null,
+				meta: null,
+			},
+		],
+	} as unknown as SchemaOverview;
+
+	type DirectusCollectionsRow = { collection: string };
+
+	type KnexLike = {
+		select: (column: string) => {
+			from: (table: string) => {
+				where: (column: string, value: unknown) => Promise<DirectusCollectionsRow[]>;
+			};
+		};
+		(table: 'directus_relations'): {
+			select: (
+				...columns: ['many_collection', 'many_field', 'one_collection', 'one_field', 'one_allowed_collections']
+			) => {
+				where: (
+					cb: (qb: { orWhere: (cb: (inner: { where: (obj: unknown) => void }) => void) => void }) => void,
+				) => Promise<unknown[]>;
+			};
+		};
+	};
+
+	const knex: KnexLike = Object.assign(
+		(_table: 'directus_relations') => ({
+			select: () => ({
+				where: async () => [],
+			}),
+		}),
+		{
+			select: () => ({
+				from: () => ({
+					where: async () => [{ collection: 'countries' }],
+				}),
+			}),
+		},
+	);
+
+	const accountability = { user: null, roles: [], admin: true } as unknown as Accountability;
+
+	await expect(async () =>
+		processAst({ action: 'read', accountability, ast }, {
+			schema,
+			knex: knex as unknown as Context['knex'],
+		} as Context),
+	).rejects.toThrow(ForbiddenError);
 });
 
 test('Validates all paths in AST and throws if no permissions match', async () => {
