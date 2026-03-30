@@ -11,6 +11,8 @@ import type {
 } from '@directus/types';
 import { uniq } from 'lodash-es';
 import { clearSystemCache } from '../cache.js';
+import { getFeature } from '../license/index.js';
+import { type CustomPermissionsEntitlements, Entitlements } from '../license/types/index.js';
 import { fetchPermissions } from '../permissions/lib/fetch-permissions.js';
 import { fetchPolicies } from '../permissions/lib/fetch-policies.js';
 import { withAppMinimalPermissions } from '../permissions/lib/with-app-minimal-permissions.js';
@@ -21,6 +23,21 @@ import { ItemsService } from './items.js';
 export class PermissionsService extends ItemsService {
 	constructor(options: AbstractServiceOptions) {
 		super('directus_permissions', options);
+	}
+
+	private isCustomPermission(data: Partial<Permission>): boolean {
+		if (data.permissions && Object.keys(data.permissions as object).length > 0) return true;
+		if (data.validation && Object.keys(data.validation as object).length > 0) return true;
+
+		return !!(data.fields && Array.isArray(data.fields) && !data.fields.includes('*'));
+	}
+
+	private async assertCustomPermissionsEnabled(payloads: Partial<Item> | Partial<Item>[]): Promise<void> {
+		const items = Array.isArray(payloads) ? payloads : [payloads];
+		if (!items.some((p) => this.isCustomPermission(p))) return;
+
+		const feature = await getFeature<CustomPermissionsEntitlements>(Entitlements.CUSTOM_PERMISSIONS);
+		if (!feature?.enabled) throw new ForbiddenError();
 	}
 
 	private async clearCaches(opts?: MutationOptions) {
@@ -34,10 +51,19 @@ export class PermissionsService extends ItemsService {
 	override async readByQuery(query: Query, opts?: QueryOptions): Promise<Partial<Item>[]> {
 		const result = (await super.readByQuery(query, opts)) as Permission[];
 
-		return withAppMinimalPermissions(this.accountability, result, query.filter);
+		const permissions = withAppMinimalPermissions(this.accountability, result, query.filter);
+
+		const feature = await getFeature<CustomPermissionsEntitlements>(Entitlements.CUSTOM_PERMISSIONS);
+
+		if (!feature?.enabled) {
+			return permissions.filter((p) => !this.isCustomPermission(p));
+		}
+
+		return permissions;
 	}
 
 	override async createOne(data: Partial<Item>, opts?: MutationOptions) {
+		await this.assertCustomPermissionsEnabled(data);
 		const res = await super.createOne(data, opts);
 
 		await this.clearCaches(opts);
@@ -46,6 +72,7 @@ export class PermissionsService extends ItemsService {
 	}
 
 	override async createMany(data: Partial<Item>[], opts?: MutationOptions) {
+		await this.assertCustomPermissionsEnabled(data);
 		const res = await super.createMany(data, opts);
 
 		await this.clearCaches(opts);
@@ -54,6 +81,7 @@ export class PermissionsService extends ItemsService {
 	}
 
 	override async updateBatch(data: Partial<Item>[], opts?: MutationOptions) {
+		await this.assertCustomPermissionsEnabled(data);
 		const res = await super.updateBatch(data, opts);
 
 		await this.clearCaches(opts);
@@ -62,6 +90,7 @@ export class PermissionsService extends ItemsService {
 	}
 
 	override async updateMany(keys: PrimaryKey[], data: Partial<Item>, opts?: MutationOptions) {
+		await this.assertCustomPermissionsEnabled(data);
 		const res = await super.updateMany(keys, data, opts);
 
 		await this.clearCaches(opts);
@@ -70,6 +99,7 @@ export class PermissionsService extends ItemsService {
 	}
 
 	override async upsertMany(payloads: Partial<Item>[], opts?: MutationOptions) {
+		await this.assertCustomPermissionsEnabled(payloads);
 		const res = await super.upsertMany(payloads, opts);
 
 		await this.clearCaches(opts);

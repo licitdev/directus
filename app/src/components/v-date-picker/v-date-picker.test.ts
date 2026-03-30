@@ -601,16 +601,6 @@ describe('v-date-picker', () => {
 		});
 
 		it('clamps day when changing to month with fewer days', async () => {
-			let capturedDay: number | undefined;
-
-			vi.mocked(formatDatePickerModelValue).mockImplementation((_type, options) => {
-				if (options.calendarValue && 'day' in options.calendarValue) {
-					capturedDay = options.calendarValue.day;
-				}
-
-				return '2024-02-29';
-			});
-
 			// Start with January 31st
 			const wrapper = createWrapper({
 				type: 'date',
@@ -625,27 +615,15 @@ describe('v-date-picker', () => {
 			await monthSelect.trigger('change');
 			await nextTick();
 
-			// Trigger emission to capture the clamped value
-			const nowButton = wrapper.find('.calendar-today-button');
-			await nowButton.trigger('click');
-			await nextTick();
+			// Check calendarValue directly — do NOT use the now button, which overwrites calendarValue with today
+			const calendarValue = (wrapper.vm as any).$.setupState.calendarValue;
 
 			// Day should be clamped to 29 (max for Feb 2024)
-			expect(capturedDay).toBeDefined();
-			expect(capturedDay).toBeLessThanOrEqual(29);
+			expect(calendarValue).toBeDefined();
+			expect(calendarValue.day).toBeLessThanOrEqual(29);
 		});
 
 		it('clamps day when changing year affects leap year', async () => {
-			let capturedDay: number | undefined;
-
-			vi.mocked(formatDatePickerModelValue).mockImplementation((_type, options) => {
-				if (options.calendarValue && 'day' in options.calendarValue) {
-					capturedDay = options.calendarValue.day;
-				}
-
-				return '2023-02-28';
-			});
-
 			// Start with Feb 29 on a leap year
 			const wrapper = createWrapper({
 				type: 'date',
@@ -660,14 +638,12 @@ describe('v-date-picker', () => {
 			await yearInput.trigger('change');
 			await nextTick();
 
-			// Trigger emission to capture the clamped value
-			const nowButton = wrapper.find('.calendar-today-button');
-			await nowButton.trigger('click');
-			await nextTick();
+			// Check calendarValue directly — do NOT use the now button, which overwrites calendarValue with today
+			const calendarValue = (wrapper.vm as any).$.setupState.calendarValue;
 
 			// Day should be clamped to 28 (max for Feb 2023)
-			expect(capturedDay).toBeDefined();
-			expect(capturedDay).toBeLessThanOrEqual(28);
+			expect(calendarValue).toBeDefined();
+			expect(calendarValue.day).toBeLessThanOrEqual(28);
 		});
 
 		it('uses current date as fallback when no date is selected', async () => {
