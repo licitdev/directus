@@ -32,5 +32,3 @@ const openDialog = computed({
 		</VCard>
 	</VDialog>
 </template>
-
-<style scoped lang="scss"></style>

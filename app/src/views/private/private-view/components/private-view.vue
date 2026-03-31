@@ -29,7 +29,6 @@ import { storeToRefs } from 'pinia';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import LicenseBanner from '../../components/license-banner.vue';
-import LicenseLockedOverlay from '../../components/license-locked-overlay.vue';
 import NotificationDialogs from '../../components/notification-dialogs.vue';
 import NotificationsDrawer from '../../components/notifications-drawer.vue';
 import PrivateViewNoAppAccess from './private-view-no-app-access.vue';
@@ -109,7 +108,6 @@ const deactivationPopupTitle = computed(() => {
 	<NotificationDialogs />
 
 	<LicenseBanner v-model="showLicenseBanner" />
-	<LicenseLockedOverlay />
 	<LicenseLockDialog v-if="!userStore.isAdmin" :open="isLicenseDeactivated" />
 	<DeactivationPopup
 		v-if="userStore.isAdmin"

@@ -90,7 +90,10 @@ settings_license_deactivation_popup_subtitle:
 settings_license_deactivation_popup_confirm: Deactivate
 license_expired_deactivation_popup_title: License Expiration
 license_suspended_deactivation_popup_title: License Suspension
-license_suspended_deactivation_popup_notice: Your license has expired and the grace period has ended. To unlock your project, reduce it to the Community plan limits of {requirements}. Deactivated items will remained stored but locked in Directus, and custom access rules will also be locked.
+license_suspended_deactivation_popup_notice:
+  Your license has expired and the grace period has ended. To unlock your project, reduce it to the Community plan
+  limits of {requirements}. Deactivated items will remained stored but locked in Directus, and custom access rules will
+  also be locked.
 license_project_locked_deactivation_popup_title: Your project has been locked for license suspension.
 license_project_locked_deactivation_popup_text: Contact your administrator to resolve this issue.
 settings_license_deactivation_popup_notice_requirements:
