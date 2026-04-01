@@ -37,12 +37,20 @@ import { vi } from 'vitest';
 export function mockCache() {
 	const clearSpy = vi.fn();
 	const systemClearSpy = vi.fn();
+	const systemGetSpy = vi.fn().mockResolvedValue(undefined);
+	const systemSetSpy = vi.fn().mockResolvedValue(undefined);
+	const systemDeleteSpy = vi.fn().mockResolvedValue(true);
 	const getCacheSpy = vi.fn();
 	const setCacheSpy = vi.fn();
 
 	const mockCacheReturn = {
 		cache: { clear: clearSpy } as any,
-		systemCache: { clear: systemClearSpy } as any,
+		systemCache: {
+			clear: systemClearSpy,
+			get: systemGetSpy,
+			set: systemSetSpy,
+			delete: systemDeleteSpy,
+		} as any,
 		localSchemaCache: { get: getCacheSpy, set: setCacheSpy } as any,
 		lockCache: undefined,
 	};
@@ -55,6 +63,9 @@ export function mockCache() {
 		spies: {
 			clearSpy,
 			systemClearSpy,
+			systemGetSpy,
+			systemSetSpy,
+			systemDeleteSpy,
 			getCacheSpy,
 			setCacheSpy,
 			mockCacheReturn,

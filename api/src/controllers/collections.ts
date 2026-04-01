@@ -1,7 +1,6 @@
-import { ErrorCode, isDirectusError, LimitExceededError } from '@directus/errors';
+import { ErrorCode, isDirectusError } from '@directus/errors';
 import type { Item } from '@directus/types';
 import { Router } from 'express';
-import { isNil, isNull } from 'lodash-es';
 import { respond } from '../middleware/respond.js';
 import { validateBatch } from '../middleware/validate-batch.js';
 import { CollectionsService } from '../services/collections.js';
@@ -20,13 +19,6 @@ router.post(
 
 		const attemptConcurrentIndex =
 			'concurrentIndexCreation' in req.query && req.query['concurrentIndexCreation'] !== 'false';
-
-		const newCollectionsCount = Array.isArray(req.body) ? req.body.length : 1;
-		const isWithinLimit = await collectionsService.checkAddingLimit(newCollectionsCount);
-
-		if (!isWithinLimit) {
-			throw new LimitExceededError({ category: 'collections' });
-		}
 
 		if (Array.isArray(req.body)) {
 			const collectionKey = await collectionsService.createMany(req.body, {
@@ -101,40 +93,6 @@ router.patch(
 			schema: req.schema,
 		});
 
-		let newAdded = 0;
-		let newExcluded = 0;
-
-		for (const collection of req.body) {
-			if (!isNil(collection.meta)) {
-				const isExisted = await collectionsService.isExisted(collection.collection);
-
-				if (!isExisted) {
-					newAdded++;
-				}
-			}
-
-			const isCurrentlyExcluded = await collectionsService.isExcluded(collection.collection!);
-			const excludedValue = collection.meta?.excluded;
-
-			if ((isNull(excludedValue) || excludedValue === false) && isCurrentlyExcluded) {
-				newAdded++;
-			}
-
-			if (excludedValue && !isCurrentlyExcluded) {
-				newExcluded++;
-			}
-		}
-
-		const newCount = newAdded - newExcluded;
-
-		if (newCount > 0) {
-			const isWithinLimit = await collectionsService.checkAddingLimit(newCount);
-
-			if (!isWithinLimit) {
-				throw new LimitExceededError({ category: 'collections' });
-			}
-		}
-
 		const collectionKeys = await collectionsService.updateBatch(req.body);
 
 		try {
@@ -160,32 +118,6 @@ router.patch(
 			accountability: req.accountability,
 			schema: req.schema,
 		});
-
-		let checkLimitForDbOnlyCollection = false;
-		const meta = req.body?.meta;
-
-		if (!isNil(meta)) {
-			const isExisted = await collectionsService.isExisted(req.params['collection']!);
-			checkLimitForDbOnlyCollection = !isExisted;
-		}
-
-		let checkLimitForExcludedCollection = false;
-		const excluded = meta?.excluded;
-
-		if (isNull(excluded) || excluded === false) {
-			const isCurrentlyExcluded = await collectionsService.isExcluded(req.params['collection']!);
-			checkLimitForExcludedCollection = !!isCurrentlyExcluded;
-		}
-
-		const shouldCheckLimit = checkLimitForDbOnlyCollection || checkLimitForExcludedCollection;
-
-		if (shouldCheckLimit) {
-			const isWithinLimit = await collectionsService.checkAddingLimit(1);
-
-			if (!isWithinLimit) {
-				throw new LimitExceededError({ category: 'collections' });
-			}
-		}
 
 		await collectionsService.updateOne(req.params['collection']!, req.body);
 

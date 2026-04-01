@@ -22,6 +22,11 @@ const mockRateLimiter = vi.hoisted(() => ({
 	points: 0,
 }));
 
+vi.mock('@directus/schema', async () => {
+	const { mockSchema } = await import('../test-utils/schema.js');
+	return mockSchema();
+});
+
 vi.mock('../../src/database/index', () => ({
 	default: vi.fn(),
 	getDatabaseClient: vi.fn().mockReturnValue('postgres'),

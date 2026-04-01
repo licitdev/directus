@@ -9,6 +9,7 @@ import type { FieldMap } from './types.js';
 import { collectionsInFieldMap } from './utils/collections-in-field-map.js';
 import { validatePathExistence } from './utils/validate-path/validate-path-existence.js';
 import { validatePathPermissions } from './utils/validate-path/validate-path-permissions.js';
+import { validateRelationalFieldsToExcludedCollections } from './utils/validate-path/validate-relational-excluded-collection.js';
 
 export interface ProcessAstOptions {
 	ast: AST;
@@ -26,6 +27,10 @@ export async function processAst(options: ProcessAstOptions, context: Context) {
 		// Validate the field existence, even if no permissions apply to the current accountability
 		for (const [path, { collection, fields }] of [...fieldMap.read.entries(), ...fieldMap.other.entries()]) {
 			validatePathExistence(path, collection, fields, context.schema);
+		}
+
+		if (context.knex) {
+			await validateRelationalFieldsToExcludedCollections(fieldMap, context.schema, context.knex);
 		}
 
 		return options.ast;
@@ -49,6 +54,10 @@ export async function processAst(options: ProcessAstOptions, context: Context) {
 	// Validate field existence first
 	for (const [path, { collection, fields }] of [...fieldMap.read.entries(), ...fieldMap.other.entries()]) {
 		validatePathExistence(path, collection, fields, context.schema);
+	}
+
+	if (context.knex) {
+		await validateRelationalFieldsToExcludedCollections(fieldMap, context.schema, context.knex);
 	}
 
 	// Validate permissions for the fields

@@ -45,6 +45,11 @@ vi.mock('@directus/env', () => ({
 	})),
 }));
 
+vi.mock('@directus/schema', async () => {
+	const { mockSchema } = await import('../test-utils/schema.js');
+	return mockSchema();
+});
+
 vi.mock('../logger/index.js', () => ({
 	useLogger: vi.fn(() => ({
 		debug: mockLoggerDebug,
@@ -211,6 +216,8 @@ describe('DeploymentService', () => {
 			vi.spyOn(ItemsService.prototype, 'readOne').mockResolvedValue(existingConfig);
 			mockTestConnection.mockResolvedValue(undefined);
 
+			// ItemsService.readByQuery / updateOne call assertCollectionNotExcluded → isExcluded queries directus_collections
+			tracker.on.select('directus_collections').response([{ excluded: false }]);
 			// Mock DB query for readConfig (internal readByQuery)
 			tracker.on.select('directus_deployments').response([existingConfig]);
 		});

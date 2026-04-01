@@ -1,4 +1,4 @@
-import { ForbiddenError, InvalidPayloadError } from '@directus/errors';
+import { ForbiddenError, InvalidPayloadError, LimitExceededError } from '@directus/errors';
 import { SchemaBuilder } from '@directus/schema-builder';
 import type { Accountability, Collection, FieldMutationOptions } from '@directus/types';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
@@ -106,6 +106,8 @@ const schema = new SchemaBuilder()
 	})
 	.build();
 
+const defaultGetCacheReturn = cacheModule.getCache();
+
 describe('Integration Tests', () => {
 	const { db, tracker, mockSchemaBuilder } = createMockKnex();
 
@@ -116,6 +118,7 @@ describe('Integration Tests', () => {
 
 	afterEach(() => {
 		resetKnexMocks(tracker, mockSchemaBuilder);
+		vi.mocked(cacheModule.getCache).mockReturnValue(defaultGetCacheReturn);
 	});
 
 	describe('Services / Collections', () => {
@@ -245,6 +248,16 @@ describe('Integration Tests', () => {
 				await expect(service.createOne(payload)).rejects.toThrow(InvalidPayloadError);
 			});
 
+			test('should throw LimitExceededError when checkAddingLimit fails', async () => {
+				const service = new CollectionsService({ knex: db, schema, accountability: null });
+
+				vi.spyOn(service, 'checkAddingLimit').mockResolvedValue(false);
+
+				await expect(service.createOne({ collection: 'new_collection', schema: {} })).rejects.toThrow(
+					LimitExceededError,
+				);
+			});
+
 			test('should throw InvalidPayloadError for existing collection', async () => {
 				tracker.on.select('directus_collections').response([{ collection: 'existing_collection' }]);
 				const service = new CollectionsService({ knex: db, schema, accountability: null });
@@ -360,7 +373,14 @@ describe('Integration Tests', () => {
 
 				vi.mocked(cacheModule.getCache).mockReturnValue({
 					cache: { clear: clearSpy } as any,
-					systemCache: { clear: vi.fn() } as any,
+					systemCache: {
+						clear: vi.fn(),
+						get: vi.fn().mockResolvedValue(undefined),
+						set: vi.fn().mockResolvedValue(undefined),
+						delete: vi.fn().mockResolvedValue(true),
+					} as any,
+					localSchemaCache: { get: vi.fn(), set: vi.fn() } as any,
+					lockCache: undefined,
 				} as unknown as ReturnType<typeof cacheModule.getCache>);
 
 				const service = new CollectionsService({
@@ -412,6 +432,7 @@ describe('Integration Tests', () => {
 		describe('createMany', () => {
 			beforeEach(() => {
 				vi.mocked(getSchemaModule.getSchema).mockResolvedValue(schema);
+				tracker.on.select('directus_collections').response([]);
 			});
 
 			test('should create multiple collections', async () => {
@@ -427,6 +448,20 @@ describe('Integration Tests', () => {
 
 				expect(result).toEqual(['test', 'test']);
 				expect(createOneSpy).toHaveBeenCalledTimes(2);
+			});
+
+			test('should throw LimitExceededError when batch exceeds collection limit', async () => {
+				const service = new CollectionsService({
+					knex: db,
+					schema,
+					accountability: null,
+				});
+
+				vi.spyOn(service, 'checkAddingLimit').mockResolvedValue(false);
+
+				await expect(
+					service.createMany([{ collection: 'collection1' }, { collection: 'collection2' }]),
+				).rejects.toThrow(LimitExceededError);
 			});
 		});
 
@@ -609,6 +644,7 @@ describe('Integration Tests', () => {
 		describe('updateBatch', () => {
 			beforeEach(() => {
 				vi.mocked(getSchemaModule.getSchema).mockResolvedValue(schema);
+				tracker.on.select('directus_collections').response([]);
 			});
 
 			test('should throw ForbiddenError for non-admin users', async () => {
@@ -658,11 +694,29 @@ describe('Integration Tests', () => {
 				expect(result).toEqual(['collection1', 'collection2']);
 				expect(updateOneSpy).toHaveBeenCalledTimes(2);
 			});
+
+			test('should throw LimitExceededError when batch net change exceeds collection limit', async () => {
+				const service = new CollectionsService({
+					knex: db,
+					schema,
+					accountability: null,
+				});
+
+				vi.spyOn(service, 'checkAddingLimit').mockResolvedValue(false);
+
+				await expect(
+					service.updateBatch([
+						{ collection: 'collection1', meta: { hidden: true } } as Partial<Collection>,
+						{ collection: 'collection2', meta: { hidden: true } } as Partial<Collection>,
+					]),
+				).rejects.toThrow(LimitExceededError);
+			});
 		});
 
 		describe('updateMany', () => {
 			beforeEach(() => {
 				vi.mocked(getSchemaModule.getSchema).mockResolvedValue(schema);
+				tracker.on.select('directus_collections').response([]);
 			});
 
 			test('should throw ForbiddenError for non-admin users', async () => {
@@ -690,6 +744,22 @@ describe('Integration Tests', () => {
 
 				expect(result).toEqual(['collection1', 'collection2']);
 				expect(updateOneSpy).toHaveBeenCalledTimes(2);
+			});
+
+			test('should throw LimitExceededError when aggregate quota check fails', async () => {
+				const service = new CollectionsService({
+					knex: db,
+					schema,
+					accountability: null,
+				});
+
+				vi.spyOn(service, 'checkAddingLimit').mockResolvedValue(false);
+
+				await expect(
+					service.updateMany(['collection1', 'collection2'], {
+						meta: { hidden: true },
+					} as Partial<Collection>),
+				).rejects.toThrow(LimitExceededError);
 			});
 		});
 
@@ -769,7 +839,14 @@ describe('Integration Tests', () => {
 
 				vi.mocked(cacheModule.getCache).mockReturnValue({
 					cache: { clear: clearSpy } as any,
-					systemCache: { clear: vi.fn() } as any,
+					systemCache: {
+						clear: vi.fn(),
+						get: vi.fn().mockResolvedValue(undefined),
+						set: vi.fn().mockResolvedValue(undefined),
+						delete: vi.fn().mockResolvedValue(true),
+					} as any,
+					localSchemaCache: { get: vi.fn(), set: vi.fn() } as any,
+					lockCache: undefined,
 				} as unknown as ReturnType<typeof cacheModule.getCache>);
 
 				const service = new CollectionsService({

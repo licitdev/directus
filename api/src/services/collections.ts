@@ -1,5 +1,5 @@
 import { useEnv } from '@directus/env';
-import { ForbiddenError, InvalidPayloadError } from '@directus/errors';
+import { ForbiddenError, InvalidPayloadError, LimitExceededError } from '@directus/errors';
 import type { SchemaInspector } from '@directus/schema';
 import { createInspector } from '@directus/schema';
 import { type BaseCollectionMeta, systemCollectionRows } from '@directus/system-data';
@@ -18,7 +18,7 @@ import type {
 import { addFieldFlag } from '@directus/utils';
 import type Keyv from 'keyv';
 import type { Knex } from 'knex';
-import { chunk, groupBy, merge, omit } from 'lodash-es';
+import { chunk, groupBy, isNil, isNull, isUndefined, merge, omit } from 'lodash-es';
 import { clearSystemCache, getCache } from '../cache.js';
 import { ALIAS_TYPES } from '../constants.js';
 import type { Helpers } from '../database/helpers/index.js';
@@ -75,6 +75,12 @@ export class CollectionsService {
 
 		if (payload.collection.startsWith('directus_')) {
 			throw new InvalidPayloadError({ reason: `Collections can't start with "directus_"` });
+		}
+
+		const isWithinLimit = await this.checkAddingLimit(1);
+
+		if (!isWithinLimit) {
+			throw new LimitExceededError({ category: 'collections' });
 		}
 
 		payload.collection = await this.helpers.schema.parseCollectionName(payload.collection);
@@ -263,6 +269,12 @@ export class CollectionsService {
 	async createMany(payloads: RawCollection[], opts?: FieldMutationOptions): Promise<string[]> {
 		const nestedActionEvents: ActionEventParams[] = [];
 
+		const isWithinLimit = await this.checkAddingLimit(payloads.length);
+
+		if (!isWithinLimit) {
+			throw new LimitExceededError({ category: 'collections' });
+		}
+
 		try {
 			const collections = await transaction(this.knex, async (trx) => {
 				const service = new CollectionsService({
@@ -444,6 +456,32 @@ export class CollectionsService {
 			throw new ForbiddenError();
 		}
 
+		let checkLimitForDbOnlyCollection = false;
+		const meta = data?.meta;
+
+		if (!isNil(meta)) {
+			const isExisted = await this.isExisted(collectionKey);
+			checkLimitForDbOnlyCollection = !isExisted;
+		}
+
+		let checkLimitForExcludedCollection = false;
+		const excluded = meta?.excluded;
+
+		if (isNull(excluded) || excluded === false) {
+			const isCurrentlyExcluded = await this.isExcluded(collectionKey);
+			checkLimitForExcludedCollection = !!isCurrentlyExcluded;
+		}
+
+		const shouldCheckLimit = checkLimitForDbOnlyCollection || checkLimitForExcludedCollection;
+
+		if (shouldCheckLimit) {
+			const isWithinLimit = await this.checkAddingLimit(1);
+
+			if (!isWithinLimit) {
+				throw new LimitExceededError({ category: 'collections' });
+			}
+		}
+
 		const nestedActionEvents: ActionEventParams[] = [];
 
 		try {
@@ -519,6 +557,44 @@ export class CollectionsService {
 		const collectionKeys: string[] = [];
 		const nestedActionEvents: ActionEventParams[] = [];
 
+		let newAdded = 0;
+		let newExcluded = 0;
+
+		for (const collection of data) {
+			if (!collection[collectionKey]) {
+				throw new InvalidPayloadError({ reason: `Collection in update misses collection key` });
+			}
+
+			if (!isNil(collection.meta)) {
+				const isExisted = await this.isExisted(collection[collectionKey]);
+
+				if (!isExisted) {
+					newAdded++;
+				}
+			}
+
+			const isCurrentlyExcluded = await this.isExcluded(collection[collectionKey]);
+			const excludedValue = collection.meta?.excluded;
+
+			if ((isNull(excludedValue) || excludedValue === false) && isCurrentlyExcluded) {
+				newAdded++;
+			}
+
+			if (excludedValue && !isCurrentlyExcluded) {
+				newExcluded++;
+			}
+		}
+
+		const newCount = newAdded - newExcluded;
+
+		if (newCount > 0) {
+			const isWithinLimit = await this.checkAddingLimit(newCount);
+
+			if (!isWithinLimit) {
+				throw new LimitExceededError({ category: 'collections' });
+			}
+		}
+
 		try {
 			await transaction(this.knex, async (trx) => {
 				const collectionItemsService = new CollectionsService({
@@ -528,18 +604,14 @@ export class CollectionsService {
 				});
 
 				for (const payload of data) {
-					if (!payload[collectionKey]) {
-						throw new InvalidPayloadError({ reason: `Collection in update misses collection key` });
-					}
-
-					await collectionItemsService.updateOne(payload[collectionKey], omit(payload, collectionKey), {
+					await collectionItemsService.updateOne(payload[collectionKey] as string, omit(payload, collectionKey), {
 						autoPurgeCache: false,
 						autoPurgeSystemCache: false,
 						bypassEmitAction: (params) =>
 							opts?.bypassEmitAction ? opts.bypassEmitAction(params) : nestedActionEvents.push(params),
 					});
 
-					collectionKeys.push(payload[collectionKey]);
+					collectionKeys.push(payload[collectionKey] as string);
 				}
 			});
 		} finally {
@@ -570,6 +642,40 @@ export class CollectionsService {
 	async updateMany(collectionKeys: string[], data: Partial<Collection>, opts?: MutationOptions): Promise<string[]> {
 		if (this.accountability && this.accountability.admin !== true) {
 			throw new ForbiddenError();
+		}
+
+		const meta = data?.meta;
+		let dbCollectionsAdded = 0;
+		let excludedCollectionsReduced = 0;
+
+		if (!isNil(meta)) {
+			for (const collectionKey of collectionKeys) {
+				const isExisted = await this.isExisted(collectionKey);
+
+				if (!isExisted) {
+					dbCollectionsAdded++;
+				}
+			}
+		}
+
+		if (isNull(meta?.excluded) || meta?.excluded === false) {
+			for (const collectionKey of collectionKeys) {
+				const isCurrentlyExcluded = await this.isExcluded(collectionKey);
+
+				if (isCurrentlyExcluded) {
+					excludedCollectionsReduced++;
+				}
+			}
+		}
+
+		const totalCollectionsToAdd = dbCollectionsAdded + excludedCollectionsReduced;
+
+		if (totalCollectionsToAdd > 0) {
+			const isWithinLimit = await this.checkAddingLimit(totalCollectionsToAdd);
+
+			if (!isWithinLimit) {
+				throw new LimitExceededError({ category: 'collections' });
+			}
 		}
 
 		const nestedActionEvents: ActionEventParams[] = [];
@@ -870,25 +976,55 @@ export class CollectionsService {
 	 * Check if a collection is excluded
 	 */
 	async isExcluded(collectionKey: string): Promise<boolean> {
+		const cacheKey = `excluded:${collectionKey}`;
+		const cachedValue = await this.getInternalCache(cacheKey);
+
+		if (!isUndefined(cachedValue)) {
+			return cachedValue;
+		}
+
 		const collection = await this.knex
 			.select('excluded')
 			.from('directus_collections')
 			.where({ collection: collectionKey })
 			.first();
 
-		return collection?.excluded === true;
+		const excluded = collection?.excluded === true;
+		await this.setInternalCache(cacheKey, excluded);
+		return excluded;
 	}
 
 	/**
 	 * Check if a collection exists
 	 */
 	async isExisted(collectionKey: string): Promise<boolean> {
+		const cacheKey = `existed:${collectionKey}`;
+		const cachedValue = await this.getInternalCache(cacheKey);
+
+		if (!isUndefined(cachedValue)) {
+			return cachedValue;
+		}
+
 		const collection = await this.knex
 			.select('collection')
 			.from('directus_collections')
 			.where({ collection: collectionKey })
 			.first();
 
-		return collection !== undefined;
+		const existed = collection !== undefined;
+		await this.setInternalCache(cacheKey, existed);
+		return existed;
+	}
+
+	private getCacheKey(key: string): string {
+		return `CollectionsService:${key}`;
+	}
+
+	private async getInternalCache(collectionKey: string): Promise<boolean | undefined> {
+		return await this.systemCache.get(this.getCacheKey(collectionKey));
+	}
+
+	private async setInternalCache(cacheKey: string, value: boolean): Promise<void> {
+		await this.systemCache.set(this.getCacheKey(cacheKey), value);
 	}
 }
