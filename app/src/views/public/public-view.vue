@@ -385,8 +385,8 @@ const logoURL = computed<string | null>(() => {
 
 		.powered-by-container {
 			position: absolute;
-			inset-block-end: 24px;
-			inset-inline-end: 24px;
+			inset-block-end: 1.5rem;
+			inset-inline-end: 1.5rem;
 		}
 
 		@media (width >= 28.125rem) {

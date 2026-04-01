@@ -41,38 +41,37 @@ const { t } = useI18n();
 
 <style scoped>
 .danger-zone-section {
-	margin-block-start: 48px;
+	margin-block-start: 3rem;
 }
 
 .danger-zone-header {
 	display: flex;
 	align-items: center;
-	gap: 12px;
+	gap: 0.75rem;
 	margin-block-end: 0;
 }
 
 .danger-zone-icon {
 	--v-icon-color: var(--theme--danger);
-	--v-icon-size: 28px;
+	--v-icon-size: 1.75rem;
 	flex-shrink: 0;
 }
 
 .danger-zone-title {
-	font-size: 25px;
+	font-size: 1.375rem;
 	font-weight: 600;
 	color: var(--theme--foreground);
 	margin: 0;
 }
 
 .danger-zone-separator {
-	block-size: 1px;
 	background: var(--theme--border-color);
-	margin-block: 16px 20px;
+	margin-block: 1rem 1.25rem;
 }
 
 .danger-zone-content {
 	display: grid;
-	gap: 16px;
+	gap: 1rem;
 }
 
 .danger-zone-banner {

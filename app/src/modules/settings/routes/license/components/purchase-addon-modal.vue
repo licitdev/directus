@@ -115,37 +115,37 @@ function confirm() {
 
 <style lang="scss" scoped>
 .purchase-addon-modal {
-	inline-size: 660px;
-	padding: 8px;
+	inline-size: 41.25rem;
+	padding: 0.5rem;
 }
 
 .modal-title {
-	font-size: 20px;
+	font-size: 1.25rem;
 	font-weight: 700;
 	color: var(--theme--foreground);
-	padding: 16px 16px 20px;
+	padding: 1rem 1rem 1.25rem;
 
 	&--confirm {
-		padding-block-end: 32px;
+		padding-block-end: 2rem;
 	}
 }
 
 .modal-body {
-	padding: 0 16px 16px;
+	padding: 0 1rem 1rem;
 	display: flex;
 	flex-direction: column;
-	gap: 12px;
+	gap: 0.75rem;
 }
 
 .quantity-input {
 	:deep(.input) {
-		block-size: 64px;
-		border-radius: 12px;
+		block-size: 4rem;
+		border-radius: 0.75rem;
 		border-color: var(--theme--border-color);
 	}
 
 	:deep(.prepend) {
-		padding-inline-start: 16px;
+		padding-inline-start: 1rem;
 	}
 }
 
@@ -156,24 +156,24 @@ function confirm() {
 .helper-text {
 	font-style: italic;
 	color: var(--theme--primary-subdued);
-	font-size: 14px;
+	font-size: 0.875rem;
 	margin: 0;
-	padding-inline-start: 4px;
+	padding-inline-start: 0.25rem;
 }
 
 .modal-actions {
 	display: flex;
 	justify-content: flex-end;
-	gap: 12px;
-	padding: 16px;
+	gap: 0.75rem;
+	padding: 1rem;
 }
 
 .cancel-btn {
-	min-inline-size: 160px;
+	min-inline-size: 10rem;
 }
 
 .confirm-btn {
-	min-inline-size: 220px;
+	min-inline-size: 13.75rem;
 
 	--v-button-background-color: #4f46e5;
 	--v-button-background-color-hover: #4338ca;

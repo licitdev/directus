@@ -51,9 +51,9 @@ const { t } = useI18n();
 
 <style scoped>
 .plan-section {
-	--plan-actions-extend: 150px;
+	--plan-actions-extend: 9.375rem;
 	position: relative;
-	padding-block-end: 15px;
+	padding-block-end: 0.9375rem;
 	inline-size: 100%;
 	box-sizing: border-box;
 }
@@ -62,14 +62,13 @@ const { t } = useI18n();
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	gap: 24px;
+	gap: 1.5rem;
 }
 
 .plan-separator {
 	position: absolute;
-	inset-inline: 0 calc(-1 * var(--plan-actions-extend, 150px));
+	inset-inline: 0 calc(-1 * var(--plan-actions-extend, 9.375rem));
 	inset-block-end: 0;
-	block-size: 1px;
 	background: var(--theme--border-color);
 }
 
@@ -80,9 +79,9 @@ const { t } = useI18n();
 
 .plan-actions {
 	display: flex;
-	gap: 12px;
+	gap: 0.75rem;
 	flex-shrink: 0;
-	margin-inline: auto calc(-1 * var(--plan-actions-extend, 150px));
+	margin-inline: auto calc(-1 * var(--plan-actions-extend, 9.375rem));
 }
 
 .plan-action-btn {
@@ -90,17 +89,17 @@ const { t } = useI18n();
 }
 
 .plan-name {
-	font-size: 25px;
+	font-size: 1.375rem;
 	font-weight: 600;
 	color: var(--theme--foreground-accent);
-	margin: 0 0 8px;
+	margin: 0 0 0.5rem;
 }
 
 .plan-subtitle {
 	display: flex;
 	align-items: center;
-	gap: 8px;
-	font-size: 14px;
+	gap: 0.5rem;
+	font-size: 0.875rem;
 	color: var(--theme--foreground-subdued);
 	margin: 0;
 }

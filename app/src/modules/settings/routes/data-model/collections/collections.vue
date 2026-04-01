@@ -428,7 +428,7 @@ async function onUnExclude(collectionKey: string) {
 	color: var(--theme--foreground-subdued);
 	white-space: nowrap;
 
-	@media (width > 640px) {
+	@media (width > 40rem) {
 		display: inline;
 	}
 }
@@ -438,7 +438,7 @@ async function onUnExclude(collectionKey: string) {
 }
 
 .v-notice {
-	margin-block-end: 32px;
+	margin-block-end: 2rem;
 }
 
 .v-info {

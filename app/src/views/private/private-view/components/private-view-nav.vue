@@ -54,7 +54,7 @@ defineProps<{ id?: string }>();
 	display: flex;
 	justify-content: center;
 	flex-shrink: 0;
-	padding: 12px 16px;
+	padding: 0.75rem 1rem;
 	border-block-start: var(--theme--navigation--border-width) solid var(--theme--navigation--border-color);
 }
 </style>

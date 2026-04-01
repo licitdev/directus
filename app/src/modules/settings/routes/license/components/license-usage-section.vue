@@ -89,49 +89,49 @@ const displayLabelOptional = computed(() => props.labelOptional ?? t('settings_l
 
 <style scoped>
 .plan-usage-section {
-	margin-block-end: 32px;
+	margin-block-end: 2rem;
 }
 
 .section-title {
 	display: flex;
 	align-items: center;
-	gap: 8px;
-	font-size: 14px;
+	gap: 0.5rem;
+	font-size: 0.875rem;
 	font-weight: 600;
 	color: var(--theme--foreground);
-	margin: 0 0 16px;
+	margin: 0 0 1rem;
 }
 
 .usage-grid {
 	display: grid;
 	grid-template-columns: repeat(2, 1fr);
-	gap: 12px;
+	gap: 0.75rem;
 }
 
 .usage-item {
 	display: flex;
 	align-items: center;
-	gap: 10px;
-	padding: 10px 12px;
+	gap: 0.625rem;
+	padding: 0.625rem 0.75rem;
 	background: var(--theme--background-subdued);
-	border-radius: 10px;
+	border-radius: 0.625rem;
 }
 
 .usage-icon {
 	--v-icon-color: var(--theme--foreground-subdued);
-	--v-icon-size: 20px;
+	--v-icon-size: 1.25rem;
 	flex-shrink: 0;
 }
 
 .usage-label {
-	font-size: 13px;
+	font-size: 0.8125rem;
 	color: var(--theme--foreground);
 	flex: 1;
 	min-inline-size: 0;
 }
 
 .usage-value {
-	font-size: 13px;
+	font-size: 0.8125rem;
 	font-weight: 500;
 	color: var(--theme--foreground-accent);
 	flex-shrink: 0;

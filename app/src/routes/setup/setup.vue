@@ -165,28 +165,28 @@ watch(form, () => {
 .license-step {
 	h1 {
 		color: var(--theme--foreground-accent);
-		font-size: 40px;
+		font-size: 2.5rem;
 		font-weight: 600;
-		line-height: 48px;
-		margin-block-end: 24px;
+		line-height: 3rem;
+		margin-block-end: 1.5rem;
 	}
 
 	p {
-		font-size: 14px;
+		font-size: 0.875rem;
 		font-weight: 500;
-		line-height: 20px;
+		line-height: 1.25rem;
 		margin-block-end: 0;
 	}
 
 	.license-key-input {
-		margin-block-start: 24px;
+		margin-block-start: 1.5rem;
 	}
 }
 
 .step2-actions {
 	display: flex;
-	gap: 12px;
-	margin-block-start: 32px;
+	gap: 0.75rem;
+	margin-block-start: 2rem;
 
 	.v-button {
 		margin-block-start: 0;

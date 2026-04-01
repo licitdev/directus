@@ -62,12 +62,12 @@ const { t } = useI18n();
 
 <style scoped>
 .banners-section {
-	--banners-extend: 150px;
+	--banners-extend: 9.375rem;
 	display: flex;
 	flex-direction: column;
 	gap: 0;
-	margin-inline-end: calc(-1 * var(--banners-extend, 150px));
-	inline-size: calc(100% + var(--banners-extend, 150px));
+	margin-inline-end: calc(-1 * var(--banners-extend, 9.375rem));
+	inline-size: calc(100% + var(--banners-extend, 9.375rem));
 	min-inline-size: 100%;
 }
 
@@ -78,11 +78,11 @@ const { t } = useI18n();
 	background: var(--theme--background-subdued);
 	border-radius: var(--theme--border-radius);
 	overflow: hidden;
-	margin-block-end: 24px;
+	margin-block-end: 1.5rem;
 }
 
 .license-grace-period-banner .banner-accent {
-	inline-size: 6px;
+	inline-size: 0.375rem;
 	flex-shrink: 0;
 	background: var(--theme--danger);
 	border-radius: var(--theme--border-radius) 0 0 var(--theme--border-radius);
@@ -99,8 +99,8 @@ const { t } = useI18n();
 .license-grace-period-banner .banner-content {
 	display: flex;
 	align-items: center;
-	gap: 16px;
-	padding: 16px 20px;
+	gap: 1rem;
+	padding: 1rem 1.25rem;
 	flex: 1;
 }
 
@@ -108,19 +108,19 @@ const { t } = useI18n();
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	inline-size: 24px;
-	block-size: 24px;
+	inline-size: 1.5rem;
+	block-size: 1.5rem;
 	flex-shrink: 0;
 }
 
 .license-grace-period-banner .banner-icon {
 	--v-icon-color: var(--theme--danger);
-	--v-icon-size: 24px;
+	--v-icon-size: 1.5rem;
 }
 
 .license-grace-period-banner .banner-text {
-	font-size: 14px;
-	line-height: 22px;
+	font-size: 0.875rem;
+	line-height: 1.375rem;
 	color: var(--theme--foreground);
 }
 

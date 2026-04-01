@@ -454,10 +454,10 @@ const licenseFormEdits = ref<Record<string, any> | null>(null);
 }
 
 .license-form-plan-wrapper {
-	--theme--form--row-gap: 24px;
+	--theme--form--row-gap: 1.5rem;
 	padding-inline: var(--content-padding);
 	padding-block: var(--content-padding) var(--content-padding-bottom);
-	max-inline-size: 1000px;
+	max-inline-size: 62.5rem;
 }
 
 .license-form-plan-wrapper :deep(.v-form .field:first-child) {
@@ -473,7 +473,7 @@ const licenseFormEdits = ref<Record<string, any> | null>(null);
 .drawer-content {
 	padding: var(--content-padding);
 	display: grid;
-	gap: 24px;
+	gap: 1.5rem;
 }
 
 .license-save-button.is-enabled :deep(.v-button .button:not(:disabled)) {
@@ -500,11 +500,11 @@ const licenseFormEdits = ref<Record<string, any> | null>(null);
 
 .license-key-field {
 	display: grid;
-	gap: 8px;
+	gap: 0.5rem;
 }
 
 .license-key-label {
-	font-size: 14px;
+	font-size: 0.875rem;
 	font-weight: 600;
 	color: var(--theme--foreground);
 }
@@ -513,21 +513,21 @@ const licenseFormEdits = ref<Record<string, any> | null>(null);
 	--v-progress-circular-color: var(--theme--foreground-subdued);
 	display: inline-block;
 	vertical-align: middle;
-	margin-inline-end: 8px;
+	margin-inline-end: 0.5rem;
 }
 
 .validation-status {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
-	gap: 4px 16px;
-	margin-block-start: 4px;
+	gap: 0.25rem 1rem;
+	margin-block-start: 0.25rem;
 }
 
 .status-item {
 	display: flex;
 	align-items: center;
-	gap: 6px;
-	font-size: 13px;
+	gap: 0.375rem;
+	font-size: 0.8125rem;
 	color: var(--theme--success);
 }
 
@@ -536,7 +536,7 @@ const licenseFormEdits = ref<Record<string, any> | null>(null);
 }
 
 .status-icon {
-	--v-icon-size: 16px;
+	--v-icon-size: 1rem;
 	--v-icon-color: var(--theme--success);
 	flex-shrink: 0;
 }

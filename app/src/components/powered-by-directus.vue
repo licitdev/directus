@@ -24,9 +24,9 @@ const label = ref(props.isOIG ? t('brand_oig_label') : t('brand_directus_label')
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	gap: 8px;
+	gap: 0.5rem;
 	inline-size: fit-content;
-	padding: 10px 18px;
+	padding: 0.625rem 1.125rem;
 	border-radius: var(--theme--border-radius);
 	border: 1px solid var(--theme--border-color);
 	box-shadow: 0 2px 8px color-mix(in srgb, var(--black) 15%, transparent);
@@ -34,7 +34,7 @@ const label = ref(props.isOIG ? t('brand_oig_label') : t('brand_directus_label')
 	background-color: var(--white);
 	color: var(--black);
 	text-decoration: none;
-	font-size: 12px;
+	font-size: 0.75rem;
 	line-height: 1.2;
 	transition: opacity var(--fast) var(--transition);
 }

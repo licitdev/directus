@@ -119,7 +119,7 @@ const showStatus = computed(() => Boolean(activePayload.value?.valid));
 }
 
 .license-notice {
-	margin-block-end: 24px;
+	margin-block-end: 1.5rem;
 
 	:deep(a) {
 		color: var(--theme--primary);
@@ -129,38 +129,38 @@ const showStatus = computed(() => Boolean(activePayload.value?.valid));
 
 .license-field {
 	display: grid;
-	gap: 8px;
+	gap: 0.5rem;
 }
 
 .license-label {
-	font-size: 14px;
+	font-size: 0.875rem;
 	font-weight: 600;
 	color: var(--theme--foreground);
 
 	.optional {
 		color: var(--theme--primary);
 		font-weight: 400;
-		margin-inline-start: 4px;
+		margin-inline-start: 0.25rem;
 	}
 }
 
 .validation-status {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
-	gap: 4px 16px;
-	margin-block-start: 4px;
+	gap: 0.25rem 1rem;
+	margin-block-start: 0.25rem;
 }
 
 .spinner {
 	--v-progress-circular-color: var(--theme--foreground-subdued);
-	margin-inline-end: 8px;
+	margin-inline-end: 0.5rem;
 }
 
 .status-item {
 	display: flex;
 	align-items: center;
-	gap: 6px;
-	font-size: 13px;
+	gap: 0.375rem;
+	font-size: 0.8125rem;
 	color: var(--theme--success);
 
 	&.status-invalid {
@@ -169,7 +169,7 @@ const showStatus = computed(() => Boolean(activePayload.value?.valid));
 }
 
 .status-icon {
-	--v-icon-size: 16px;
+	--v-icon-size: 1rem;
 	--v-icon-color: var(--theme--success);
 	flex-shrink: 0;
 

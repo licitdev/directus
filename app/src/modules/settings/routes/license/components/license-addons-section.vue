@@ -87,17 +87,17 @@ function openPurchaseModal(addon: Addon) {
 
 <style scoped>
 .add-on-section {
-	margin-block-end: 32px;
+	margin-block-end: 2rem;
 }
 
 .section-title {
 	display: flex;
 	align-items: center;
-	gap: 8px;
-	font-size: 25px;
+	gap: 0.5rem;
+	font-size: 1.5rem;
 	font-weight: 600;
 	color: var(--theme--foreground);
-	margin: 0 0 16px;
+	margin: 0 0 1rem;
 }
 
 .section-icon {
@@ -107,10 +107,10 @@ function openPurchaseModal(addon: Addon) {
 .add-on-loading {
 	display: flex;
 	align-items: center;
-	gap: 12px;
-	padding: 16px 20px;
+	gap: 0.75rem;
+	padding: 1rem 1.25rem;
 	color: var(--theme--foreground-subdued);
-	font-size: 14px;
+	font-size: 0.875rem;
 }
 
 .add-on-error {
@@ -120,17 +120,17 @@ function openPurchaseModal(addon: Addon) {
 .add-on-grid {
 	display: grid;
 	grid-template-columns: 1fr;
-	gap: 12px;
+	gap: 0.75rem;
 }
 
 .add-on-card {
 	--add-on-card-background: var(--theme--background-normal);
 	display: flex;
 	align-items: center;
-	gap: 16px;
-	padding: 16px 20px;
+	gap: 1rem;
+	padding: 1rem 1.25rem;
 	background: var(--add-on-card-background);
-	border-radius: 8px;
+	border-radius: 0.5rem;
 
 	--v-addon-icon-background: var(--theme--primary);
 	--addon-title-color: var(--theme--foreground);
@@ -146,8 +146,8 @@ function openPurchaseModal(addon: Addon) {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	inline-size: 40px;
-	block-size: 40px;
+	inline-size: 2.5rem;
+	block-size: 2.5rem;
 	border-radius: 50%;
 	background: var(--v-addon-icon-background);
 	flex-shrink: 0;
@@ -155,14 +155,14 @@ function openPurchaseModal(addon: Addon) {
 
 .add-on-icon {
 	--v-icon-color: var(--white);
-	--v-icon-size: 22px;
+	--v-icon-size: 1.375rem;
 	flex-shrink: 0;
 }
 
 .add-on-content {
 	display: flex;
 	flex-direction: column;
-	gap: 4px;
+	gap: 0.25rem;
 	flex: 1;
 	min-inline-size: 0;
 }
@@ -174,8 +174,8 @@ function openPurchaseModal(addon: Addon) {
 }
 
 .add-on-purchase-icon {
-	--v-icon-size: 18px;
-	margin-inline-end: 6px;
+	--v-icon-size: 1.125rem;
+	margin-inline-end: 0.375rem;
 }
 
 .add-on-manage-btn {
@@ -185,8 +185,8 @@ function openPurchaseModal(addon: Addon) {
 }
 
 .add-on-manage-icon {
-	--v-icon-size: 18px;
-	margin-inline-end: 6px;
+	--v-icon-size: 1.125rem;
+	margin-inline-end: 0.375rem;
 }
 
 .add-on-upgrade-btn {
@@ -201,18 +201,18 @@ function openPurchaseModal(addon: Addon) {
 }
 
 .add-on-upgrade-icon {
-	--v-icon-size: 18px;
-	margin-inline-end: 6px;
+	--v-icon-size: 1.125rem;
+	margin-inline-end: 0.375rem;
 }
 
 .add-on-title {
-	font-size: 14px;
+	font-size: 0.875rem;
 	font-weight: 600;
 	color: var(--addon-title-color);
 }
 
 .add-on-description {
-	font-size: 13px;
+	font-size: 0.8125rem;
 	color: var(--theme--foreground-subdued);
 }
 </style>
