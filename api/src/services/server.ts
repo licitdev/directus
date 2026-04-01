@@ -13,7 +13,7 @@ import getDatabase, { hasDatabaseConnection } from '../database/index.js';
 import { defaultEntitlements } from '../license/defaults.js';
 import { getFeature } from '../license/index.js';
 import { getLicensePayload } from '../license/lib/get-license-payload.js';
-import { isLicenseLocked } from '../license/lib/license-status.js';
+import { getLicenseStatus } from '../license/lib/license-status.js';
 import { useLogger } from '../logger/index.js';
 import getMailer from '../mailer.js';
 import { rateLimiterGlobal } from '../middleware/rate-limiter-global.js';
@@ -340,10 +340,13 @@ export class ServerService {
 
 			try {
 				const licensePayload = await getLicensePayload(true);
+				const licenseStatus = getLicenseStatus(licensePayload);
 				info['license'] = licensePayload ?? null;
-				info['license_locked'] = licensePayload ? isLicenseLocked(licensePayload) : false;
+				info['license_status'] = licenseStatus;
+				info['license_locked'] = licenseStatus === 'locked';
 			} catch {
 				info['license'] = null;
+				info['license_status'] = null;
 				info['license_locked'] = false;
 			}
 		}

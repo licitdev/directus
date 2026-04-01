@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { User } from '@directus/types';
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import DeactivationSelectList, { type Item } from './deactivation-select-list.vue';
 import api from '@/api';
@@ -25,9 +25,17 @@ import DrawerItem from '@/views/private/components/drawer-item.vue';
 
 type UserItem = Item & { avatar: string };
 
-const props = defineProps<{
-	open: boolean;
-}>();
+const props = withDefaults(
+	defineProps<{
+		open: boolean;
+		notice?: string;
+		isSuspended?: boolean;
+		title?: string;
+	}>(),
+	{
+		isSuspended: false,
+	},
+);
 
 const emit = defineEmits<{
 	(e: 'update:open', value: boolean): void;
@@ -69,8 +77,10 @@ const deactivationNoticeMessage = computed(() => {
 		parts.push(t('settings_license_deactivation_popup_notice_users', { count: usersCount }));
 	}
 
-	if (parts.length === 0) {
-		return t('settings_license_deactivation_popup_notice_no_requirements');
+	if (props.isSuspended) {
+		return t('license_suspended_deactivation_popup_notice', {
+			requirements: parts.join(t('settings_license_deactivation_popup_notice_and')),
+		});
 	}
 
 	return t('settings_license_deactivation_popup_notice_requirements', {
@@ -224,14 +234,7 @@ async function fetchUsers() {
 	}
 }
 
-watch(
-	() => props.open,
-	(open) => {
-		if (open && users.value.length === 0) {
-			void fetchUsers();
-		}
-	},
-);
+void fetchUsers();
 
 async function deactivateLicense() {
 	deactivating.value = true;
@@ -317,13 +320,13 @@ async function onClickDeactivate() {
 	<VDialog v-model="openDeactivatePopup" keep-behind @esc="openDeactivatePopup = false">
 		<div class="deactivation-popup">
 			<div class="deactivation-popup-header">
-				<h2 class="title">{{ t('settings_license_deactivation_popup_title') }}</h2>
+				<h2 class="title">{{ props.title ?? t('settings_license_deactivation_popup_title') }}</h2>
 				<p class="subtitle">{{ t('settings_license_deactivation_popup_subtitle') }}</p>
 			</div>
 
 			<div class="deactivation-popup-body">
 				<div class="notice-wrapper">
-					<VNotice type="danger" icon="error">
+					<VNotice v-if="!disabledDeactivateButton" type="danger" icon="error">
 						{{ deactivationNoticeMessage }}
 					</VNotice>
 				</div>
@@ -447,7 +450,7 @@ async function onClickDeactivate() {
 			</div>
 
 			<div class="deactivation-popup-actions">
-				<VButton secondary @click="openDeactivatePopup = false">
+				<VButton v-if="!isSuspended" secondary @click="openDeactivatePopup = false">
 					{{ t('cancel') }}
 				</VButton>
 				<VButton kind="danger" :disabled="disabledDeactivateButton" @click="onClickDeactivate">
@@ -497,6 +500,11 @@ async function onClickDeactivate() {
 
 .deactivation-popup-header {
 	padding: 1rem 1.5rem 0.5rem;
+
+	.title {
+		color: var(--theme--danger);
+	}
+
 	h2 {
 		font-size: 1.5rem;
 		font-weight: bold;

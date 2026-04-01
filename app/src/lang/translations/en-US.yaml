@@ -89,8 +89,14 @@ settings_license_deactivation_popup_title: Deactivation License Requirement
 settings_license_deactivation_popup_subtitle:
   If you need to update your license key, you an update it via the “Manage License” in the License setting page.
 settings_license_deactivation_popup_confirm: Deactivate
-settings_license_deactivation_popup_notice:
-  In order to proceed to deactivate your license, you will need to deactivate 2 collections and 5 user seats.
+license_expired_deactivation_popup_title: License Expiration
+license_suspended_deactivation_popup_title: License Suspension
+license_suspended_deactivation_popup_notice:
+  Your license has expired and the grace period has ended. To unlock your project, reduce it to the Community plan
+  limits of {requirements}. Deactivated items will remained stored but locked in Directus, and custom access rules will
+  also be locked.
+license_project_locked_deactivation_popup_title: Your project has been locked for license suspension.
+license_project_locked_deactivation_popup_text: Contact your administrator to resolve this issue.
 settings_license_deactivation_popup_notice_requirements:
   'In order to proceed to deactivate your license, you will need to deactivate {requirements}.'
 settings_license_deactivation_popup_notice_no_requirements: You can proceed to deactivate your license.

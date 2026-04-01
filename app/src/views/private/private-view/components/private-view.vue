@@ -27,21 +27,24 @@ export interface PrivateViewProps {
 import { useCookies } from '@vueuse/integrations/useCookies';
 import { storeToRefs } from 'pinia';
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import LicenseBanner from '../../components/license-banner.vue';
-import LicenseLockedOverlay from '../../components/license-locked-overlay.vue';
 import NotificationDialogs from '../../components/notification-dialogs.vue';
 import NotificationsDrawer from '../../components/notifications-drawer.vue';
 import PrivateViewNoAppAccess from './private-view-no-app-access.vue';
 import PrivateViewRoot from './private-view-root.vue';
 import PoweredByDirectus from '@/components/powered-by-directus.vue';
+import DeactivationPopup from '@/modules/settings/routes/license/components/deactivation-popup.vue';
 import { useServerStore } from '@/stores/server';
 import { useSettingsStore } from '@/stores/settings';
 import { useUserStore } from '@/stores/user';
+import LicenseLockDialog from '@/views/private/components/license-lock-dialog.vue';
 
 defineProps<PrivateViewProps>();
 defineOptions({ inheritAttrs: false });
 
 const userStore = useUserStore();
+const { t } = useI18n();
 const { info } = storeToRefs(useServerStore());
 
 const showPoweredBy = computed(() => info.value?.license?.whitelabel_enabled !== false);
@@ -58,6 +61,26 @@ const settingsStore = useSettingsStore();
 const showLicenseBanner = computed(
 	() => userStore.isAdmin && !settingsStore.settings?.project_owner && !cookies.get('license-banner-dismissed'),
 );
+
+const isLicenseDeactivated = computed(() => {
+	if (info.value.license_locked) {
+		return true;
+	}
+
+	if (info.value.license_status && ['locked', 'suspended', 'revoked'].includes(info.value?.license_status)) {
+		return true;
+	}
+
+	return false;
+});
+
+const deactivationPopupTitle = computed(() => {
+	if (info.value.license_status && ['suspended', 'revoked'].includes(info.value?.license_status)) {
+		return t('license_suspended_deactivation_popup_title');
+	}
+
+	return t('license_expired_deactivation_popup_title');
+});
 </script>
 
 <template>
@@ -85,5 +108,11 @@ const showLicenseBanner = computed(
 	<NotificationDialogs />
 
 	<LicenseBanner v-model="showLicenseBanner" />
-	<LicenseLockedOverlay />
+	<LicenseLockDialog v-if="!userStore.isAdmin" :open="isLicenseDeactivated" />
+	<DeactivationPopup
+		v-if="userStore.isAdmin"
+		:open="isLicenseDeactivated"
+		is-suspended
+		:title="deactivationPopupTitle"
+	/>
 </template>

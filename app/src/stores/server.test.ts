@@ -40,6 +40,7 @@ const mockServerInfo: Info = {
 	license_source: null,
 	license: null,
 	license_locked: false,
+	license_status: 'missing',
 	files: undefined,
 	rateLimit: undefined,
 	queryLimit: undefined,
