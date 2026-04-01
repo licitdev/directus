@@ -2,9 +2,17 @@ import type { Request, Response } from 'express';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { loadSettings } from './load-settings.js';
 
+const { mockGetFeature } = vi.hoisted(() => ({
+	mockGetFeature: vi.fn(),
+}));
+
 // Mock dependencies
 vi.mock('../../../services/settings.js');
 vi.mock('../../../utils/get-schema.js');
+
+vi.mock('../../../license/index.js', () => ({
+	getFeature: mockGetFeature,
+}));
 
 const mockReadSingleton = vi.fn();
 const mockGetSchema = vi.fn();
@@ -28,6 +36,7 @@ beforeEach(() => {
 
 	vi.clearAllMocks();
 	mockGetSchema.mockResolvedValue({});
+	mockGetFeature.mockResolvedValue({ enabled: true });
 });
 
 describe('loadSettings', () => {
@@ -50,6 +59,7 @@ describe('loadSettings', () => {
 		await loadSettings(mockRequest as Request, mockResponse as Response, nextFunction);
 
 		expect(mockGetSchema).toHaveBeenCalledTimes(1);
+		expect(mockGetFeature).toHaveBeenCalledWith('llm');
 
 		expect(mockReadSingleton).toHaveBeenCalledWith({
 			fields: [
@@ -334,5 +344,88 @@ describe('loadSettings', () => {
 		});
 
 		expect(nextFunction).toHaveBeenCalledTimes(1);
+	});
+
+	describe('LLM feature gate (openai-compatible fields)', () => {
+		test('should null openai-compatible settings when llm feature is disabled', async () => {
+			mockGetFeature.mockResolvedValue({ enabled: false });
+
+			mockReadSingleton.mockResolvedValue({
+				ai_openai_api_key: 'sk-openai',
+				ai_anthropic_api_key: null,
+				ai_google_api_key: null,
+				ai_openai_compatible_api_key: 'custom-key',
+				ai_openai_compatible_base_url: 'http://localhost:11434/v1',
+				ai_openai_compatible_name: 'Ollama',
+				ai_openai_compatible_models: [{ id: 'llama3', name: 'Llama 3' }],
+				ai_openai_compatible_headers: [{ header: 'X-Custom', value: 'value' }],
+				ai_openai_allowed_models: ['gpt-5'],
+				ai_anthropic_allowed_models: null,
+				ai_google_allowed_models: null,
+				ai_system_prompt: 'Keep this',
+			});
+
+			await loadSettings(mockRequest as Request, mockResponse as Response, nextFunction);
+
+			expect(mockGetFeature).toHaveBeenCalledWith('llm');
+
+			expect(mockResponse.locals).toEqual({
+				ai: {
+					settings: {
+						openaiApiKey: 'sk-openai',
+						anthropicApiKey: null,
+						googleApiKey: null,
+						openaiCompatibleApiKey: null,
+						openaiCompatibleBaseUrl: null,
+						openaiCompatibleName: null,
+						openaiCompatibleModels: null,
+						openaiCompatibleHeaders: null,
+						openaiAllowedModels: ['gpt-5'],
+						anthropicAllowedModels: null,
+						googleAllowedModels: null,
+						systemPrompt: 'Keep this',
+					},
+					systemPrompt: 'Keep this',
+				},
+			});
+
+			expect(nextFunction).toHaveBeenCalledTimes(1);
+		});
+
+		test('should null openai-compatible settings when llm entitlement is missing', async () => {
+			mockGetFeature.mockResolvedValue(undefined);
+
+			mockReadSingleton.mockResolvedValue({
+				ai_openai_api_key: null,
+				ai_anthropic_api_key: null,
+				ai_google_api_key: null,
+				ai_openai_compatible_api_key: 'custom-key',
+				ai_openai_compatible_base_url: 'http://localhost:11434/v1',
+				ai_openai_compatible_name: 'Ollama',
+				ai_openai_compatible_models: [{ id: 'llama3', name: 'Llama 3' }],
+				ai_openai_compatible_headers: null,
+				ai_openai_allowed_models: null,
+				ai_anthropic_allowed_models: null,
+				ai_google_allowed_models: null,
+				ai_system_prompt: null,
+			});
+
+			await loadSettings(mockRequest as Request, mockResponse as Response, nextFunction);
+
+			expect(mockResponse.locals?.['ai']?.['settings']).toEqual({
+				openaiApiKey: null,
+				anthropicApiKey: null,
+				googleApiKey: null,
+				openaiCompatibleApiKey: null,
+				openaiCompatibleBaseUrl: null,
+				openaiCompatibleName: null,
+				openaiCompatibleModels: null,
+				openaiCompatibleHeaders: null,
+				openaiAllowedModels: null,
+				anthropicAllowedModels: null,
+				googleAllowedModels: null,
+				systemPrompt: null,
+			});
+		});
 	});
 });
