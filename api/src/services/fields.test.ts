@@ -14,6 +14,7 @@ import {
 	setupSystemCollectionMocks,
 } from '../test-utils/knex.js';
 import * as getSchemaModule from '../utils/get-schema.js';
+import { CollectionsService } from './collections.js';
 import { FieldsService } from './fields.js';
 import { ItemsService } from './items.js';
 
@@ -235,6 +236,154 @@ describe('Integration Tests', () => {
 
 				expect(result.length).toBeGreaterThan(0);
 				expect(result.every((field) => field.collection === 'test_collection')).toBe(true);
+			});
+
+			test('marks relational fields as is_collection_excluded when relations target excluded collections', async () => {
+				const mockColumns = [
+					{
+						table: 'test_collection',
+						name: 'id',
+						data_type: 'integer',
+						default_value: null,
+						is_nullable: false,
+					},
+					{
+						table: 'test_collection',
+						name: 'rel',
+						data_type: 'integer',
+						default_value: null,
+						is_nullable: true,
+					},
+				];
+
+				const service = new FieldsService({
+					knex: db,
+					schema,
+					accountability: { role: 'admin', admin: true } as Accountability,
+				});
+
+				service.schemaInspector.columnInfo = vi.fn().mockResolvedValue(mockColumns);
+
+				// directus_fields rows: meta.special must include a relational keyword (m2o, o2m, m2m, m2a);
+				// readAll uses meta.special for this, not field.type
+				tracker.on.select('directus_fields').response([
+					{
+						id: 1,
+						collection: 'test_collection',
+						field: 'rel',
+						interface: null,
+						display: null,
+						options: null,
+						display_options: null,
+						width: 'full',
+						hidden: false,
+						required: false,
+						sort: null,
+						special: ['m2o'],
+						translations: null,
+						note: null,
+						conditions: null,
+						validation: null,
+						validation_message: null,
+						searchable: true,
+						system: false,
+						clear_hidden_value_on_save: false,
+						group: null,
+					},
+				]);
+
+				// directus_relations rows: link rel -> excluded_collection
+				tracker.on.select('directus_relations').response([
+					{
+						many_collection: 'test_collection',
+						many_field: 'rel',
+						one_collection: 'excluded_collection',
+						one_field: 'id',
+					},
+				]);
+
+				// readAll calls CollectionsService.isExcluded per collection (many then one)
+				const isExcludedSpy = vi.spyOn(CollectionsService.prototype, 'isExcluded').mockImplementation(async (key) => {
+					return key === 'excluded_collection';
+				});
+
+				let result: Field[];
+
+				try {
+					result = await service.readAll('test_collection');
+				} finally {
+					isExcludedSpy.mockRestore();
+				}
+
+				const relationalField = result.find((field) => field.field === 'rel') as Field & {
+					is_collection_excluded?: boolean;
+				};
+
+				expect(relationalField).toBeDefined();
+				expect(relationalField.meta?.special).toContain('m2o');
+				expect(relationalField.is_collection_excluded).toBe(true);
+			});
+
+			test('does not set is_collection_excluded when meta.special omits relational keywords', async () => {
+				const mockColumns = [
+					{
+						table: 'test_collection',
+						name: 'id',
+						data_type: 'integer',
+						default_value: null,
+						is_nullable: false,
+					},
+					{
+						table: 'test_collection',
+						name: 'rel',
+						data_type: 'integer',
+						default_value: null,
+						is_nullable: true,
+					},
+				];
+
+				const service = new FieldsService({
+					knex: db,
+					schema,
+					accountability: { role: 'admin', admin: true } as Accountability,
+				});
+
+				service.schemaInspector.columnInfo = vi.fn().mockResolvedValue(mockColumns);
+
+				tracker.on.select('directus_fields').response([
+					{
+						id: 1,
+						collection: 'test_collection',
+						field: 'rel',
+						interface: null,
+						display: null,
+						options: null,
+						display_options: null,
+						width: 'full',
+						hidden: false,
+						required: false,
+						sort: null,
+						special: null,
+						translations: null,
+						note: null,
+						conditions: null,
+						validation: null,
+						validation_message: null,
+						searchable: true,
+						system: false,
+						clear_hidden_value_on_save: false,
+						group: null,
+					},
+				]);
+
+				const result = await service.readAll('test_collection');
+
+				const relField = result.find((field) => field.field === 'rel') as Field & {
+					is_collection_excluded?: boolean;
+				};
+
+				expect(relField).toBeDefined();
+				expect(relField.is_collection_excluded).toBeUndefined();
 			});
 
 			test('should throw ForbiddenError for non-admin users without access', async () => {
