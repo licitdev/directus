@@ -7,6 +7,7 @@ export { IllegalAssetTransformationError } from './illegal-asset-transformation.
 export { InternalServerError } from './internal.js';
 export { InvalidCredentialsError } from './invalid-credentials.js';
 export { InvalidForeignKeyError } from './invalid-foreign-key.js';
+export { InvalidInviteError } from './invalid-invite.js';
 export { InvalidLicenseConfigError } from './invalid-license-config.js';
 export { InvalidLicenseKeyError } from './invalid-license-key.js';
 export { InvalidLicenseTokenError } from './invalid-license-token.js';
@@ -34,3 +35,4 @@ export { UserDeactivatedError } from './user-deactivated.js';
 export { UserSuspendedError } from './user-suspended.js';
 export { ValueOutOfRangeError } from './value-out-of-range.js';
 export { ValueTooLongError } from './value-too-long.js';
+export { TimeoutError } from './timeout.js';

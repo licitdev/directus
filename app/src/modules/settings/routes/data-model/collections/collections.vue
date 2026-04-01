@@ -446,7 +446,7 @@ async function onUnExclude(collectionKey: string) {
 }
 
 .root-drag-container {
-	padding: 8px 0;
+	padding: 0.4375rem 0;
 	overflow: hidden;
 }
 
@@ -462,7 +462,7 @@ async function onUnExclude(collectionKey: string) {
 }
 
 .collection-icon {
-	margin-inline-end: 8px;
+	margin-inline-end: 0.4375rem;
 }
 
 .hidden .collection-name {
@@ -488,11 +488,11 @@ async function onUnExclude(collectionKey: string) {
 }
 
 .db-only {
-	margin-block-end: 16px;
+	margin-block-end: 0.875rem;
 }
 
 .expand-collapse-button {
-	padding-block: 4px 8px;
+	padding-block: 0.25rem 0.4375rem;
 	text-align: end;
 	color: var(--theme--foreground-subdued);
 
@@ -512,6 +512,6 @@ async function onUnExclude(collectionKey: string) {
 }
 
 .snapshot-download {
-	margin-block-start: 12px;
+	margin-block-start: 0.6875rem;
 }
 </style>

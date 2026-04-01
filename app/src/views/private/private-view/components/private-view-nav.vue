@@ -26,7 +26,7 @@ defineProps<{ id?: string }>();
 	position: relative;
 	display: flex;
 	flex-direction: column;
-	font-size: 1rem;
+	font-size: 0.8125rem;
 	background: var(--theme--navigation--background);
 }
 
@@ -42,7 +42,7 @@ defineProps<{ id?: string }>();
 	--v-list-item-background-color-active: var(--theme--navigation--list--background-active);
 	--v-divider-color: var(--theme--navigation--list--divider--border-color);
 	--v-divider-thickness: var(--theme--navigation--list--divider--border-width);
-	--project-header-height: 60px;
+	--project-header-height: 3.375rem;
 
 	flex: 1;
 	min-block-size: 0;

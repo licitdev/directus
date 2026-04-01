@@ -1,15 +1,12 @@
-import { createError, ErrorCode } from '../index.js';
+import { createError, type DirectusErrorConstructor, ErrorCode } from '../index.js';
 
 export interface InvalidLicenseKeyErrorExtensions {
 	reason?: string;
 	statusCode?: number;
 }
 
-export const messageConstructor = (extensions: InvalidLicenseKeyErrorExtensions) =>
+export const messageConstructor = (extensions: InvalidLicenseKeyErrorExtensions): string =>
 	extensions.reason ?? 'Invalid license key.';
 
-export const InvalidLicenseKeyError = createError<InvalidLicenseKeyErrorExtensions>(
-	ErrorCode.InvalidLicenseKey,
-	messageConstructor,
-	403,
-);
+export const InvalidLicenseKeyError: DirectusErrorConstructor<InvalidLicenseKeyErrorExtensions> =
+	createError<InvalidLicenseKeyErrorExtensions>(ErrorCode.InvalidLicenseKey, messageConstructor, 403);

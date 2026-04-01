@@ -1,3 +1,7 @@
-import { createError, ErrorCode } from '../index.js';
+import { createError, type DirectusErrorConstructor, ErrorCode } from '../index.js';
 
-export const UserDeactivatedError = createError(ErrorCode.UserDeactivated, 'User deactivated.', 401);
+export const UserDeactivatedError: DirectusErrorConstructor<void> = createError(
+	ErrorCode.UserDeactivated,
+	'User deactivated.',
+	401,
+);
