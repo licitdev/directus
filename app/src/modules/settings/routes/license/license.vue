@@ -6,6 +6,7 @@ import { storeToRefs } from 'pinia';
 import { computed, provide, ref, watch } from 'vue';
 import { I18nT, useI18n } from 'vue-i18n';
 import SettingsNavigation from '../../components/navigation.vue';
+import { useAddonMetadata } from './composables/use-addon-metadata';
 import VBreadcrumb from '@/components/v-breadcrumb.vue';
 import VButton from '@/components/v-button.vue';
 import VDrawer from '@/components/v-drawer.vue';
@@ -211,26 +212,22 @@ function onLicenseKeyInput(v: string) {
 	};
 }
 
-function mapAddonToDisplay(item: {
-	id: string;
-	name: string;
-	description: string;
-	status: string;
-	action: string;
-	icon?: string;
-	disabled?: boolean;
-}) {
-	return {
-		...item,
-		icon: item.icon ?? 'extension',
-		disabled: item.disabled ?? false,
-		showPurchase: !(item.disabled ?? false) && item.action === 'purchase',
-		showInfo: item.action === 'info',
-		showUpgradePlan: item.disabled ?? false,
-	};
-}
+const addonMetadata = useAddonMetadata();
 
-const addonsData = computed(() => addons.value?.data?.map(mapAddonToDisplay) ?? []);
+const addonsData = computed(() => {
+	const purchasedIds = new Set((addons.value?.data ?? []).map((a: { id: string }) => a.id));
+
+	return Object.entries(addonMetadata).map(([id, meta]) => ({
+		id,
+		name: meta.name,
+		description: meta.description,
+		icon: meta.icon,
+		disabled: meta.disabled ?? false,
+		showPurchase: !meta.disabled && !purchasedIds.has(id),
+		showManage: !meta.disabled && purchasedIds.has(id),
+		showUpgradePlan: meta.disabled ?? false,
+	}));
+});
 
 provide('license:openDrawer', openDrawer);
 

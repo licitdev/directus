@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ref } from 'vue';
+import PurchaseAddonModal from './purchase-addon-modal.vue';
 import VButton from '@/components/v-button.vue';
 import VIcon from '@/components/v-icon/v-icon.vue';
 import VNotice from '@/components/v-notice.vue';
@@ -8,13 +10,11 @@ type Addon = {
 	id: string;
 	name: string;
 	description: string;
-	status: string;
-	action: string;
 	icon: string;
+	disabled: boolean;
 	showPurchase: boolean;
-	showInfo: boolean;
-	disabled?: boolean;
-	showUpgradePlan?: boolean;
+	showManage: boolean;
+	showUpgradePlan: boolean;
 };
 
 defineProps<{
@@ -23,6 +23,16 @@ defineProps<{
 	addonsError: string | null;
 	version: string;
 }>();
+
+const showPurchaseModal = ref(false);
+const selectedAddonInfo = ref<string | null>(null);
+
+function openPurchaseModal(addon: Addon) {
+	if (addon.id) {
+		selectedAddonInfo.value = addon.id;
+		showPurchaseModal.value = true;
+	}
+}
 </script>
 
 <template>
@@ -41,42 +51,38 @@ defineProps<{
 			</VNotice>
 			<template v-else>
 				<div v-for="pkg in addons" :key="pkg.id" class="add-on-card" :class="{ disabled: pkg.disabled }">
-					<div class="add-on-icon-wrapper" :class="{ disabled: pkg.disabled }">
+					<div class="add-on-icon-wrapper">
 						<VIcon :name="pkg.icon" class="add-on-icon" />
 					</div>
 					<div class="add-on-content">
-						<span class="add-on-title" :class="{ disabled: pkg.disabled }">
-							{{ pkg.name }}
-						</span>
-						<span v-if="pkg.description" class="add-on-description" :class="{ disabled: pkg.disabled }">
-							{{ pkg.description }}
-						</span>
+						<span class="add-on-title">{{ pkg.name }}</span>
+						<span v-if="pkg.description" class="add-on-description">{{ pkg.description }}</span>
 					</div>
 					<VButton
 						v-if="pkg.showPurchase"
 						secondary
 						small
 						class="add-on-purchase-btn"
-						:href="`https://directus.io/license-request?utm_source=self_hosted&utm_medium=product&utm_campaign=2025_10_kyc&utm_term=${version}&utm_content=settings_addon_${pkg.id}`"
-						target="_blank"
+						:disabled="pkg.disabled"
+						@click="openPurchaseModal(pkg)"
 					>
 						<VIcon name="add_shopping_cart" class="add-on-purchase-icon" />
 						{{ $t('settings_license_purchase') }}
 					</VButton>
-					<VButton v-else-if="pkg.showUpgradePlan" secondary small class="add-on-upgrade-btn" disabled>
+					<VButton v-else-if="pkg.showManage" secondary small class="add-on-manage-btn" :disabled="pkg.disabled">
+						<VIcon name="settings" class="add-on-manage-icon" />
+						{{ $t('settings_license_manage_addon') }}
+					</VButton>
+					<VButton v-else-if="pkg.showUpgradePlan" secondary small class="add-on-upgrade-btn" :disabled="pkg.disabled">
 						<VIcon name="diamond" class="add-on-upgrade-icon" />
 						{{ $t('settings_license_upgrade_plan') }}
 					</VButton>
-					<VIcon
-						v-else-if="pkg.showInfo"
-						v-tooltip.bottom="$t('settings_license_add_on_info')"
-						name="info"
-						class="add-on-info-icon"
-					/>
 				</div>
 			</template>
 		</div>
 	</div>
+
+	<PurchaseAddonModal v-if="selectedAddonInfo" v-model="showPurchaseModal" :addon-id="selectedAddonInfo" />
 </template>
 
 <style scoped>
@@ -118,12 +124,22 @@ defineProps<{
 }
 
 .add-on-card {
+	--add-on-card-background: var(--theme--background-normal);
 	display: flex;
 	align-items: center;
 	gap: 16px;
 	padding: 16px 20px;
-	background: var(--theme--background-subdued);
+	background: var(--add-on-card-background);
 	border-radius: 8px;
+
+	--v-addon-icon-background: var(--theme--primary);
+	--addon-title-color: var(--theme--foreground);
+
+	&.disabled {
+		--v-addon-icon-background: var(--theme--foreground-subdued);
+		--add-on-card-background: var(--theme--background-subdued);
+		--addon-title-color: var(--theme--foreground-subdued);
+	}
 }
 
 .add-on-icon-wrapper {
@@ -133,27 +149,13 @@ defineProps<{
 	inline-size: 40px;
 	block-size: 40px;
 	border-radius: 50%;
-	background: var(--theme--primary);
+	background: var(--v-addon-icon-background);
 	flex-shrink: 0;
-}
-
-.add-on-icon-wrapper.disabled {
-	background: var(--theme--background-normal);
-}
-
-.add-on-icon-wrapper.disabled .add-on-icon {
-	--v-icon-color: var(--theme--foreground-subdued);
 }
 
 .add-on-icon {
 	--v-icon-color: var(--white);
 	--v-icon-size: 22px;
-	flex-shrink: 0;
-}
-
-.add-on-info-icon {
-	--v-icon-color: var(--theme--foreground-subdued);
-	--v-icon-size: 18px;
 	flex-shrink: 0;
 }
 
@@ -166,11 +168,23 @@ defineProps<{
 }
 
 .add-on-purchase-btn {
+	--v-button-background-color: var(--theme--background-accent);
 	white-space: nowrap;
 	flex-shrink: 0;
 }
 
 .add-on-purchase-icon {
+	--v-icon-size: 18px;
+	margin-inline-end: 6px;
+}
+
+.add-on-manage-btn {
+	--v-button-background-color: var(--theme--background-accent);
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+.add-on-manage-icon {
 	--v-icon-size: 18px;
 	margin-inline-end: 6px;
 }
@@ -187,7 +201,6 @@ defineProps<{
 }
 
 .add-on-upgrade-icon {
-	--v-icon-color: var(--theme--foreground-subdued);
 	--v-icon-size: 18px;
 	margin-inline-end: 6px;
 }
@@ -195,20 +208,11 @@ defineProps<{
 .add-on-title {
 	font-size: 14px;
 	font-weight: 600;
-	color: var(--theme--foreground);
-}
-
-.add-on-title.disabled {
-	color: var(--theme--foreground-subdued);
+	color: var(--addon-title-color);
 }
 
 .add-on-description {
 	font-size: 13px;
 	color: var(--theme--foreground-subdued);
-}
-
-.add-on-description.disabled {
-	color: var(--theme--foreground-subdued);
-	opacity: 0.8;
 }
 </style>

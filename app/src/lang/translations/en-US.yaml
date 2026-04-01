@@ -56,7 +56,7 @@ settings_license_value_stored: Value Securely Stored
 settings_license_edit: Edit License Key
 settings_license_env_managed: You will need to manage your license key through your ENV.
 settings_license_add: Add License Key
-settings_license_manage: Manage License
+settings_license_manage: Manage
 settings_license_upgrade_plan: Upgrade Plan
 settings_license_manage_plan: Manage Plan
 settings_license_current_plan: Current Plan
@@ -65,6 +65,7 @@ settings_license_your_plan_usage: Your Plan Usage
 settings_license_add_on_packages: Add-on Packages
 settings_license_add_on_info: Learn more about this add-on
 settings_license_purchase: Purchase
+settings_license_manage_addon: Manage
 settings_license_usage_available: Included
 settings_license_usage_unavailable: Not Included
 settings_license_usage_disabled: Disabled
@@ -100,6 +101,20 @@ settings_license_deactivation_popup_remaining: '{count} remaining'
 settings_license_deactivation_popup_limit_count_success: 'All set'
 settings_license_deactivate_confirm: Are you sure you want to deactivate these collections and user seats?
 settings_license_deactivate_success: License deactivated successfully
+settings_license_addon_user_seats_name: User Seats
+settings_license_addon_user_seats_description: '$15.00 per seat'
+settings_license_addon_user_seats_title: Purchase Additional User Seats
+settings_license_addon_user_seats_helper_text: 1 Pack = 10 Users
+settings_license_addon_sso_name: SSO Feature
+settings_license_addon_sso_description: Allows SSO configuration
+settings_license_addon_sso_title: Are you sure you want to purchase SSO feature?
+settings_license_addon_collections_name: Data Model Collections
+settings_license_addon_collections_description: '$100.00 per 25 collections/ pack'
+settings_license_addon_collections_title: Additional Collections Pack(s)
+settings_license_addon_collections_helper_text: 1 Pack = 25 Collections
+settings_license_addon_basic_support_name: Basic Support
+settings_license_addon_basic_support_title: Are you sure you want to purchase Basic Support feature?
+settings_license_addon_confirm_purchase: Confirm Purchase
 user_status_deactivated: Deactivated
 error_archiving_users: Failed to deactivate selected users.
 error_excluding_collections: Failed to deactivate selected collections.
