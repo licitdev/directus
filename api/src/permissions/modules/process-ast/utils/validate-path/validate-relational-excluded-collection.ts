@@ -89,6 +89,64 @@ function touchesExcludedTargetCollection(
 	return false;
 }
 
+async function getExcludedSet(knex: Knex): Promise<Set<string>> {
+	const excludedRows = (await knex.select('collection').from('directus_collections').where('excluded', true)) as {
+		collection: string;
+	}[];
+
+	return new Set(excludedRows.map((r) => r.collection));
+}
+
+export async function getExcludedRelationalFieldsForCollection(
+	collection: string,
+	schema: SchemaOverview,
+	knex: Knex,
+): Promise<string[]> {
+	const excludedSet = await getExcludedSet(knex);
+
+	if (excludedSet.size === 0) {
+		return [];
+	}
+
+	const relationalFields = Object.keys(schema.collections[collection]?.fields ?? {}).filter((field) =>
+		isRelationalField(schema, collection, field),
+	);
+
+	if (relationalFields.length === 0) {
+		return [];
+	}
+
+	const metaRows = (await knex('directus_relations')
+		.select('many_collection', 'many_field', 'one_collection', 'one_field', 'one_allowed_collections')
+		.where((qb) => {
+			for (const f of relationalFields) {
+				qb.orWhere((inner) => {
+					inner.where({ many_collection: collection, many_field: f });
+				});
+
+				qb.orWhere((inner) => {
+					inner.where({ one_collection: collection, one_field: f });
+				});
+			}
+		})) as RelationMetaRow[];
+
+	const excludedFields: string[] = [];
+
+	for (const field of relationalFields) {
+		const touchedCollections = getCollectionsTouchedByFieldRelation(schema, collection, field, metaRows);
+
+		if (touchedCollections.size === 0) {
+			continue;
+		}
+
+		if (touchesExcludedTargetCollection(touchedCollections, collection, excludedSet)) {
+			excludedFields.push(field);
+		}
+	}
+
+	return excludedFields;
+}
+
 /**
  * Reject field paths whose relation graph references an excluded collection (directus_collections.excluded),
  * using the same error shape as unknown fields.
@@ -98,11 +156,7 @@ export async function validateRelationalFieldsToExcludedCollections(
 	schema: SchemaOverview,
 	knex: Knex,
 ): Promise<void> {
-	const excludedRows = (await knex.select('collection').from('directus_collections').where('excluded', true)) as {
-		collection: string;
-	}[];
-
-	const excludedSet = new Set(excludedRows.map((r) => r.collection));
+	const excludedSet = await getExcludedSet(knex);
 
 	if (excludedSet.size === 0) {
 		return;

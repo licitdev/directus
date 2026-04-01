@@ -28,6 +28,7 @@ import { runAst } from '../database/run-ast/run-ast.js';
 import emitter from '../emitter.js';
 import { processAst } from '../permissions/modules/process-ast/process-ast.js';
 import { createCollectionExcludedError } from '../permissions/modules/process-ast/utils/validate-path/create-error.js';
+import { getExcludedRelationalFieldsForCollection } from '../permissions/modules/process-ast/utils/validate-path/validate-relational-excluded-collection.js';
 import { processPayload } from '../permissions/modules/process-payload/process-payload.js';
 import { validateAccess } from '../permissions/modules/validate-access/validate-access.js';
 import { shouldClearCache } from '../utils/should-clear-cache.js';
@@ -534,6 +535,8 @@ export class ItemsService<Item extends AnyItem = AnyItem, Collection extends str
 					)
 				: query;
 
+		const isDefaultFieldSelection = updatedQuery.fields === undefined || (updatedQuery.fields?.includes('*') ?? false);
+
 		let ast = await getAstFromQuery(
 			{
 				collection: this.collection,
@@ -547,7 +550,12 @@ export class ItemsService<Item extends AnyItem = AnyItem, Collection extends str
 		);
 
 		ast = await processAst(
-			{ ast, action: 'read', accountability: this.accountability },
+			{
+				ast,
+				action: 'read',
+				accountability: this.accountability,
+				skipRelationalExcludedCollectionsValidation: isDefaultFieldSelection,
+			},
 			{ knex: this.knex, schema: this.schema },
 		);
 
@@ -556,6 +564,18 @@ export class ItemsService<Item extends AnyItem = AnyItem, Collection extends str
 			// GraphQL requires relational keys to be returned regardless
 			stripNonRequested: opts?.stripNonRequested !== undefined ? opts.stripNonRequested : true,
 		});
+
+		if (isDefaultFieldSelection && Array.isArray(records)) {
+			const excludedFields = await getExcludedRelationalFieldsForCollection(this.collection, this.schema, this.knex);
+
+			if (excludedFields.length > 0) {
+				for (const record of records as Record<string, unknown>[]) {
+					for (const field of excludedFields) {
+						delete record[field];
+					}
+				}
+			}
+		}
 
 		// TODO when would this happen?
 		if (records === null) {

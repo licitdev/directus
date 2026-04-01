@@ -2,7 +2,10 @@ import { ForbiddenError } from '@directus/errors';
 import type { Relation, RelationMeta, SchemaOverview } from '@directus/types';
 import { describe, expect, test } from 'vitest';
 import type { FieldMap } from '../../types.js';
-import { validateRelationalFieldsToExcludedCollections } from './validate-relational-excluded-collection.js';
+import {
+	getExcludedRelationalFieldsForCollection,
+	validateRelationalFieldsToExcludedCollections,
+} from './validate-relational-excluded-collection.js';
 
 type DirectusCollectionsRow = { collection: string };
 
@@ -205,5 +208,34 @@ describe('validateRelationalFieldsToExcludedCollections', () => {
 				knex as unknown as Parameters<typeof validateRelationalFieldsToExcludedCollections>[2],
 			),
 		).rejects.toThrowError(ForbiddenError);
+	});
+});
+
+describe('getExcludedRelationalFieldsForCollection', () => {
+	test('returns relational field names that touch excluded collections', async () => {
+		const schema = createSchemaOverview({
+			collection: 'cities',
+			field: 'country',
+			special: ['m2o'],
+			relations: [
+				{
+					collection: 'cities',
+					field: 'country',
+					related_collection: 'countries',
+					schema: null,
+					meta: null,
+				},
+			],
+		});
+
+		const knex = createKnexMock({ excludedCollections: ['countries'] });
+
+		await expect(
+			getExcludedRelationalFieldsForCollection(
+				'cities',
+				schema,
+				knex as unknown as Parameters<typeof getExcludedRelationalFieldsForCollection>[2],
+			),
+		).resolves.toEqual(['country']);
 	});
 });

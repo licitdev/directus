@@ -15,6 +15,7 @@ export interface ProcessAstOptions {
 	ast: AST;
 	action: PermissionsAction;
 	accountability: Accountability | null;
+	skipRelationalExcludedCollectionsValidation?: boolean;
 }
 
 export async function processAst(options: ProcessAstOptions, context: Context) {
@@ -29,7 +30,7 @@ export async function processAst(options: ProcessAstOptions, context: Context) {
 			validatePathExistence(path, collection, fields, context.schema);
 		}
 
-		if (context.knex) {
+		if (context.knex && options.skipRelationalExcludedCollectionsValidation !== true) {
 			await validateRelationalFieldsToExcludedCollections(fieldMap, context.schema, context.knex);
 		}
 
@@ -56,7 +57,7 @@ export async function processAst(options: ProcessAstOptions, context: Context) {
 		validatePathExistence(path, collection, fields, context.schema);
 	}
 
-	if (context.knex) {
+	if (context.knex && options.skipRelationalExcludedCollectionsValidation !== true) {
 		await validateRelationalFieldsToExcludedCollections(fieldMap, context.schema, context.knex);
 	}
 
