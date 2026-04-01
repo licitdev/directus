@@ -27,7 +27,9 @@ export function useRelationSingle<T extends Record<string, any>>(
 	watch(
 		[value, previewQuery, relation, enabled],
 		() => {
-			if (enabled.value) getDisplayItem();
+			const isExcludedRelationCollection = relation.value?.relatedCollection?.meta?.excluded === true;
+
+			if (enabled.value && !isExcludedRelationCollection) getDisplayItem();
 		},
 		{ immediate: true },
 	);

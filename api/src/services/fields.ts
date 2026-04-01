@@ -43,6 +43,7 @@ import { getSchema } from '../utils/get-schema.js';
 import { sanitizeColumn } from '../utils/sanitize-schema.js';
 import { shouldClearCache } from '../utils/should-clear-cache.js';
 import { transaction } from '../utils/transaction.js';
+import { CollectionsService } from './collections.js';
 import { buildCollectionAndFieldRelations } from './fields/build-collection-and-field-relations.js';
 import { getCollectionMetaUpdates } from './fields/get-collection-meta-updates.js';
 import { getCollectionRelationList } from './fields/get-collection-relation-list.js';
@@ -275,6 +276,65 @@ export class FieldsService {
 		// Update specific database type overrides
 		for (const field of result) {
 			field.type = this.helpers.schema.processFieldType(field);
+		}
+
+		// Mark relational fields when their relation points to an excluded collection
+		const relationSpecials = ['m2o', 'o2m', 'm2m', 'm2a'];
+
+		if (result.length > 0) {
+			type RelationMetaRow = {
+				many_collection: string;
+				many_field: string;
+				one_collection: string | null;
+				one_field: string | null;
+			};
+
+			const collectionsService = new CollectionsService({
+				knex: this.knex,
+				schema: this.schema,
+				accountability: this.accountability,
+			});
+
+			for (const field of result) {
+				const specials = field.meta?.special ?? [];
+
+				if (!specials.some((special) => relationSpecials.includes(special))) {
+					continue;
+				}
+
+				const rowsForField = await this.knex('directus_relations')
+					.select<RelationMetaRow[]>('many_collection', 'many_field', 'one_collection', 'one_field')
+					.where((qb) => {
+						qb.where({
+							many_collection: field.collection,
+							many_field: field.field,
+						}).orWhere({
+							one_collection: field.collection,
+							one_field: field.field,
+						});
+					});
+
+				if (!rowsForField || rowsForField.length === 0) {
+					field.is_collection_excluded = false;
+					continue;
+				}
+
+				let isExcludedRelation = false;
+
+				for (const row of rowsForField) {
+					if (await collectionsService.isExcluded(row.many_collection)) {
+						isExcludedRelation = true;
+						break;
+					}
+
+					if (row.one_collection && (await collectionsService.isExcluded(row.one_collection))) {
+						isExcludedRelation = true;
+						break;
+					}
+				}
+
+				field.is_collection_excluded = isExcludedRelation;
+			}
 		}
 
 		return result;

@@ -69,6 +69,7 @@ export interface FieldRaw {
 export interface Field extends FieldRaw {
 	name: string;
 	children?: Field[] | null;
+	is_collection_excluded?: boolean;
 }
 
 export type RawField = DeepPartial<Field> & { field: string; type: Type };
