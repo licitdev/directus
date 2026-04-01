@@ -79,31 +79,36 @@ vi.mock('../utils/should-clear-cache.js', () => ({
 
 const mockCreateIndexSpy = vi.fn().mockResolvedValue(undefined);
 
-vi.mock('../database/helpers/index.js', () => ({
-	getHelpers: vi.fn(() => ({
-		schema: {
-			createIndex: mockCreateIndexSpy,
-			processFieldType: vi.fn((field) => field.type),
-			preColumnChange: vi.fn().mockResolvedValue(true),
-			postColumnChange: vi.fn().mockResolvedValue(undefined),
-			setNullable: vi.fn(),
-			generateIndexName: vi.fn((type, collection, field) => `${collection}_${field}_${type}`),
-		},
-		date: {
-			fieldFlagForField: vi.fn().mockReturnValue(null),
-		},
-		st: {
-			createColumn: vi.fn((_table, _field) => ({
-				defaultTo: vi.fn().mockReturnThis(),
-				notNullable: vi.fn().mockReturnThis(),
-				nullable: vi.fn().mockReturnThis(),
-				unique: vi.fn().mockReturnThis(),
-				index: vi.fn().mockReturnThis(),
-				primary: vi.fn().mockReturnThis(),
-			})),
-		},
-	})),
-}));
+vi.mock('../database/helpers/index.js', async (importOriginal) => {
+	const actual = await importOriginal<typeof import('../database/helpers/index.js')>();
+
+	return {
+		...actual,
+		getHelpers: vi.fn(() => ({
+			schema: {
+				createIndex: mockCreateIndexSpy,
+				processFieldType: vi.fn((field) => field.type),
+				preColumnChange: vi.fn().mockResolvedValue(true),
+				postColumnChange: vi.fn().mockResolvedValue(undefined),
+				setNullable: vi.fn(),
+				generateIndexName: vi.fn((type, collection, field) => `${collection}_${field}_${type}`),
+			},
+			date: {
+				fieldFlagForField: vi.fn().mockReturnValue(null),
+			},
+			st: {
+				createColumn: vi.fn((_table, _field) => ({
+					defaultTo: vi.fn().mockReturnThis(),
+					notNullable: vi.fn().mockReturnThis(),
+					nullable: vi.fn().mockReturnThis(),
+					unique: vi.fn().mockReturnThis(),
+					index: vi.fn().mockReturnThis(),
+					primary: vi.fn().mockReturnThis(),
+				})),
+			},
+		})),
+	};
+});
 
 const schema = new SchemaBuilder()
 	.collection('directus_fields', (c) => {
@@ -263,10 +268,11 @@ describe('Integration Tests', () => {
 				});
 
 				service.schemaInspector.columnInfo = vi.fn().mockResolvedValue(mockColumns);
+				// readAll also runs an aliasQuery against directus_fields; satisfy knex-mock-client
+				tracker.on.select('directus_fields').response([]);
 
-				// directus_fields rows: meta.special must include a relational keyword (m2o, o2m, m2m, m2a);
-				// readAll uses meta.special for this, not field.type
-				tracker.on.select('directus_fields').response([
+				// Field meta is loaded via ItemsService.readByQuery (mocked in this test file), not via knex tracker
+				const readByQuerySpy = vi.spyOn(ItemsService.prototype, 'readByQuery').mockResolvedValue([
 					{
 						id: 1,
 						collection: 'test_collection',
@@ -312,6 +318,7 @@ describe('Integration Tests', () => {
 				try {
 					result = await service.readAll('test_collection');
 				} finally {
+					readByQuerySpy.mockRestore();
 					isExcludedSpy.mockRestore();
 				}
 
@@ -349,8 +356,11 @@ describe('Integration Tests', () => {
 				});
 
 				service.schemaInspector.columnInfo = vi.fn().mockResolvedValue(mockColumns);
+				// readAll also runs an aliasQuery against directus_fields; satisfy knex-mock-client
+				tracker.on.select('directus_fields').response([]);
 
-				tracker.on.select('directus_fields').response([
+				// Field meta is loaded via ItemsService.readByQuery (mocked in this test file), not via knex tracker
+				const readByQuerySpy = vi.spyOn(ItemsService.prototype, 'readByQuery').mockResolvedValue([
 					{
 						id: 1,
 						collection: 'test_collection',
@@ -377,6 +387,7 @@ describe('Integration Tests', () => {
 				]);
 
 				const result = await service.readAll('test_collection');
+				readByQuerySpy.mockRestore();
 
 				const relField = result.find((field) => field.field === 'rel') as Field & {
 					is_collection_excluded?: boolean;
@@ -389,6 +400,9 @@ describe('Integration Tests', () => {
 			test('should throw ForbiddenError for non-admin users without access', async () => {
 				vi.mocked(fetchPermissions).mockResolvedValueOnce([]);
 
+				// readAll loads meta via ItemsService.readByQuery (mocked ItemsService module)
+				const readByQuerySpy = vi.spyOn(ItemsService.prototype, 'readByQuery').mockResolvedValue([]);
+
 				const service = new FieldsService({
 					knex: db,
 					schema,
@@ -399,7 +413,11 @@ describe('Integration Tests', () => {
 
 				tracker.on.select('directus_fields').response([]);
 
-				await expect(service.readAll('test_collection')).rejects.toThrow(ForbiddenError);
+				try {
+					await expect(service.readAll('test_collection')).rejects.toThrow(ForbiddenError);
+				} finally {
+					readByQuerySpy.mockRestore();
+				}
 			});
 		});
 
@@ -544,6 +562,7 @@ describe('Integration Tests', () => {
 						group: null,
 						validation: null,
 						validation_message: null,
+						searchable: true,
 						id: 0,
 					},
 				};
@@ -588,6 +607,7 @@ describe('Integration Tests', () => {
 						group: null,
 						validation: null,
 						validation_message: null,
+						searchable: true,
 						id: 0,
 					},
 				};
