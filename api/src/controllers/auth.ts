@@ -12,6 +12,7 @@ import {
 	createSAMLAuthRouter,
 } from '../auth/drivers/index.js';
 import { DEFAULT_AUTH_PROVIDER, REFRESH_COOKIE_OPTIONS, SESSION_COOKIE_OPTIONS } from '../constants.js';
+import { getDatabase } from '../database/index.js';
 import { getFeature } from '../license/index.js';
 import { useLogger } from '../logger/index.js';
 import { respond } from '../middleware/respond.js';
@@ -266,7 +267,10 @@ router.get(
 
 		try {
 			const ssoEntitlement = await getFeature<{ enabled?: boolean }>('sso');
-			isSSOEnabled = ssoEntitlement?.enabled === true;
+			const db = getDatabase();
+			const settings = await db.select('sso_deactivated').from('directus_settings').first();
+
+			isSSOEnabled = !!ssoEntitlement?.enabled || !settings?.sso_deactivated;
 		} catch {
 			logger.warn('[license] Failed to load SSO feature entitlements');
 		}

@@ -995,6 +995,7 @@ errors:
   REQUESTS_EXCEEDED: Requests limit reached
   ROUTE_NOT_FOUND: Not found
   SERVICE_UNAVAILABLE: Service Unavailable
+  SSO_NON_ADMIN: SSO login is restricted to admin users only.
   TOKEN_EXPIRED: Token expired
   UNEXPECTED_RESPONSE: Unexpected response
   UNKNOWN: Unexpected Error
@@ -1074,6 +1075,7 @@ color: Color
 circle: Circle
 empty_item: Empty Item
 log_in_with: 'Log In with {provider}'
+login_error: Login Error
 conditional_styles: Conditional Styles
 advanced_settings: Advanced Settings
 advanced_filter: Advanced Filter

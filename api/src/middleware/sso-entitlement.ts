@@ -1,4 +1,5 @@
 import { ForbiddenError } from '@directus/errors';
+import { getDatabase } from '../database/index.js';
 import { getFeature } from '../license/index.js';
 import { Entitlements } from '../license/types/index.js';
 import { useLogger } from '../logger/index.js';
@@ -11,7 +12,10 @@ export const ssoEntitlementCheck = asyncHandler(async (_req, _res, next) => {
 
 	try {
 		const ssoEntitlement = await getFeature<{ enabled?: boolean }>(Entitlements.SSO);
-		isSSOEnabled = ssoEntitlement?.enabled === true;
+		const db = getDatabase();
+		const settings = await db.select('sso_deactivated').from('directus_settings').first();
+
+		isSSOEnabled = !!ssoEntitlement?.enabled || !settings?.sso_deactivated;
 	} catch {
 		logger.warn('[license] Failed to load SSO feature entitlements');
 	}
