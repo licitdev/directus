@@ -9,6 +9,7 @@ import VButton from '@/components/v-button.vue';
 import VCardActions from '@/components/v-card-actions.vue';
 import VCardTitle from '@/components/v-card-title.vue';
 import VCard from '@/components/v-card.vue';
+import VCheckbox from '@/components/v-checkbox.vue';
 import VChip from '@/components/v-chip.vue';
 import VDialog from '@/components/v-dialog.vue';
 import VDivider from '@/components/v-divider.vue';
@@ -92,6 +93,7 @@ const deactivating = ref(false);
 const showedUserInfoKey = ref<string | null>(null);
 const userDrawerActive = ref(false);
 const confirmDeactivate = ref(false);
+const ssoForceLogoutAcknowledged = ref(false);
 
 const selectedCollections = ref<string[]>([]);
 const selectedUsers = ref<string[]>([]);
@@ -121,7 +123,11 @@ const disabledDeactivateButton = computed(() => {
 		return true;
 	}
 
-	return !!userLimit.value || !!collectionLimit.value;
+	if (!!userLimit.value || !!collectionLimit.value) {
+		return true;
+	}
+
+	return !ssoForceLogoutAcknowledged.value;
 });
 
 async function fetchUsers() {
@@ -241,8 +247,7 @@ async function deactivateLicense() {
 
 	try {
 		await api.post('/server/deactivate-license', {
-			collections: selectedCollections.value,
-			users: selectedUsers.value,
+			deactivate_sso: ssoForceLogoutAcknowledged.value,
 		});
 
 		await Promise.all([serverStore.hydrate(), settingsStore.hydrate()]);
@@ -413,6 +418,10 @@ async function onClickDeactivate() {
 									</div>
 								</template>
 							</DeactivationSelectList>
+
+							<VCheckbox v-model="ssoForceLogoutAcknowledged" class="sso-logout-notice">
+								{{ t('settings_license_deactivation_sso_force_logout_notice') }}
+							</VCheckbox>
 						</div>
 
 						<div class="admin-seat-list">
@@ -617,5 +626,9 @@ async function onClickDeactivate() {
 	row-gap: 2.25rem;
 	display: flex;
 	flex-direction: column;
+}
+
+.sso-logout-notice {
+	margin-block-start: 0.75rem;
 }
 </style>

@@ -106,6 +106,8 @@ settings_license_deactivation_popup_notice_and: ' and '
 settings_license_deactivation_popup_remaining: '{count} remaining'
 settings_license_deactivation_popup_limit_count_success: 'All set'
 settings_license_deactivate_confirm: Are you sure you want to deactivate these collections and user seats?
+settings_license_deactivation_sso_force_logout_notice:
+  All users will be forced to log in with email & password after SSO is deactivated.
 settings_license_deactivate_success: License deactivated successfully
 settings_license_addon_user_seats_name: User Seats
 settings_license_addon_user_seats_description: '$15.00 per seat'
