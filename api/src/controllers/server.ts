@@ -2,6 +2,8 @@ import { useEnv } from '@directus/env';
 import { ErrorCode, ForbiddenError, InvalidPayloadError, isDirectusError, RouteNotFoundError } from '@directus/errors';
 import { format } from 'date-fns';
 import { Router } from 'express';
+import { DEFAULT_AUTH_PROVIDER } from '../constants.js';
+import getDatabase from '../database/index.js';
 import { getLicenseAddons } from '../license/addons.js';
 import { checkLicense } from '../license/lib/check-license.js';
 import { deactivate } from '../license/lib/deactivate.js';
@@ -266,6 +268,18 @@ router.post(
 			license_key: null,
 			license_token: null,
 		});
+
+		const { deactivate_sso } = req.body as { deactivate_sso?: boolean };
+
+		if (deactivate_sso) {
+			const knex = getDatabase();
+
+			await knex('directus_users')
+				.whereNot('provider', DEFAULT_AUTH_PROVIDER)
+				.update({ provider: DEFAULT_AUTH_PROVIDER, auth_data: null });
+
+			await settingsService.upsertSingleton({ sso_deactivated: true });
+		}
 
 		await clearCacheTokenPayload();
 

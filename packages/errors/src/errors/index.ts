@@ -27,6 +27,7 @@ export { RangeNotSatisfiableError } from './range-not-satisfiable.js';
 export { RecordNotUniqueError } from './record-not-unique.js';
 export { RouteNotFoundError } from './route-not-found.js';
 export { ServiceUnavailableError } from './service-unavailable.js';
+export { SsoNonAdminError } from './sso-non-admin.js';
 export { TokenExpiredError } from './token-expired.js';
 export { UnexpectedResponseError } from './unexpected-response.js';
 export { UnprocessableContentError } from './unprocessable-content.js';

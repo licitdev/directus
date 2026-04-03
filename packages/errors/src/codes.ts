@@ -29,6 +29,7 @@ export enum ErrorCode {
 	RequestsExceeded = 'REQUESTS_EXCEEDED',
 	RouteNotFound = 'ROUTE_NOT_FOUND',
 	ServiceUnavailable = 'SERVICE_UNAVAILABLE',
+	SsoNonAdmin = 'SSO_NON_ADMIN',
 	TokenExpired = 'TOKEN_EXPIRED',
 	UnexpectedResponse = 'UNEXPECTED_RESPONSE',
 	UnprocessableContent = 'UNPROCESSABLE_CONTENT',

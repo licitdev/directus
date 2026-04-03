@@ -3,6 +3,12 @@ import formatTitle from '@directus/format-title';
 import { computed, onMounted, ref, toRefs, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import TransitionExpand from '@/components/transition/expand.vue';
+import VButton from '@/components/v-button.vue';
+import VCardActions from '@/components/v-card-actions.vue';
+import VCardText from '@/components/v-card-text.vue';
+import VCardTitle from '@/components/v-card-title.vue';
+import VCard from '@/components/v-card.vue';
+import VDialog from '@/components/v-dialog.vue';
 import VDivider from '@/components/v-divider.vue';
 import VIcon from '@/components/v-icon/v-icon.vue';
 import VInput from '@/components/v-input.vue';
@@ -28,10 +34,12 @@ const submitting = ref(false);
 
 const isOTPValid = computed(() => typeof otp.value === 'string' && otp.value.length === 6);
 
-const requiresTFA = computed(() => {
-	const reason = Array.isArray(route.query.reason) ? route.query.reason[0] : route.query.reason;
-	return reason === 'INVALID_OTP';
+const reason = computed(() => {
+	const r = route.query.reason;
+	return Array.isArray(r) ? r[0] : r;
 });
+
+const requiresTFA = computed(() => reason.value === 'INVALID_OTP');
 
 const otpAttempted = ref(false);
 
@@ -45,9 +53,16 @@ onMounted(() => {
 	}
 });
 
-const otpInlineError = computed(() => {
-	const reason = Array.isArray(route.query.reason) ? route.query.reason[0] : route.query.reason;
-	return reason === 'INVALID_OTP' && otpAttempted.value ? translateAPIError('INVALID_OTP') : null;
+const otpInlineError = computed(() =>
+	reason.value === 'INVALID_OTP' && otpAttempted.value ? translateAPIError('INVALID_OTP') : null,
+);
+
+const ssoNonAdminDialogOpen = ref(false);
+
+onMounted(() => {
+	if (reason.value === 'SSO_NON_ADMIN') {
+		ssoNonAdminDialogOpen.value = true;
+	}
 });
 
 // Track the original provider that was clicked for OTP submission
@@ -125,15 +140,13 @@ watch(
 );
 
 const errorFormatted = computed(() => {
-	const validReasons = ['SIGN_OUT', 'SESSION_EXPIRED'];
-
-	const reason = Array.isArray(route.query.reason) ? route.query.reason[0] : route.query.reason;
+	const validReasons = ['SIGN_OUT', 'SESSION_EXPIRED', 'SSO_NON_ADMIN'];
 
 	// When requiring TFA, don't show the error banner; render the OTP input instead
 	if (requiresTFA.value) return null;
 
-	if (reason && !validReasons.includes(reason)) {
-		return translateAPIError(reason);
+	if (reason.value && !validReasons.includes(reason.value)) {
+		return translateAPIError(reason.value);
 	}
 
 	return null;
@@ -211,6 +224,16 @@ watch(selectedProviderName, (val) => {
 			</template>
 		</template>
 	</div>
+
+	<VDialog v-model="ssoNonAdminDialogOpen">
+		<VCard>
+			<VCardTitle>{{ $t('login_error') }}</VCardTitle>
+			<VCardText>{{ $t('errors.SSO_NON_ADMIN') }}</VCardText>
+			<VCardActions>
+				<VButton @click="ssoNonAdminDialogOpen = false">{{ $t('done') }}</VButton>
+			</VCardActions>
+		</VCard>
+	</VDialog>
 </template>
 
 <style lang="scss" scoped>

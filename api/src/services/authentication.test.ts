@@ -81,14 +81,20 @@ vi.mock('../utils/get-milliseconds.js', () => ({
 	getMilliseconds: vi.fn().mockReturnValue(900000),
 }));
 
+const mockEnv = vi.hoisted<Record<string, unknown>>(() => ({
+	EMAIL_TEMPLATES_PATH: './templates',
+	LOGIN_STALL_TIME: 0,
+	ACCESS_TOKEN_TTL: '15m',
+	REFRESH_TOKEN_TTL: '7d',
+	SESSION_COOKIE_TTL: '1d',
+}));
+
 vi.mock('@directus/env', () => ({
-	useEnv: vi.fn().mockReturnValue({
-		EMAIL_TEMPLATES_PATH: './templates',
-		LOGIN_STALL_TIME: 0,
-		ACCESS_TOKEN_TTL: '15m',
-		REFRESH_TOKEN_TTL: '7d',
-		SESSION_COOKIE_TTL: '1d',
-	}),
+	useEnv: vi.fn(() => mockEnv),
+}));
+
+vi.mock('../license/index.js', () => ({
+	getFeature: vi.fn().mockResolvedValue({ enabled: true }),
 }));
 
 vi.mock('jsonwebtoken', () => ({
