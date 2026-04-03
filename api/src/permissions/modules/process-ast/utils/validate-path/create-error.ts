@@ -8,6 +8,14 @@ export function createCollectionForbiddenError(path: string, collection: string)
 	});
 }
 
+export function createCollectionExcludedError(path: string, collection: string): DirectusError<any> {
+	const pathSuffix = path === '' ? 'root' : `"${path}"`;
+
+	return new ForbiddenError({
+		reason: `The collection "${collection}" is excluded. Queried in ${pathSuffix}.`,
+	});
+}
+
 export function createFieldsForbiddenError(path: string, collection: string, fields: string[]): DirectusError<any> {
 	const pathSuffix = path === '' ? 'root' : `"${path}"`;
 

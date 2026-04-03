@@ -6,6 +6,7 @@ import bootstrap from './commands/bootstrap/index.js';
 import cacheClear from './commands/cache/clear.js';
 import dbMigrate from './commands/database/migrate.js';
 import init from './commands/init/index.js';
+import validate from './commands/license/index.js';
 import { apply } from './commands/schema/apply.js';
 import usersCreate from './commands/users/create.js';
 import { loadExtensions } from './load-extensions.js';
@@ -46,6 +47,10 @@ vi.mock('./commands/schema/apply.js', () => ({
 }));
 
 vi.mock('./commands/users/create.js', () => ({
+	default: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('./commands/license/index.js', () => ({
 	default: vi.fn().mockResolvedValue(undefined),
 }));
 
@@ -115,6 +120,12 @@ describe('createCli', () => {
 			expect(cacheClear).toHaveBeenCalledWith(expect.objectContaining({ data: true }), expect.anything());
 		});
 
+		test('Should call validate when license:validate command is invoked', async () => {
+			await program.parseAsync(['node', 'directus', 'license:validate']);
+
+			expect(validate).toHaveBeenCalledTimes(1);
+		});
+
 		test.each([
 			['latest', 'migrate:latest'],
 			['up', 'migrate:up'],
@@ -172,6 +183,12 @@ describe('createCli', () => {
 				}),
 				expect.anything(),
 			);
+		});
+
+		test('Should parse license:validate command options correctly', async () => {
+			await program.parseAsync(['node', 'directus', 'license:validate', '--key', 'my-license-key']);
+
+			expect(validate).toHaveBeenCalledWith(expect.objectContaining({ key: 'my-license-key' }), expect.anything());
 		});
 	});
 });

@@ -19,6 +19,7 @@ import type { StringValue } from 'ms';
 import { clearSystemCache } from '../cache.js';
 import { DEFAULT_AUTH_PROVIDER } from '../constants.js';
 import getDatabase from '../database/index.js';
+import { getFeature } from '../license/index.js';
 import { useLogger } from '../logger/index.js';
 import { validateRemainingAdminUsers } from '../permissions/modules/validate-remaining-admin/validate-remaining-admin-users.js';
 import { createDefaultAccountability } from '../permissions/utils/create-default-accountability.js';
@@ -653,5 +654,34 @@ export class UsersService extends ItemsService {
 		if (this.cache && opts?.autoPurgeCache !== false) {
 			await this.cache.clear();
 		}
+	}
+
+	/**
+	 * Verify if adding new active users is within the limit.
+	 */
+	async checkAddingLimit(count: number): Promise<boolean> {
+		const usersCountResult = await this.knex('directus_users').where('status', 'active').count<{ count: string }[]>({
+			count: '*',
+		});
+
+		const usersCount = Number(usersCountResult[0]?.count ?? 0);
+
+		const usersFeature = await getFeature<{ limit?: number }>('users');
+		const usersLimit = usersFeature?.limit;
+
+		if (usersLimit && usersCount + count > usersLimit) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Check if a user is active by id
+	 */
+	async isActive(userId: PrimaryKey): Promise<boolean> {
+		const user = await this.knex.select('status').from('directus_users').where({ id: userId }).first();
+
+		return user?.status === 'active';
 	}
 }

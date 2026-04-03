@@ -119,6 +119,10 @@ function onSelectAll() {
 				@select-all="onSelectAll"
 			/>
 
+			<div v-if="$slots.message" class="message-box">
+				<slot name="message" />
+			</div>
+
 			<VProgressCircular v-if="loading && !hasPrependContent" indeterminate rounded />
 
 			<div v-if="!loading || hasPrependContent" class="grid" :class="{ 'single-row': isSingleRow }">
@@ -175,6 +179,10 @@ function onSelectAll() {
 .layout-cards {
 	padding: var(--content-padding);
 	padding-block-start: 0;
+}
+
+.message-box {
+	padding-block-end: var(--content-padding);
 }
 
 .grid {

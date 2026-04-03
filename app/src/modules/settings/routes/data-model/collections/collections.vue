@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { saveAs } from 'file-saver';
-import { merge } from 'lodash';
+import { merge, orderBy } from 'lodash';
 import { computed, ref } from 'vue';
-import { RouterLink, RouterView } from 'vue-router';
+import { RouterLink, RouterView, useRouter } from 'vue-router';
 import Draggable from 'vuedraggable';
 import SettingsNavigation from '../../../components/navigation.vue';
 import CollectionDialog from './components/collection-dialog.vue';
@@ -13,14 +13,22 @@ import api from '@/api';
 import TransitionExpand from '@/components/transition/expand.vue';
 import VBreadcrumb from '@/components/v-breadcrumb.vue';
 import VButton from '@/components/v-button.vue';
+import VCardActions from '@/components/v-card-actions.vue';
+import VCardText from '@/components/v-card-text.vue';
+import VCardTitle from '@/components/v-card-title.vue';
+import VCard from '@/components/v-card.vue';
 import VDetail from '@/components/v-detail.vue';
+import VDialog from '@/components/v-dialog.vue';
 import VIcon from '@/components/v-icon/v-icon.vue';
 import VInfo from '@/components/v-info.vue';
 import VListItemIcon from '@/components/v-list-item-icon.vue';
 import VListItem from '@/components/v-list-item.vue';
 import VList from '@/components/v-list.vue';
+import VNotice from '@/components/v-notice.vue';
 import { useCollectionsStore } from '@/stores/collections';
+import { useServerStore } from '@/stores/server';
 import { Collection } from '@/types/collections';
+import { extractErrorCode } from '@/utils/extract-error-code';
 import { translate } from '@/utils/translate-object-values';
 import { unexpectedError } from '@/utils/unexpected-error';
 import { PrivateViewHeaderBarActionButton } from '@/views/private';
@@ -30,9 +38,13 @@ import SidebarDetail from '@/views/private/components/sidebar-detail.vue';
 
 const search = ref<string | null>(null);
 const collectionDialogActive = ref(false);
+const collectionLimitModalActive = ref(false);
 const editCollection = ref<Collection | null>();
 
+const router = useRouter();
+
 const collectionsStore = useCollectionsStore();
+const serverStore = useServerStore();
 const { collapsedIds, hasExpandableCollections, expandAll, collapseAll, toggleCollapse } = useExpandCollapse();
 
 const collections = computed(() => {
@@ -42,8 +54,24 @@ const collections = computed(() => {
 	}));
 });
 
+const collectionsLimit = computed(() => {
+	return serverStore.license.entitlements.collections?.limit ?? 0;
+});
+
+const collectionsWarningLimit = computed(() => {
+	return serverStore.license.entitlements.collections?.warning_limit ?? 0;
+});
+
+const reachedCollectionsLimit = computed(() => collectionsStore.collectionsUsageCount >= collectionsLimit.value);
+
+const approachingCollectionsLimit = computed(
+	() => collectionsStore.collectionsUsageCount >= collectionsLimit.value - collectionsWarningLimit.value,
+);
+
 const rootCollections = computed(() => {
-	return collections.value.filter((collection) => !collection.meta?.group);
+	const roots = collections.value.filter((collection) => !collection.meta?.group);
+
+	return orderBy(roots, [(c) => (c.meta?.excluded === true ? 1 : 0), 'meta.sort', 'collection']);
 });
 
 export type CollectionTree = {
@@ -148,12 +176,71 @@ async function downloadSnapshot() {
 		`snapshot.json`,
 	);
 }
+
+function onCreateCollectionClick() {
+	if (reachedCollectionsLimit.value) {
+		collectionLimitModalActive.value = true;
+	}
+}
+
+function onDbOnlyClick() {
+	if (reachedCollectionsLimit.value) {
+		collectionLimitModalActive.value = true;
+	}
+}
+
+function onPurchaseAddOnClick() {
+	collectionLimitModalActive.value = false;
+	router.push('/settings/license');
+}
+
+async function onUnExclude(collectionKey: string) {
+	const nonExcludedCount = collectionsStore.configuredCollections.filter(
+		(c) => (c.meta as { excluded?: boolean } | null)?.excluded !== true,
+	).length;
+
+	if (collectionsLimit.value > 0 && nonExcludedCount + 1 > collectionsLimit.value) {
+		collectionLimitModalActive.value = true;
+
+		return;
+	}
+
+	const previousCollections = [...collectionsStore.collections];
+
+	collectionsStore.collections = collectionsStore.collections.map((collection) => {
+		if (collection.collection === collectionKey) {
+			return merge({}, collection, {
+				meta: { ...collection.meta, excluded: false },
+			}) as Collection;
+		}
+
+		return collection;
+	});
+
+	try {
+		await api.patch('/collections', [{ collection: collectionKey, meta: { excluded: false } }]);
+	} catch (error) {
+		collectionsStore.collections = previousCollections;
+
+		if (extractErrorCode(error) === 'LIMIT_EXCEEDED') {
+			collectionLimitModalActive.value = true;
+		} else {
+			unexpectedError(error);
+		}
+	}
+}
 </script>
 
 <template>
 	<PrivateView :title="$t('settings_data_model')" icon="database">
 		<template #headline>
 			<VBreadcrumb :items="[{ name: $t('settings'), to: '/settings' }]" />
+		</template>
+
+		<template #actions:prepend>
+			<span v-if="collectionsLimit > 0" class="collections-usage-header">
+				({{ collectionsStore.collectionsUsageCount }}/{{ collectionsLimit }}) {{ $t('collections') }}
+			</span>
 		</template>
 
 		<template #actions>
@@ -178,8 +265,9 @@ async function downloadSnapshot() {
 
 			<PrivateViewHeaderBarActionButton
 				v-tooltip.bottom="$t('create_collection')"
-				to="/settings/data-model/+"
+				:to="reachedCollectionsLimit ? undefined : '/settings/data-model/+'"
 				icon="add"
+				@click="onCreateCollectionClick"
 			/>
 		</template>
 
@@ -188,11 +276,30 @@ async function downloadSnapshot() {
 		</template>
 
 		<div class="padding-box">
+			<VNotice v-if="reachedCollectionsLimit" type="danger" icon="cancel">
+				<template #title>{{ $t('collections_limit_reached_notice') }}</template>
+			</VNotice>
+
+			<VNotice v-if="approachingCollectionsLimit && !reachedCollectionsLimit" type="warning" icon="warning">
+				<template #title>
+					{{
+						$t('collections_approaching_limit_notice', {
+							count: collectionsLimit - collectionsStore.collectionsUsageCount,
+						})
+					}}
+				</template>
+			</VNotice>
+
 			<VInfo v-if="collections.length === 0" icon="box" :title="$t('no_collections')">
 				{{ $t('no_collections_copy_admin') }}
 
 				<template #append>
-					<VButton to="/settings/data-model/+">{{ $t('create_collection') }}</VButton>
+					<VButton
+						:to="reachedCollectionsLimit ? undefined : '/settings/data-model/+'"
+						@click="onCreateCollectionClick"
+					>
+						{{ $t('create_collection') }}
+					</VButton>
 				</template>
 			</VInfo>
 
@@ -225,6 +332,7 @@ async function downloadSnapshot() {
 							@edit-collection="editCollection = $event"
 							@set-nested-sort="onSort"
 							@toggle-collapse="toggleCollapse"
+							@un-exclude="onUnExclude"
 						/>
 					</template>
 				</Draggable>
@@ -245,10 +353,18 @@ async function downloadSnapshot() {
 						<VIcon name="add" />
 					</VListItemIcon>
 
-					<RouterLink class="collection-name" :to="`/settings/data-model/${collection.collection}`">
+					<RouterLink
+						v-if="!reachedCollectionsLimit"
+						class="collection-name"
+						:to="`/settings/data-model/${collection.collection}`"
+					>
 						<VIcon class="collection-icon" name="dns" />
 						<span class="collection-name">{{ collection.name }}</span>
 					</RouterLink>
+					<div v-else class="collection-name collection-name-link" @click="onDbOnlyClick">
+						<VIcon class="collection-icon" name="dns" />
+						<span class="collection-name">{{ collection.name }}</span>
+					</div>
 
 					<CollectionOptions :collection="collection" :has-nested-collections="false" />
 				</VListItem>
@@ -266,6 +382,7 @@ async function downloadSnapshot() {
 					:visibility-tree="findVisibilityChild(collection.collection)!"
 					:is-collapsed="false"
 					disable-drag
+					@un-exclude="onUnExclude"
 				/>
 			</VDetail>
 		</div>
@@ -286,12 +403,42 @@ async function downloadSnapshot() {
 			:collection="editCollection"
 			@update:model-value="editCollection = null"
 		/>
+
+		<VDialog v-model="collectionLimitModalActive" persistent>
+			<VCard>
+				<VCardTitle>{{ $t('collections_limit_modal_title') }}</VCardTitle>
+				<VCardText>{{ $t('collections_limit_modal_description') }}</VCardText>
+				<VCardActions>
+					<VButton secondary @click="collectionLimitModalActive = false">
+						{{ $t('cancel') }}
+					</VButton>
+					<VButton @click="onPurchaseAddOnClick">
+						{{ $t('purchase_add_on') }}
+					</VButton>
+				</VCardActions>
+			</VCard>
+		</VDialog>
 	</PrivateView>
 </template>
 
 <style scoped lang="scss">
+.collections-usage-header {
+	position: relative;
+	display: none;
+	color: var(--theme--foreground-subdued);
+	white-space: nowrap;
+
+	@media (width > 40rem) {
+		display: inline;
+	}
+}
+
 .padding-box {
 	padding: var(--content-padding);
+}
+
+.v-notice {
+	margin-block-end: 2rem;
 }
 
 .v-info {
@@ -321,6 +468,10 @@ async function downloadSnapshot() {
 .hidden .collection-name {
 	color: var(--theme--foreground-subdued);
 	flex-grow: 1;
+}
+
+.collection-name-link {
+	cursor: pointer;
 }
 
 .draggable-list :deep(.sortable-ghost) {

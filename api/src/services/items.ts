@@ -28,6 +28,7 @@ import getDatabase, { getDatabaseClient } from '../database/index.js';
 import { runAst } from '../database/run-ast/run-ast.js';
 import emitter from '../emitter.js';
 import { processAst } from '../permissions/modules/process-ast/process-ast.js';
+import { createCollectionExcludedError } from '../permissions/modules/process-ast/utils/validate-path/create-error.js';
 import { processPayload } from '../permissions/modules/process-payload/process-payload.js';
 import { validateAccess } from '../permissions/modules/validate-access/validate-access.js';
 import { shouldClearCache } from '../utils/should-clear-cache.js';
@@ -35,6 +36,7 @@ import { transaction } from '../utils/transaction.js';
 import { validateKeys } from '../utils/validate-keys.js';
 import { validateUserCountIntegrity } from '../utils/validate-user-count-integrity.js';
 import { handleVersion } from '../utils/versioning/handle-version.js';
+import { CollectionsService } from './collections.js';
 import { PayloadService } from './payload.js';
 
 const env = useEnv();
@@ -49,6 +51,7 @@ export class ItemsService<Item extends AnyItem = AnyItem, Collection extends str
 	schema: SchemaOverview;
 	cache: Keyv<any> | null;
 	nested: string[];
+	collectionsService: CollectionsService;
 
 	constructor(collection: Collection, options: AbstractServiceOptions) {
 		this.collection = collection;
@@ -58,8 +61,19 @@ export class ItemsService<Item extends AnyItem = AnyItem, Collection extends str
 		this.schema = options.schema;
 		this.cache = getCache().cache;
 		this.nested = options.nested ?? [];
+		this.collectionsService = new CollectionsService(options);
 
 		return this;
+	}
+
+	private async assertCollectionNotExcluded(): Promise<void> {
+		if (isSystemCollection(this.collection)) {
+			return;
+		}
+
+		if (await this.collectionsService.isExcluded(this.collection)) {
+			throw createCollectionExcludedError('', this.collection);
+		}
 	}
 
 	/**
@@ -105,6 +119,8 @@ export class ItemsService<Item extends AnyItem = AnyItem, Collection extends str
 	}
 
 	async getKeysByQuery(query: Query): Promise<PrimaryKey[]> {
+		await this.assertCollectionNotExcluded();
+
 		const primaryKeyField = this.schema.collections[this.collection]!.primary;
 		const readQuery = cloneDeep(query);
 		readQuery.fields = [primaryKeyField];
@@ -125,6 +141,8 @@ export class ItemsService<Item extends AnyItem = AnyItem, Collection extends str
 	 * Create a single new item.
 	 */
 	async createOne(data: Partial<Item>, opts: MutationOptions = {}): Promise<PrimaryKey> {
+		await this.assertCollectionNotExcluded();
+
 		if (!opts.mutationTracker) opts.mutationTracker = this.createMutationTracker();
 
 		if (!opts.bypassLimits) {
@@ -431,6 +449,8 @@ export class ItemsService<Item extends AnyItem = AnyItem, Collection extends str
 	 * Uses `this.createOne` under the hood.
 	 */
 	async createMany(data: Partial<Item>[], opts: MutationOptions = {}): Promise<PrimaryKey[]> {
+		await this.assertCollectionNotExcluded();
+
 		if (!opts.mutationTracker) opts.mutationTracker = this.createMutationTracker();
 
 		const { primaryKeys, nestedActionEvents } = await transaction(this.knex, async (knex) => {
@@ -497,6 +517,8 @@ export class ItemsService<Item extends AnyItem = AnyItem, Collection extends str
 	 * Get items by query.
 	 */
 	async readByQuery(query: Query, opts?: QueryOptions): Promise<Item[]> {
+		await this.assertCollectionNotExcluded();
+
 		const updatedQuery =
 			opts?.emitEvents !== false
 				? await emitter.emitFilter(
@@ -585,6 +607,8 @@ export class ItemsService<Item extends AnyItem = AnyItem, Collection extends str
 	 * Uses `this.readByQuery` under the hood.
 	 */
 	async readOne(key: PrimaryKey, query: Query = {}, opts?: QueryOptions): Promise<Item> {
+		await this.assertCollectionNotExcluded();
+
 		const primaryKeyField = this.schema.collections[this.collection]!.primary;
 		validateKeys(this.schema, this.collection, primaryKeyField, key);
 
@@ -612,6 +636,8 @@ export class ItemsService<Item extends AnyItem = AnyItem, Collection extends str
 	 * Uses `this.readByQuery` under the hood.
 	 */
 	async readMany(keys: PrimaryKey[], query: Query = {}, opts?: QueryOptions): Promise<Item[]> {
+		await this.assertCollectionNotExcluded();
+
 		const primaryKeyField = this.schema.collections[this.collection]!.primary;
 		validateKeys(this.schema, this.collection, primaryKeyField, keys);
 
@@ -634,6 +660,8 @@ export class ItemsService<Item extends AnyItem = AnyItem, Collection extends str
 	 * Uses `this.updateMany` under the hood.
 	 */
 	async updateByQuery(query: Query, data: Partial<Item>, opts?: MutationOptions): Promise<PrimaryKey[]> {
+		await this.assertCollectionNotExcluded();
+
 		const keys = await this.getKeysByQuery(query);
 
 		return keys.length ? await this.updateMany(keys, data, opts) : [];
@@ -645,6 +673,8 @@ export class ItemsService<Item extends AnyItem = AnyItem, Collection extends str
 	 * Uses `this.updateMany` under the hood.
 	 */
 	async updateOne(key: PrimaryKey, data: Partial<Item>, opts?: MutationOptions): Promise<PrimaryKey> {
+		await this.assertCollectionNotExcluded();
+
 		await this.updateMany([key], data, opts);
 		return key;
 	}
@@ -655,6 +685,8 @@ export class ItemsService<Item extends AnyItem = AnyItem, Collection extends str
 	 * Uses `this.updateOne` under the hood.
 	 */
 	async updateBatch(data: Partial<Item>[], opts: MutationOptions = {}): Promise<PrimaryKey[]> {
+		await this.assertCollectionNotExcluded();
+
 		if (!Array.isArray(data)) {
 			throw new InvalidPayloadError({ reason: 'Input should be an array of items' });
 		}
@@ -707,6 +739,8 @@ export class ItemsService<Item extends AnyItem = AnyItem, Collection extends str
 	 * Update many items by primary key, setting all items to the same change.
 	 */
 	async updateMany(keys: PrimaryKey[], data: Partial<Item>, opts: MutationOptions = {}): Promise<PrimaryKey[]> {
+		await this.assertCollectionNotExcluded();
+
 		if (!opts.mutationTracker) opts.mutationTracker = this.createMutationTracker();
 
 		if (!opts.bypassLimits) {
@@ -979,6 +1013,8 @@ export class ItemsService<Item extends AnyItem = AnyItem, Collection extends str
 	 * Uses `this.createOne` / `this.updateOne` under the hood.
 	 */
 	async upsertOne(payload: Partial<Item>, opts?: MutationOptions): Promise<PrimaryKey> {
+		await this.assertCollectionNotExcluded();
+
 		const primaryKeyField = this.schema.collections[this.collection]!.primary;
 		const primaryKey: PrimaryKey | undefined = payload[primaryKeyField];
 
@@ -1008,6 +1044,8 @@ export class ItemsService<Item extends AnyItem = AnyItem, Collection extends str
 	 * Uses `this.upsertOne` under the hood.
 	 */
 	async upsertMany(payloads: Partial<Item>[], opts: MutationOptions = {}): Promise<PrimaryKey[]> {
+		await this.assertCollectionNotExcluded();
+
 		if (!opts.mutationTracker) opts.mutationTracker = this.createMutationTracker();
 
 		const primaryKeys = await transaction(this.knex, async (knex) => {
@@ -1043,6 +1081,8 @@ export class ItemsService<Item extends AnyItem = AnyItem, Collection extends str
 	 * Uses `this.deleteMany` under the hood.
 	 */
 	async deleteByQuery(query: Query, opts?: MutationOptions): Promise<PrimaryKey[]> {
+		await this.assertCollectionNotExcluded();
+
 		const keys = await this.getKeysByQuery(query);
 
 		const primaryKeyField = this.schema.collections[this.collection]!.primary;
@@ -1057,6 +1097,8 @@ export class ItemsService<Item extends AnyItem = AnyItem, Collection extends str
 	 * Uses `this.deleteMany` under the hood.
 	 */
 	async deleteOne(key: PrimaryKey, opts?: MutationOptions): Promise<PrimaryKey> {
+		await this.assertCollectionNotExcluded();
+
 		const primaryKeyField = this.schema.collections[this.collection]!.primary;
 		validateKeys(this.schema, this.collection, primaryKeyField, key);
 
@@ -1068,6 +1110,8 @@ export class ItemsService<Item extends AnyItem = AnyItem, Collection extends str
 	 * Delete multiple items by primary key.
 	 */
 	async deleteMany(keys: PrimaryKey[], opts: MutationOptions = {}): Promise<PrimaryKey[]> {
+		await this.assertCollectionNotExcluded();
+
 		if (!opts.mutationTracker) opts.mutationTracker = this.createMutationTracker();
 
 		if (!opts.bypassLimits) {
@@ -1188,6 +1232,8 @@ export class ItemsService<Item extends AnyItem = AnyItem, Collection extends str
 	 * Read/treat collection as singleton.
 	 */
 	async readSingleton(query: Query, opts?: QueryOptions): Promise<Partial<Item>> {
+		await this.assertCollectionNotExcluded();
+
 		query = clone(query);
 
 		query.limit = 1;
@@ -1236,6 +1282,8 @@ export class ItemsService<Item extends AnyItem = AnyItem, Collection extends str
 	 * Uses `this.createOne` / `this.updateOne` under the hood.
 	 */
 	async upsertSingleton(data: Partial<Item>, opts?: MutationOptions): Promise<PrimaryKey> {
+		await this.assertCollectionNotExcluded();
+
 		const primaryKeyField = this.schema.collections[this.collection]!.primary;
 
 		const record = await this.knex.select(primaryKeyField).from(this.collection).limit(1).first();

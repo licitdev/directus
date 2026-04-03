@@ -42,6 +42,7 @@ export type CollectionMeta = {
 	sort: number | null;
 	group: string | null;
 	collapse: 'open' | 'closed' | 'locked';
+	excluded: boolean | null;
 };
 
 export type BaseCollectionMeta = Pick<
@@ -57,6 +58,7 @@ export type BaseCollectionMeta = Pick<
 	| 'accountability'
 	| 'group'
 	| 'system'
+	| 'excluded'
 >;
 
 export type DataCollectionMeta = Partial<BaseCollectionMeta> & Pick<BaseCollectionMeta, 'collection' | 'note'>;

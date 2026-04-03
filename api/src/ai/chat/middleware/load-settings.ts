@@ -1,7 +1,12 @@
 import type { RequestHandler } from 'express';
+import { getFeature } from '../../../license/index.js';
 import { SettingsService } from '../../../services/settings.js';
 import { getSchema } from '../../../utils/get-schema.js';
 import type { AISettings } from '../../providers/types.js';
+
+const getFieldValue = <T>(value: T): T | null => {
+	return value ?? null;
+};
 
 export const loadSettings: RequestHandler = async (_req, res, next) => {
 	const service = new SettingsService({
@@ -25,19 +30,22 @@ export const loadSettings: RequestHandler = async (_req, res, next) => {
 		],
 	});
 
+	const llmFeature = await getFeature<{ enabled?: boolean }>('llm');
+	const isLlmEnabled = llmFeature?.enabled ?? false;
+
 	const aiSettings: AISettings = {
-		openaiApiKey: settings['ai_openai_api_key'] ?? null,
-		anthropicApiKey: settings['ai_anthropic_api_key'] ?? null,
-		googleApiKey: settings['ai_google_api_key'] ?? null,
-		openaiCompatibleApiKey: settings['ai_openai_compatible_api_key'] ?? null,
-		openaiCompatibleBaseUrl: settings['ai_openai_compatible_base_url'] ?? null,
-		openaiCompatibleName: settings['ai_openai_compatible_name'] ?? null,
-		openaiCompatibleModels: settings['ai_openai_compatible_models'] ?? null,
-		openaiCompatibleHeaders: settings['ai_openai_compatible_headers'] ?? null,
-		openaiAllowedModels: settings['ai_openai_allowed_models'] ?? null,
-		anthropicAllowedModels: settings['ai_anthropic_allowed_models'] ?? null,
-		googleAllowedModels: settings['ai_google_allowed_models'] ?? null,
-		systemPrompt: settings['ai_system_prompt'] ?? null,
+		openaiApiKey: getFieldValue(settings['ai_openai_api_key']),
+		anthropicApiKey: getFieldValue(settings['ai_anthropic_api_key']),
+		googleApiKey: getFieldValue(settings['ai_google_api_key']),
+		openaiCompatibleApiKey: isLlmEnabled ? getFieldValue(settings['ai_openai_compatible_api_key']) : null,
+		openaiCompatibleBaseUrl: isLlmEnabled ? getFieldValue(settings['ai_openai_compatible_base_url']) : null,
+		openaiCompatibleName: isLlmEnabled ? getFieldValue(settings['ai_openai_compatible_name']) : null,
+		openaiCompatibleModels: isLlmEnabled ? getFieldValue(settings['ai_openai_compatible_models']) : null,
+		openaiCompatibleHeaders: isLlmEnabled ? getFieldValue(settings['ai_openai_compatible_headers']) : null,
+		openaiAllowedModels: getFieldValue(settings['ai_openai_allowed_models']),
+		anthropicAllowedModels: getFieldValue(settings['ai_anthropic_allowed_models']),
+		googleAllowedModels: getFieldValue(settings['ai_google_allowed_models']),
+		systemPrompt: getFieldValue(settings['ai_system_prompt']),
 	};
 
 	res.locals['ai'] = {

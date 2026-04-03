@@ -14,6 +14,9 @@ beforeEach(() => {
 });
 
 const mockServerInfo: Info = {
+	ai_enabled: true,
+	mcp_enabled: true,
+	setupCompleted: false,
 	project: {
 		project_name: 'Directus',
 		project_descriptor: null,
@@ -33,6 +36,18 @@ const mockServerInfo: Info = {
 		public_registration: null,
 		public_registration_verify_email: null,
 	},
+	show_license_key_field: true,
+	license_source: null,
+	license: null,
+	license_locked: false,
+	license_status: 'missing',
+	files: undefined,
+	rateLimit: undefined,
+	queryLimit: undefined,
+	extensions: undefined,
+	websocket: undefined,
+	version: undefined,
+	uploads: undefined,
 };
 
 const mockAuthProviders: Auth['providers'] = [
@@ -56,7 +71,23 @@ afterEach(() => {
 });
 
 describe('hydrate action', async () => {
-	test('should hydrate info', async () => {
+	test('should hydrate info and license', async () => {
+		const mockEntitlements = {
+			collections: { limit: 10 },
+		};
+
+		const mockAddons = [
+			{
+				id: 'sso',
+				name: 'SSO Feature',
+				description: 'Allows SSO configuration',
+				status: 'available',
+				action: 'purchase',
+				icon: 'cloud_lock',
+				disabled: false,
+			},
+		];
+
 		apiGetSpy.mockImplementation((path: string) => {
 			if (path === '/server/info') {
 				return Promise.resolve({
@@ -66,9 +97,34 @@ describe('hydrate action', async () => {
 				});
 			}
 
+			if (path === '/server/license/addons') {
+				return Promise.resolve({
+					data: {
+						data: {
+							addons: mockAddons,
+						},
+					},
+				});
+			}
+
 			if (path.startsWith('/auth')) {
 				// stub as auth is not tested here
-				return Promise.resolve({ data: {} });
+				return Promise.resolve({
+					data: {
+						data: [],
+						disableDefault: false,
+					},
+				});
+			}
+
+			if (path === '/server/license') {
+				return Promise.resolve({
+					data: {
+						data: {
+							entitlements: mockEntitlements,
+						},
+					},
+				});
 			}
 
 			return;
@@ -78,13 +134,29 @@ describe('hydrate action', async () => {
 		await serverStore.hydrate();
 
 		expect(serverStore.info).toEqual(mockServerInfo);
+		expect(serverStore.addons.data).toEqual(mockAddons);
+		expect(serverStore.license.entitlements).toEqual(mockEntitlements);
 	});
 
 	test('should hydrate auth', async () => {
 		apiGetSpy.mockImplementation((path: string) => {
 			if (path === '/server/info') {
 				// stub as server info is not tested here
-				return Promise.resolve({ data: {} });
+				return Promise.resolve({
+					data: {
+						data: {},
+					},
+				});
+			}
+
+			if (path === '/server/license/addons') {
+				return Promise.resolve({
+					data: {
+						data: {
+							addons: [],
+						},
+					},
+				});
 			}
 
 			if (path.startsWith('/auth')) {
@@ -92,6 +164,16 @@ describe('hydrate action', async () => {
 					data: {
 						data: mockAuthProviders,
 						disableDefault: true,
+					},
+				});
+			}
+
+			if (path === '/server/license') {
+				return Promise.resolve({
+					data: {
+						data: {
+							entitlements: {},
+						},
 					},
 				});
 			}
@@ -121,9 +203,34 @@ describe('hydrate action', async () => {
 				});
 			}
 
+			if (path === '/server/license/addons') {
+				return Promise.resolve({
+					data: {
+						data: {
+							addons: [],
+						},
+					},
+				});
+			}
+
 			if (path.startsWith('/auth')) {
 				// stub as auth is not tested here
-				return Promise.resolve({ data: {} });
+				return Promise.resolve({
+					data: {
+						data: [],
+						disableDefault: false,
+					},
+				});
+			}
+
+			if (path === '/server/license') {
+				return Promise.resolve({
+					data: {
+						data: {
+							entitlements: {},
+						},
+					},
+				});
 			}
 
 			return;
@@ -145,9 +252,34 @@ describe('hydrate action', async () => {
 				});
 			}
 
+			if (path === '/server/license/addons') {
+				return Promise.resolve({
+					data: {
+						data: {
+							addons: [],
+						},
+					},
+				});
+			}
+
 			if (path.startsWith('/auth')) {
 				// stub as auth is not tested here
-				return Promise.resolve({ data: {} });
+				return Promise.resolve({
+					data: {
+						data: [],
+						disableDefault: false,
+					},
+				});
+			}
+
+			if (path === '/server/license') {
+				return Promise.resolve({
+					data: {
+						data: {
+							entitlements: {},
+						},
+					},
+				});
 			}
 
 			return;
@@ -176,9 +308,34 @@ describe('hydrate action', async () => {
 				});
 			}
 
+			if (path === '/server/license/addons') {
+				return Promise.resolve({
+					data: {
+						data: {
+							addons: [],
+						},
+					},
+				});
+			}
+
 			if (path.startsWith('/auth')) {
 				// stub as auth is not tested here
-				return Promise.resolve({ data: {} });
+				return Promise.resolve({
+					data: {
+						data: [],
+						disableDefault: false,
+					},
+				});
+			}
+
+			if (path === '/server/license') {
+				return Promise.resolve({
+					data: {
+						data: {
+							entitlements: {},
+						},
+					},
+				});
 			}
 
 			return;
@@ -206,11 +363,31 @@ describe('dehydrate action', () => {
 				});
 			}
 
+			if (path === '/server/license/addons') {
+				return Promise.resolve({
+					data: {
+						data: {
+							addons: [],
+						},
+					},
+				});
+			}
+
 			if (path.startsWith('/auth')) {
 				return Promise.resolve({
 					data: {
 						data: mockAuthProviders,
 						disableDefault: true,
+					},
+				});
+			}
+
+			if (path === '/server/license') {
+				return Promise.resolve({
+					data: {
+						data: {
+							entitlements: {},
+						},
 					},
 				});
 			}
@@ -225,5 +402,35 @@ describe('dehydrate action', () => {
 		expect(serverStore.info.project).toEqual(null);
 		expect(serverStore.auth.providers).toEqual([]);
 		expect(serverStore.auth.disableDefault).toEqual(false);
+	});
+});
+
+describe('hydrateLicense action', () => {
+	test('should hydrate license entitlements', async () => {
+		const mockEntitlements = {
+			users: { remaining_seats: 5 },
+		};
+
+		apiGetSpy.mockImplementation((path: string) => {
+			if (path === '/server/license') {
+				return Promise.resolve({
+					data: {
+						data: {
+							entitlements: mockEntitlements,
+						},
+					},
+				});
+			}
+
+			return;
+		});
+
+		const serverStore = useServerStore();
+
+		expect(serverStore.license.entitlements).toEqual({});
+
+		await serverStore.hydrateLicense();
+
+		expect(serverStore.license.entitlements).toEqual(mockEntitlements);
 	});
 });

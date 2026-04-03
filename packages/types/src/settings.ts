@@ -83,6 +83,8 @@ export type Settings = {
 	mcp_system_prompt_enabled: boolean;
 	mcp_system_prompt: string | null;
 	collaborative_editing_enabled: boolean;
+	license_token: '**********' | null;
+	license_key: '**********' | null;
 } & OwnerInformation;
 
 export type OwnerInformation = {
@@ -98,4 +100,5 @@ export type SetupForm = {
 	password: string | null;
 	password_confirm: string | null;
 	license: boolean;
+	license_key: string | null;
 } & OwnerInformation;

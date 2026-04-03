@@ -5,6 +5,8 @@ import {
 	InvalidCredentialsError,
 	InvalidOtpError,
 	ServiceUnavailableError,
+	SsoNonAdminError,
+	UserDeactivatedError,
 	UserSuspendedError,
 } from '@directus/errors';
 import type { AbstractServiceOptions, Accountability, LoginResult, SchemaOverview } from '@directus/types';
@@ -12,10 +14,14 @@ import jwt from 'jsonwebtoken';
 import type { Knex } from 'knex';
 import { clone, cloneDeep } from 'lodash-es';
 import type { StringValue } from 'ms';
+import { SSO_DRIVERS } from '../auth/constants/auth.js';
 import { getAuthProvider } from '../auth.js';
 import { DEFAULT_AUTH_PROVIDER } from '../constants.js';
 import getDatabase from '../database/index.js';
 import emitter from '../emitter.js';
+import { getFeature } from '../license/index.js';
+import { Entitlements } from '../license/types/index.js';
+import { useLogger } from '../logger/index.js';
 import { fetchRolesTree } from '../permissions/lib/fetch-roles-tree.js';
 import { fetchGlobalAccess } from '../permissions/modules/fetch-global-access/fetch-global-access.js';
 import { createRateLimiter, RateLimiterRes } from '../rate-limiter.js';
@@ -124,7 +130,12 @@ export class AuthenticationService {
 		);
 
 		if (user?.status !== 'active' || user?.provider !== providerName) {
-			const loginError = new InvalidCredentialsError();
+			let loginError = new InvalidCredentialsError();
+
+			if (user?.status === 'deactivated') {
+				loginError = new UserDeactivatedError();
+			}
+
 			emitStatus('fail', updatedPayload, user, loginError);
 			await stall(STALL_TIME, timeStart);
 			throw loginError;
@@ -222,6 +233,30 @@ export class AuthenticationService {
 			{ roles, user: user.id, ip: this.accountability?.ip ?? null },
 			{ knex: this.knex },
 		);
+
+		const providerDriver = env[`AUTH_${providerName.toUpperCase()}_DRIVER`] as string | undefined;
+
+		if (providerDriver && SSO_DRIVERS.includes(providerDriver) && !globalAccess.admin) {
+			let isSSOEnabled = false;
+
+			try {
+				const ssoEntitlement = await getFeature<{ enabled?: boolean }>(Entitlements.SSO);
+
+				if (ssoEntitlement?.enabled === true) {
+					const settings = await this.knex.select('sso_deactivated').from('directus_settings').first();
+					isSSOEnabled = !settings?.sso_deactivated;
+				}
+			} catch {
+				useLogger().warn('[license] Failed to load SSO feature entitlements');
+			}
+
+			if (!isSSOEnabled) {
+				const loginError = new SsoNonAdminError();
+				emitStatus('fail', payload, user, loginError);
+				await stall(STALL_TIME, timeStart);
+				throw loginError;
+			}
+		}
 
 		const tokenPayload: DirectusTokenPayload = {
 			id: user.id,
@@ -369,6 +404,9 @@ export class AuthenticationService {
 			if (record.user_status === 'suspended') {
 				await stall(STALL_TIME, timeStart);
 				throw new UserSuspendedError();
+			} else if (record.user_status === 'deactivated') {
+				await stall(STALL_TIME, timeStart);
+				throw new UserDeactivatedError();
 			} else {
 				await stall(STALL_TIME, timeStart);
 				throw new InvalidCredentialsError();

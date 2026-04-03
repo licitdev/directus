@@ -36,7 +36,113 @@ setup_save_accept_license: >
 setup_accept_license: I accept the terms of the {directusBsl} and {privacyPolicy}
 setup_marketing_emails: Send me product updates and release notes
 setup_launch: Launch Directus
+setup_continue: Continue
+setup_license_key_info: Have a license key? Enter it below to activate your plan and unlock advanced features.
+setup_license_key_notice:
+  'Companies with under $5M in annual revenue may qualify for our Business plan at no cost. {learnMore} about
+  eligibility and apply anytime.'
+setup_learn_more: Learn more
+setup_optional: optional
 setup_project: Setup Project
+license_key: License Key
+license_key_placeholder: Enter your license key
+license_key_masked_placeholder: '••••••••••••••••••••••••'
+settings_license: License
+settings_license_tier: Starter Plan
+license_key_management: License Key Management
+license_key_management_notice: Have a license key? Enter it below to activate your plan and unlock advanced features.
+settings_license_no_key: No license key configured
+settings_license_value_stored: Value Securely Stored
+settings_license_edit: Edit License Key
+settings_license_env_managed: You will need to manage your license key through your ENV.
+settings_license_add: Add License Key
+settings_license_manage: Manage
+settings_license_upgrade_plan: Upgrade Plan
+settings_license_manage_plan: Manage Plan
+settings_license_current_plan: Current Plan
+settings_license_never_expires: Never Expires
+settings_license_your_plan_usage: Your Plan Usage
+settings_license_add_on_packages: Add-on Packages
+settings_license_add_on_info: Learn more about this add-on
+settings_license_purchase: Purchase
+settings_license_manage_addon: Manage
+settings_license_usage_available: Included
+settings_license_usage_unavailable: Not Included
+settings_license_usage_disabled: Disabled
+settings_license_usage_opt_in: Optional
+settings_license_usage_collections: Collections
+settings_license_usage_seats: Seats
+settings_license_usage_sso: SSO
+settings_license_usage_custom_rules: Custom Rules (Access Policies)
+settings_license_usage_custom_llm: Custom LLM
+settings_license_usage_analytics: Analytics
+settings_license_business_plan_notice:
+  '💡 Companies with under $5M in annual revenue may qualify for our Business plan at no cost. {learnMore} about
+  eligibility and apply anytime.'
+settings_license_learn_more: Learn more
+settings_license_customer: Customer
+settings_license_danger_zone: Danger Zone
+settings_license_deactivate: Deactivate License
+settings_license_deactivate_notice: Remove the license from this project and unbind it so it can be used elsewhere.
+settings_license_deactivate_confirm_title: Deactivate License?
+settings_license_deactivation_popup_title: Deactivation License Requirement
+settings_license_deactivation_popup_subtitle:
+  If you need to update your license key, you an update it via the “Manage License” in the License setting page.
+settings_license_deactivation_popup_confirm: Deactivate
+license_expired_deactivation_popup_title: License Expiration
+license_suspended_deactivation_popup_title: License Suspension
+license_suspended_deactivation_popup_notice:
+  Your license has expired and the grace period has ended. To unlock your project, reduce it to the Community plan
+  limits of {requirements}. Deactivated items will remained stored but locked in Directus, and custom access rules will
+  also be locked.
+license_project_locked_deactivation_popup_title: Your project has been locked for license suspension.
+license_project_locked_deactivation_popup_text: Contact your administrator to resolve this issue.
+settings_license_deactivation_popup_notice_requirements:
+  'In order to proceed to deactivate your license, you will need to deactivate {requirements}.'
+settings_license_deactivation_popup_notice_no_requirements: You can proceed to deactivate your license.
+settings_license_deactivation_popup_notice_collections: '{count} collection(s)'
+settings_license_deactivation_popup_notice_users: '{count} user seat(s)'
+settings_license_deactivation_popup_notice_and: ' and '
+settings_license_deactivation_popup_remaining: '{count} remaining'
+settings_license_deactivation_popup_limit_count_success: 'All set'
+settings_license_deactivate_confirm: Are you sure you want to deactivate these collections and user seats?
+settings_license_deactivation_sso_force_logout_notice:
+  All users will be forced to log in with email & password after SSO is deactivated.
+settings_license_deactivate_success: License deactivated successfully
+settings_license_addon_user_seats_name: User Seats
+settings_license_addon_user_seats_description: '$15.00 per seat'
+settings_license_addon_user_seats_title: Purchase Additional User Seats
+settings_license_addon_user_seats_helper_text: 1 Pack = 10 Users
+settings_license_addon_sso_name: SSO Feature
+settings_license_addon_sso_description: Allows SSO configuration
+settings_license_addon_sso_title: Are you sure you want to purchase SSO feature?
+settings_license_addon_collections_name: Data Model Collections
+settings_license_addon_collections_description: '$100.00 per 25 collections/ pack'
+settings_license_addon_collections_title: Additional Collections Pack(s)
+settings_license_addon_collections_helper_text: 1 Pack = 25 Collections
+settings_license_addon_basic_support_name: Basic Support
+settings_license_addon_basic_support_title: Are you sure you want to purchase Basic Support feature?
+settings_license_addon_confirm_purchase: Confirm Purchase
+user_status_deactivated: Deactivated
+error_archiving_users: Failed to deactivate selected users.
+error_excluding_collections: Failed to deactivate selected collections.
+license_valid: License Valid
+license_invalid: Invalid License Key
+license_expires_on: 'Expires on {date}'
+license_expired_on: 'Expired on {date}'
+license_status_active: Active
+license_status_expiring: Expiring
+license_status_expired: Expired
+license_expiring_soon_warning: 'You have {days} remaining before your Directus license key expires.'
+license_grace_period_warning:
+  'Your Directus license key has expired. You have {days} to resolve your license issue or your Directus project will be
+  locked.'
+license_project_locked: Your Directus project is locked
+license_project_locked_notice:
+  Your license has expired and the grace period has ended. Enter a new license key to unlock your project.
+brand_directus_label: 'Powered by Directus'
+brand_oig_label: 'Open Innovation Grant'
+license_tier: '{tier} Tier'
 first_name: First Name
 last_name: Last Name
 admin_email: Admin Email
@@ -57,6 +163,8 @@ draft: Draft
 archived: Archived
 marketplace: Marketplace
 extensions: Extensions
+purchase_add_on: Purchase Add-on
+upgrade_plan: Upgrade Plan
 skip_link_nav: Skip to Navigation
 skip_link_module_nav: Skip to Module Navigation
 skip_link_main: Skip to Main Content
@@ -182,6 +290,7 @@ edit_collection: Edit Collection
 exclusive: Exclusive
 children: Children
 db_only_click_to_configure: 'Database Only: Click to Configure'
+excluded_click_to_configure: 'Excluded: Click to Configure'
 show_active_items: Show Active Items
 show_archived_items: Show Archived Items
 show_all_items: Show All Items
@@ -776,6 +885,14 @@ csv: CSV
 csv_utf8: CSV Excel (UTF-8)
 no_collections: No Collections
 create_collection: Create Collection
+collections_limit_reached_notice: You have reached max capacity. Upgrade plan to unlock more.
+collections_approaching_limit_notice: You have {count} collection(s) left. Upgrade plan to unlock more.
+users_limit_reached_notice: You have reached max capacity. Upgrade plan to unlock more.
+users_approaching_limit_notice: You have {count} seat(s) left. Upgrade plan to unlock more.
+collections_limit_modal_title: You have reached the max limit allowed for your tier
+collections_limit_modal_description: You can also purchase additional add-ons for more feature unlock.
+upgrade_plan_modal_title: Upgrade your Plan
+upgrade_plan_modal_description: Upgrade your plan to unlock this feature.
 no_collections_copy_admin: You don’t have any Collections yet. Click the button below to get started.
 no_collections_copy: You don’t have any Collections yet. Please contact your system administrator.
 relationship_not_setup: The relationship is not configured properly or you don't have permission to access it
@@ -813,6 +930,9 @@ sidebar: Sidebar
 duration: Duration
 charset: Charset
 second: second
+users_limit_modal_title: You have reached the max limit allowed for your tier.
+users_limit_admin_modal_description: You can also purchase additional add-ons for more feature unlock.
+users_limit_modal_description: Contact your administrator to unlock more.
 file_moved: File Moved
 collection_created: Collection Created
 modified_on: Modified On
@@ -856,6 +976,7 @@ errors:
   INTERNAL_SERVER_ERROR: Unexpected Error
   INVALID_CONFIG: Invalid config
   INVALID_CREDENTIALS: Wrong username or password
+  USER_DEACTIVATED: Account has been deactivated. Contact your admin to resolve the issue.
   INVALID_FOREIGN_KEY: Invalid foreign key
   INVALID_INVITE: This invite is no longer valid
   INVALID_IP: IP Address not allowed
@@ -876,6 +997,7 @@ errors:
   REQUESTS_EXCEEDED: Requests limit reached
   ROUTE_NOT_FOUND: Not found
   SERVICE_UNAVAILABLE: Service Unavailable
+  SSO_NON_ADMIN: SSO login is restricted to admin users only.
   TOKEN_EXPIRED: Token expired
   UNEXPECTED_RESPONSE: Unexpected response
   UNKNOWN: Unexpected Error
@@ -921,6 +1043,7 @@ make_collection_visible: Make Collection Visible
 make_collection_hidden: Make Collection Hidden
 make_folder_visible: Make Folder Visible
 make_folder_hidden: Make Folder Hidden
+un_exclude_collection: Un-exclude Collection
 goto_collection_content: View Content
 count_of_total_items: '{count} of {total} Items'
 start_end_of_count_items: '{start}-{end} of {count} Items'
@@ -954,6 +1077,7 @@ color: Color
 circle: Circle
 empty_item: Empty Item
 log_in_with: 'Log In with {provider}'
+login_error: Login Error
 conditional_styles: Conditional Styles
 advanced_settings: Advanced Settings
 advanced_filter: Advanced Filter
@@ -1553,6 +1677,7 @@ fields:
     status_active: Active
     status_suspended: Suspended
     status_archived: Archived
+    status_deactivated: Deactivated
     role: Role
     token: Token
     provider: Provider
@@ -2231,6 +2356,15 @@ interfaces:
     inline_title_label: Show title inside line
     margin_top: Margin Top
     margin_top_label: Increase Top Margin
+  presentation-license-section:
+    name: License Section
+    description: Display a section of the Settings License page
+    section: Section
+    section_plan: Plan
+    section_banners: Banners
+    section_usage: Usage
+    section_addons: Add-ons
+    section_danger: Danger Zone
   select-dropdown:
     description: Select a value from a dropdown
     choices_placeholder: Add a new choice
@@ -3014,3 +3148,4 @@ text_direction_auto: Automatic (Match Language)
 text_direction_ltr: Left to Right (LTR)
 text_direction_rtl: Right to Left (RTL)
 set_to_now: Set to Now
+feature_limit_notice: '{limit} days of {feature} is included in your current plan.'

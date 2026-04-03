@@ -179,6 +179,7 @@ async function saveAndQuit() {
 		const savedItem: Record<string, any> = await save();
 		await setLang(savedItem);
 		await refreshCurrentUser();
+		await serverStore.hydrateLicense();
 		router.push(`/users`);
 	} catch {
 		// `save` will show unexpected error dialog
@@ -190,6 +191,7 @@ async function saveAndStay() {
 		const savedItem: Record<string, any> = await save();
 		await setLang(savedItem);
 		await refreshCurrentUser();
+		await serverStore.hydrateLicense();
 
 		if (props.primaryKey === '+') {
 			const newPrimaryKey = savedItem.id;
@@ -208,6 +210,7 @@ async function saveAndAddNew() {
 		const savedItem: Record<string, any> = await save();
 		await setLang(savedItem);
 		await refreshCurrentUser();
+		await serverStore.hydrateLicense();
 		router.push(`/users/+`);
 	} catch {
 		// `save` will show unexpected error dialog
@@ -227,6 +230,8 @@ async function deleteAndQuit() {
 	if (deleting.value) return;
 
 	try {
+		const serverStore = useServerStore();
+
 		const currentUserId = userStore.currentUser && 'id' in userStore.currentUser ? userStore.currentUser.id : null;
 
 		// If the deleted user is the current user, we want to log them out
@@ -239,6 +244,7 @@ async function deleteAndQuit() {
 		await remove();
 		edits.value = {};
 		router.replace(`/users`);
+		await serverStore.hydrateLicense();
 	} catch {
 		// `remove` will show the unexpected error dialog
 	}

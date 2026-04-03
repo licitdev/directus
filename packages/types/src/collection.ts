@@ -11,6 +11,7 @@ type Translations = {
 export type CollectionMeta = {
 	collection: string;
 	note: string | null;
+	excluded: boolean | null;
 	hidden: boolean;
 	singleton: boolean;
 	icon: string | null;
@@ -60,6 +61,7 @@ export type BaseCollectionMeta = Pick<
 	| 'accountability'
 	| 'group'
 	| 'system'
+	| 'excluded'
 >;
 
 export type RawCollection = {

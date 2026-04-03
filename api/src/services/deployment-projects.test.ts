@@ -15,6 +15,11 @@ vi.mock('../deployment.js', () => ({
 	})),
 }));
 
+vi.mock('@directus/schema', async () => {
+	const { mockSchema } = await import('../test-utils/schema.js');
+	return mockSchema();
+});
+
 vi.mock('../../src/database/index', async () => {
 	const { mockDatabase } = await import('../test-utils/database.js');
 	return mockDatabase();
@@ -60,6 +65,7 @@ describe('DeploymentProjectsService', () => {
 				schema,
 			});
 
+			tracker.on.select('directus_collections').response([{ excluded: false }]);
 			tracker.on.select('directus_deployments').response([vercelConfig]);
 		});
 

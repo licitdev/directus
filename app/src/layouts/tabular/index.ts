@@ -178,7 +178,11 @@ export default defineLayout<LayoutOptions, LayoutQuery>({
 
 			const fieldsDefaultValue = computed(() => {
 				return fieldsInCollection.value
-					.filter((field) => !field.meta?.hidden && !field.meta?.special?.includes('no-data'))
+					.filter((field) => {
+						return (
+							!field.meta?.hidden && !field.meta?.special?.includes('no-data') && field.is_collection_excluded !== true
+						);
+					})
 					.slice(0, 4)
 					.map(({ field }) => field)
 					.sort();
@@ -235,9 +239,13 @@ export default defineLayout<LayoutOptions, LayoutQuery>({
 				get() {
 					if (!collection.value) return [];
 
-					return fields.value
+					const returnedFields = fields.value
 						.map((key) => ({ ...fieldsStore.getField(collection.value!, key), key }))
-						.filter((f) => f && f.meta?.special?.includes('no-data') !== true) as (Field & { key: string })[];
+						.filter(
+							(f) => (f && f.meta?.special?.includes('no-data') !== true) || f.is_collection_excluded !== true,
+						) as (Field & { key: string })[];
+
+					return returnedFields;
 				},
 				set(val) {
 					fields.value = val.map((field) => field.field);

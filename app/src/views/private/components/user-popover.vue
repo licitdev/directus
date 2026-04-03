@@ -149,6 +149,10 @@ function navigateToUser() {
 			--v-chip-color: var(--theme--danger);
 			--v-chip-background-color: var(--danger-25);
 		}
+		&.deactivated {
+			--v-chip-color: var(--theme--foreground-accent);
+			--v-chip-background-color: var(--theme--background-accent);
+		}
 	}
 
 	.email {

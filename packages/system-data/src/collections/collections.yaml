@@ -3,6 +3,7 @@ table: directus_collections
 defaults:
   collection: null
   hidden: false
+  excluded: null
   singleton: false
   icon: null
   note: null

@@ -47,6 +47,8 @@ const mockSettings: Settings = {
 	default_theme_dark: null,
 	theme_light_overrides: null,
 	theme_dark_overrides: null,
+	license_token: null,
+	license_key: null,
 };
 
 const mockUser = { id: 'e7f7a94d-5b38-4978-8450-de0e38859fec', role: { admin_access: false } } as any;

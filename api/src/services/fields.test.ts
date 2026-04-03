@@ -14,6 +14,7 @@ import {
 	setupSystemCollectionMocks,
 } from '../test-utils/knex.js';
 import * as getSchemaModule from '../utils/get-schema.js';
+import { CollectionsService } from './collections.js';
 import { FieldsService } from './fields.js';
 import { ItemsService } from './items.js';
 
@@ -78,31 +79,36 @@ vi.mock('../utils/should-clear-cache.js', () => ({
 
 const mockCreateIndexSpy = vi.fn().mockResolvedValue(undefined);
 
-vi.mock('../database/helpers/index.js', () => ({
-	getHelpers: vi.fn(() => ({
-		schema: {
-			createIndex: mockCreateIndexSpy,
-			processFieldType: vi.fn((field) => field.type),
-			preColumnChange: vi.fn().mockResolvedValue(true),
-			postColumnChange: vi.fn().mockResolvedValue(undefined),
-			setNullable: vi.fn(),
-			generateIndexName: vi.fn((type, collection, field) => `${collection}_${field}_${type}`),
-		},
-		date: {
-			fieldFlagForField: vi.fn().mockReturnValue(null),
-		},
-		st: {
-			createColumn: vi.fn((_table, _field) => ({
-				defaultTo: vi.fn().mockReturnThis(),
-				notNullable: vi.fn().mockReturnThis(),
-				nullable: vi.fn().mockReturnThis(),
-				unique: vi.fn().mockReturnThis(),
-				index: vi.fn().mockReturnThis(),
-				primary: vi.fn().mockReturnThis(),
-			})),
-		},
-	})),
-}));
+vi.mock('../database/helpers/index.js', async (importOriginal) => {
+	const actual = await importOriginal<typeof import('../database/helpers/index.js')>();
+
+	return {
+		...actual,
+		getHelpers: vi.fn(() => ({
+			schema: {
+				createIndex: mockCreateIndexSpy,
+				processFieldType: vi.fn((field) => field.type),
+				preColumnChange: vi.fn().mockResolvedValue(true),
+				postColumnChange: vi.fn().mockResolvedValue(undefined),
+				setNullable: vi.fn(),
+				generateIndexName: vi.fn((type, collection, field) => `${collection}_${field}_${type}`),
+			},
+			date: {
+				fieldFlagForField: vi.fn().mockReturnValue(null),
+			},
+			st: {
+				createColumn: vi.fn((_table, _field) => ({
+					defaultTo: vi.fn().mockReturnThis(),
+					notNullable: vi.fn().mockReturnThis(),
+					nullable: vi.fn().mockReturnThis(),
+					unique: vi.fn().mockReturnThis(),
+					index: vi.fn().mockReturnThis(),
+					primary: vi.fn().mockReturnThis(),
+				})),
+			},
+		})),
+	};
+});
 
 const schema = new SchemaBuilder()
 	.collection('directus_fields', (c) => {
@@ -237,8 +243,165 @@ describe('Integration Tests', () => {
 				expect(result.every((field) => field.collection === 'test_collection')).toBe(true);
 			});
 
+			test('marks relational fields as is_collection_excluded when relations target excluded collections', async () => {
+				const mockColumns = [
+					{
+						table: 'test_collection',
+						name: 'id',
+						data_type: 'integer',
+						default_value: null,
+						is_nullable: false,
+					},
+					{
+						table: 'test_collection',
+						name: 'rel',
+						data_type: 'integer',
+						default_value: null,
+						is_nullable: true,
+					},
+				];
+
+				const service = new FieldsService({
+					knex: db,
+					schema,
+					accountability: { role: 'admin', admin: true } as Accountability,
+				});
+
+				service.schemaInspector.columnInfo = vi.fn().mockResolvedValue(mockColumns);
+				// readAll also runs an aliasQuery against directus_fields; satisfy knex-mock-client
+				tracker.on.select('directus_fields').response([]);
+
+				// Field meta is loaded via ItemsService.readByQuery (mocked in this test file), not via knex tracker
+				const readByQuerySpy = vi.spyOn(ItemsService.prototype, 'readByQuery').mockResolvedValue([
+					{
+						id: 1,
+						collection: 'test_collection',
+						field: 'rel',
+						interface: null,
+						display: null,
+						options: null,
+						display_options: null,
+						width: 'full',
+						hidden: false,
+						required: false,
+						sort: null,
+						special: ['m2o'],
+						translations: null,
+						note: null,
+						conditions: null,
+						validation: null,
+						validation_message: null,
+						searchable: true,
+						system: false,
+						clear_hidden_value_on_save: false,
+						group: null,
+					},
+				]);
+
+				// directus_relations rows: link rel -> excluded_collection
+				tracker.on.select('directus_relations').response([
+					{
+						many_collection: 'test_collection',
+						many_field: 'rel',
+						one_collection: 'excluded_collection',
+						one_field: 'id',
+					},
+				]);
+
+				// readAll calls CollectionsService.isExcluded per collection (many then one)
+				const isExcludedSpy = vi.spyOn(CollectionsService.prototype, 'isExcluded').mockImplementation(async (key) => {
+					return key === 'excluded_collection';
+				});
+
+				let result: Field[];
+
+				try {
+					result = await service.readAll('test_collection');
+				} finally {
+					readByQuerySpy.mockRestore();
+					isExcludedSpy.mockRestore();
+				}
+
+				const relationalField = result.find((field) => field.field === 'rel') as Field & {
+					is_collection_excluded?: boolean;
+				};
+
+				expect(relationalField).toBeDefined();
+				expect(relationalField.meta?.special).toContain('m2o');
+				expect(relationalField.is_collection_excluded).toBe(true);
+			});
+
+			test('does not set is_collection_excluded when meta.special omits relational keywords', async () => {
+				const mockColumns = [
+					{
+						table: 'test_collection',
+						name: 'id',
+						data_type: 'integer',
+						default_value: null,
+						is_nullable: false,
+					},
+					{
+						table: 'test_collection',
+						name: 'rel',
+						data_type: 'integer',
+						default_value: null,
+						is_nullable: true,
+					},
+				];
+
+				const service = new FieldsService({
+					knex: db,
+					schema,
+					accountability: { role: 'admin', admin: true } as Accountability,
+				});
+
+				service.schemaInspector.columnInfo = vi.fn().mockResolvedValue(mockColumns);
+				// readAll also runs an aliasQuery against directus_fields; satisfy knex-mock-client
+				tracker.on.select('directus_fields').response([]);
+
+				// Field meta is loaded via ItemsService.readByQuery (mocked in this test file), not via knex tracker
+				const readByQuerySpy = vi.spyOn(ItemsService.prototype, 'readByQuery').mockResolvedValue([
+					{
+						id: 1,
+						collection: 'test_collection',
+						field: 'rel',
+						interface: null,
+						display: null,
+						options: null,
+						display_options: null,
+						width: 'full',
+						hidden: false,
+						required: false,
+						sort: null,
+						special: null,
+						translations: null,
+						note: null,
+						conditions: null,
+						validation: null,
+						validation_message: null,
+						searchable: true,
+						system: false,
+						clear_hidden_value_on_save: false,
+						group: null,
+					},
+				]);
+
+				const result = await service.readAll('test_collection');
+				readByQuerySpy.mockRestore();
+
+				const relField = result.find((field) => field.field === 'rel') as Field & {
+					is_collection_excluded?: boolean;
+				};
+
+				expect(relField).toBeDefined();
+				expect(relField.is_collection_excluded).toBeUndefined();
+			});
+
 			test('should throw ForbiddenError for non-admin users without access', async () => {
 				vi.mocked(fetchPermissions).mockResolvedValueOnce([]);
+
+				// readAll loads meta via ItemsService.readByQuery (mocked ItemsService module)
+				const readByQuerySpy = vi.spyOn(ItemsService.prototype, 'readByQuery').mockResolvedValue([]);
 
 				const service = new FieldsService({
 					knex: db,
@@ -250,7 +413,11 @@ describe('Integration Tests', () => {
 
 				tracker.on.select('directus_fields').response([]);
 
-				await expect(service.readAll('test_collection')).rejects.toThrow(ForbiddenError);
+				try {
+					await expect(service.readAll('test_collection')).rejects.toThrow(ForbiddenError);
+				} finally {
+					readByQuerySpy.mockRestore();
+				}
 			});
 		});
 
@@ -395,6 +562,7 @@ describe('Integration Tests', () => {
 						group: null,
 						validation: null,
 						validation_message: null,
+						searchable: true,
 						id: 0,
 					},
 				};
@@ -439,6 +607,7 @@ describe('Integration Tests', () => {
 						group: null,
 						validation: null,
 						validation_message: null,
+						searchable: true,
 						id: 0,
 					},
 				};

@@ -3,6 +3,7 @@ import { ErrorCode, InvalidPayloadError, isDirectusError } from '@directus/error
 import type { Accountability } from '@directus/types';
 import type { Request } from 'express';
 import { Router } from 'express';
+import { AUTH_DRIVERS, SSO_DRIVERS } from '../auth/constants/auth.js';
 import {
 	createLDAPAuthRouter,
 	createLocalAuthRouter,
@@ -11,8 +12,11 @@ import {
 	createSAMLAuthRouter,
 } from '../auth/drivers/index.js';
 import { DEFAULT_AUTH_PROVIDER, REFRESH_COOKIE_OPTIONS, SESSION_COOKIE_OPTIONS } from '../constants.js';
+import { getDatabase } from '../database/index.js';
+import { getFeature } from '../license/index.js';
 import { useLogger } from '../logger/index.js';
 import { respond } from '../middleware/respond.js';
+import { ssoEntitlementCheck } from '../middleware/sso-entitlement.js';
 import { createDefaultAccountability } from '../permissions/utils/create-default-accountability.js';
 import { AuthenticationService } from '../services/authentication.js';
 import { UsersService } from '../services/users.js';
@@ -34,23 +38,23 @@ for (const authProvider of authProviders) {
 	let authRouter: Router | undefined;
 
 	switch (authProvider.driver) {
-		case 'local':
+		case AUTH_DRIVERS.LOCAL:
 			authRouter = createLocalAuthRouter(authProvider.name);
 			break;
 
-		case 'oauth2':
+		case AUTH_DRIVERS.OAUTH2:
 			authRouter = createOAuth2AuthRouter(authProvider.name);
 			break;
 
-		case 'openid':
+		case AUTH_DRIVERS.OPENID:
 			authRouter = createOpenIDAuthRouter(authProvider.name);
 			break;
 
-		case 'ldap':
+		case AUTH_DRIVERS.LDAP:
 			authRouter = createLDAPAuthRouter(authProvider.name);
 			break;
 
-		case 'saml':
+		case AUTH_DRIVERS.SAML:
 			authRouter = createSAMLAuthRouter(authProvider.name);
 			break;
 	}
@@ -60,7 +64,11 @@ for (const authProvider of authProviders) {
 		continue;
 	}
 
-	router.use(`/login/${authProvider.name}`, authRouter);
+	if (SSO_DRIVERS.includes(authProvider.driver)) {
+		router.use(`/login/${authProvider.name}`, ssoEntitlementCheck, authRouter);
+	} else {
+		router.use(`/login/${authProvider.name}`, authRouter);
+	}
 }
 
 if (!env['AUTH_DISABLE_DEFAULT']) {
@@ -255,8 +263,20 @@ router.get(
 		const sessionOnly =
 			'sessionOnly' in req.query && (req.query['sessionOnly'] === '' || Boolean(req.query['sessionOnly']));
 
+		let isSSOEnabled = false;
+
+		try {
+			const ssoEntitlement = await getFeature<{ enabled?: boolean }>('sso');
+			const db = getDatabase();
+			const settings = await db.select('sso_deactivated').from('directus_settings').first();
+
+			isSSOEnabled = !!ssoEntitlement?.enabled || !settings?.sso_deactivated;
+		} catch {
+			logger.warn('[license] Failed to load SSO feature entitlements');
+		}
+
 		res.locals['payload'] = {
-			data: getAuthProviders({ sessionOnly }),
+			data: isSSOEnabled ? getAuthProviders({ sessionOnly }) : [],
 			disableDefault: env['AUTH_DISABLE_DEFAULT'],
 		};
 
